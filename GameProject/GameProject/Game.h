@@ -100,24 +100,8 @@ g_FaintTexture{};
 float
 g_AttackX{ g_WindowWidth * -0.99375f },
 g_AttackY{ g_WindowHeight * -0.025f },
-g_GodmoongussAttackX{ g_WindowWidth * -0.99375f },
-g_GodmoongussAttackY{ g_WindowHeight * -0.025f },
-g_LaxAttackX{ g_WindowWidth * -0.99375f },
-g_LaxAttackY{ g_WindowHeight * -0.025f },
-g_WaitX{ g_WindowWidth * -0.99375f },
-g_WaitY{ g_WindowHeight * -0.025f },
-g_ItemX{ g_WindowWidth * -0.99375f },
-g_ItemY{ g_WindowHeight * -0.025f },
-g_SwitchX{ g_WindowWidth * -0.99375f },
-g_SwitchY{ g_WindowHeight * -0.025f },
-g_RunX{ g_WindowWidth * -0.99375f },
-g_RunY{ g_WindowHeight * -0.025f },
-g_ItemDoneX{ g_WindowWidth * -0.99375f },
-g_ItemDoneY{ g_WindowHeight * -0.025f },
-g_NotFirstTurnX{ g_WindowWidth * -0.99375f },
-g_NotFirstTurnY{ g_WindowHeight * -0.025f },
-g_FaintX{ g_WindowWidth * -0.99375f },
-g_FaintY{ g_WindowHeight * -0.025f };
+TextBlockX{ g_WindowWidth * 0.0062548866f },
+TextBlockY{ g_WindowHeight * 0.674196351f };
 
 const int
 g_BackgroundSizeWidth{ 1279 },
@@ -132,15 +116,33 @@ g_LaxManY{ g_WindowHeight * 0.255f },
 g_GodmoongussX{ g_WindowWidth * 0.59375f },
 g_GodmoongussY{ g_WindowHeight * 0.025f },
 g_HPBarWidth1{ g_WindowWidth * 0.3125f },
-g_HPBarWidth2{ g_WindowWidth * 0.3125f };
+g_HPBarWidth2{ g_WindowWidth * 0.3125f },
+g_SpeedLax{ 200.f },
+g_SpeedAttack{ 0.f },
+g_SpeedGmoonguss{ 200.f },
+g_SpeedHPBar{ 50.f },
+g_HPBar1HitAmmount{ g_WindowWidth * 0.03125f },
+g_HPBar2HitAmmount{ g_WindowWidth * 0.0625f },
+g_HPBar1Target = g_HPBarWidth1 - (g_HPBar1HitAmmount),
+g_HPBar2Target = g_HPBarWidth2 - (g_HPBar2HitAmmount),
+g_PhaseWaitCounter{ 0.f },
+g_MovementLength{ 55.f };
 
 bool
 g_Move{ false },
 g_Item{ false },
 g_Run{ false },
 g_Switch{ false },
-g_notFirstTurn{ false };
-static float HPBar2Target = g_HPBarWidth2 - (g_WindowWidth * 0.0625f);
+g_notFirstTurn{ false },
+g_LaxAttackTextureIsOn{ false },
+g_WaitTextBlock{ false },
+g_GMoongussAttackTextureIsOn{ false },
+g_ItemTextureIsOn{ false },
+g_SwitchTextureIsOn{ false },
+g_RunTextureIsOn{ false },
+g_ItemDoneTextureIsOn{ false },
+g_NotFirstTurnTextureIsOn{ false },
+g_FaintTextureIsOn{ false };
 enum class AttackPhase
 {
 	phase_lax_forward,
@@ -170,8 +172,9 @@ enum class ItemPhase
 	phase_itemhpbar2_down,
 	phase_itemdone
 };
-
-struct Buttons
+AttackPhase Attackphase = AttackPhase::phase_lax_forward;
+ItemPhase Itemphase = ItemPhase::phase_hpbar2_up;
+struct Rects
 {
 	Rectf
 		fightButton
@@ -217,15 +220,25 @@ struct Buttons
 		g_WindowHeight * 0.0217125f,
 	};
 };
-Buttons g_Buttons;
+Rects g_Rects;
 
 Point2f g_BackgroundPosition{ 1.f,1.f };
 // Declare your own functions here
 void DrawEverything();
-void Attack();
-void Item();
-void Switch();
-void RunAway();
+void Attack(float elapsedSec);
+void Item(float elapsedSec);
+void Switch(float elapsedSec);
+void RunAway(float elapsedSec);
+void LaxForward(float elapsedSec);
+void LaxBackward(float elapsedSec);
+void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
+void GMoongussForward(float elapsedSec);
+void GMoongussBackward(float elapsedSec);
+void HPBar1Down(float elapsedSec);
+void Wait(float elapsedSec);
+void HPBar2Down(float elapsedSec);
+void HPBar2Up(float elapsedSec);
+
 #pragma endregion ownDeclarations
 
 #pragma region gameFunctions											

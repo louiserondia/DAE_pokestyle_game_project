@@ -48,13 +48,13 @@ void Draw()
 	// MAP & TILES PART DRAW
 	ClearBackground(0.f, 0.f, 0.f);
 	if (g_IsBattleOn) {
-		DrawMap();
+		DrawEverything();
 		/*	DrawMap1();
 			DrawMC();*/
 	}
 	// BATTLE PART DRAW
 	else {
-		DrawEverything();
+		DrawMap();
 	}
 }
 
@@ -65,19 +65,19 @@ void Update(float elapsedSec)
 
 		if (g_Move)
 		{
-			Attack();
+			Attack(elapsedSec);
 		}
 		if (g_Item == true)
 		{
-			Item();
+			Item(elapsedSec);
 		}
 		if (g_Switch == true)
 		{
-			Switch();
+			Switch(elapsedSec);
 		}
 		if (g_Run == true)
 		{
-			RunAway();
+			RunAway(elapsedSec);
 		}
 	}
 }
@@ -119,26 +119,30 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 	if (g_IsBattleOn) {
 		if (!(g_Move or g_Switch or g_Item or g_Run))
 		{
-			if (mouseX >= g_Buttons.fightButton.left && mouseX <= (g_Buttons.fightButton.left + g_Buttons.fightButton.width) &&
-				mouseY >= g_Buttons.fightButton.top && mouseY <= (g_Buttons.fightButton.top + g_Buttons.fightButton.height))
+			if (mouseX >= g_Rects.fightButton.left && mouseX <= (g_Rects.fightButton.left + g_Rects.fightButton.width) &&
+				mouseY >= g_Rects.fightButton.top && mouseY <= (g_Rects.fightButton.top + g_Rects.fightButton.height))
 			{
 				g_Move = true;
+				std::cout << "it works" << std::endl;
 
 			}
-			else if (mouseX >= g_Buttons.pokemonButton.left && mouseX <= (g_Buttons.pokemonButton.left + g_Buttons.pokemonButton.width) &&
-				mouseY >= g_Buttons.pokemonButton.top && mouseY <= (g_Buttons.pokemonButton.top + g_Buttons.pokemonButton.height))
+			else if (mouseX >= g_Rects.pokemonButton.left && mouseX <= (g_Rects.pokemonButton.left + g_Rects.pokemonButton.width) &&
+				mouseY >= g_Rects.pokemonButton.top && mouseY <= (g_Rects.pokemonButton.top + g_Rects.pokemonButton.height))
 			{
 				g_Switch = true;
+				std::cout << "it works too" << std::endl;
 			}
-			else if (mouseX >= g_Buttons.itemButton.left && mouseX <= (g_Buttons.itemButton.left + g_Buttons.itemButton.width) &&
-				mouseY >= g_Buttons.itemButton.top && mouseY <= (g_Buttons.itemButton.top + g_Buttons.itemButton.height))
+			else if (mouseX >= g_Rects.itemButton.left && mouseX <= (g_Rects.itemButton.left + g_Rects.itemButton.width) &&
+				mouseY >= g_Rects.itemButton.top && mouseY <= (g_Rects.itemButton.top + g_Rects.itemButton.height))
 			{
 				g_Item = true;
+				std::cout << "it works aswell" << std::endl;
 			}
-			else if (mouseX >= g_Buttons.runButton.left && mouseX <= (g_Buttons.runButton.left + g_Buttons.runButton.width) &&
-				mouseY >= g_Buttons.runButton.top && mouseY <= (g_Buttons.runButton.top + g_Buttons.runButton.height))
+			else if (mouseX >= g_Rects.runButton.left && mouseX <= (g_Rects.runButton.left + g_Rects.runButton.width) &&
+				mouseY >= g_Rects.runButton.top && mouseY <= (g_Rects.runButton.top + g_Rects.runButton.height))
 			{
 				g_Run = true;
+				std::cout << "it works also" << std::endl;
 			}
 		}
 	}
@@ -255,33 +259,12 @@ void DrawEverything()
 		g_WindowWidth,
 		g_WindowHeight,
 	},
-	sourceBackground
-	{
-		1.f,
-		1.f,
-		g_BackgroundSizeWidth,
-		g_BackgroundSizeHeight,
-	},
 	destinationLaxMan
 	{
 		g_LaxManX,
 		g_LaxManY,
 		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
-	},
-	sourcePokemon
-	{
-		1.f,
-		1.f,
-		g_PokemonSize,
-		g_PokemonSize,
-	},
-	sourceTextBlock
-	{
-		1.f,
-		1.f,
-		g_TextBlockSizeWidth,
-		g_TextBlockSizeHeight,
 	},
 	destinationGodmoonguss
 	{
@@ -297,417 +280,178 @@ void DrawEverything()
 		g_WindowWidth * 0.1f,
 		g_WindowHeight * 0.1f,
 	},
-	destinationGodmoongussAttack
+	destinationTextBlock
 	{
-		g_GodmoongussAttackX,
-		g_GodmoongussAttackY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationLaxAttack
-	{
-		g_LaxAttackX,
-		g_LaxAttackY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationWait
-	{
-		g_WaitX,
-		g_WaitY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationItem
-	{
-		g_ItemX,
-		g_ItemY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationSwitch
-	{
-		g_SwitchX,
-		g_SwitchY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationRun
-	{
-		g_RunX,
-		g_RunY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationItemDone
-	{
-		g_ItemDoneX,
-		g_ItemDoneY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationNotFirstTurn
-	{
-		g_NotFirstTurnX,
-		g_NotFirstTurnY,
-		g_WindowWidth * 0.987f,
-		g_WindowHeight * 0.3197f,
-	},
-	destinationFaint
-	{
-		g_FaintX,
-		g_FaintY,
+		TextBlockX,
+		TextBlockY,
 		g_WindowWidth * 0.987f,
 		g_WindowHeight * 0.3197f,
 	};
 
-	utils::DrawTexture(g_BackgroundTexture, destinationBackground, sourceBackground);
-	utils::DrawTexture(g_LaxManTexture, destinationLaxMan, sourcePokemon);
-	utils::DrawTexture(g_GodmoongussTexture, destinationGodmoonguss, sourcePokemon);
-	utils::DrawTexture(g_AttackTexture, destinationAttack, sourcePokemon);
-	utils::DrawTexture(g_GodmoongussAttackTexture, destinationGodmoongussAttack, sourceTextBlock);
-	utils::DrawTexture(g_LaxAttackTexture, destinationLaxAttack, sourceTextBlock);
-	utils::DrawTexture(g_WaitTexture, destinationWait, sourceTextBlock);
-	utils::DrawTexture(g_ItemTexture, destinationItem, sourceTextBlock);
-	utils::DrawTexture(g_SwitchTexture, destinationSwitch, sourceTextBlock);
-	utils::DrawTexture(g_RunTexture, destinationRun, sourceTextBlock);
-	utils::DrawTexture(g_ItemDoneTexture, destinationItemDone, sourceTextBlock);
-	utils::DrawTexture(g_NotFirstTurnTexture, destinationNotFirstTurn, sourceTextBlock);
-	utils::DrawTexture(g_FaintTexture, destinationFaint, sourceTextBlock);
+	utils::DrawTexture(g_BackgroundTexture, destinationBackground);
+	utils::DrawTexture(g_LaxManTexture, destinationLaxMan);
+	utils::DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
+	utils::DrawTexture(g_AttackTexture, destinationAttack);
+
+	if(g_GMoongussAttackTextureIsOn==true)
+	{
+		utils::DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
+	}
+	if (g_LaxAttackTextureIsOn == true)
+	{
+		utils::DrawTexture(g_LaxAttackTexture, destinationTextBlock);
+	}
+	if (g_WaitTextBlock == true)
+	{
+		utils::DrawTexture(g_WaitTexture, destinationTextBlock);
+	}
+	if (g_ItemTextureIsOn == true)
+	{
+		utils::DrawTexture(g_ItemTexture, destinationTextBlock);
+	}
+	if (g_SwitchTextureIsOn == true)
+	{
+		utils::DrawTexture(g_SwitchTexture, destinationTextBlock);
+	}
+	if (g_RunTextureIsOn == true)
+	{
+		utils::DrawTexture(g_RunTexture, destinationTextBlock);
+	}
+	if (g_ItemDoneTextureIsOn == true)
+	{
+		utils::DrawTexture(g_ItemDoneTexture, destinationTextBlock);
+	}
+	if (g_NotFirstTurnTextureIsOn == true)
+	{
+		utils::DrawTexture(g_NotFirstTurnTexture, destinationTextBlock);
+	}
+	if (g_FaintTextureIsOn == true)
+	{
+		utils::DrawTexture(g_FaintTexture, destinationTextBlock);
+	}
 	SetColor(0.27f, 0.27f, 0.27f);
-	FillRect(g_Buttons.HpBar1.left, g_Buttons.HpBar1.top, g_HPBarWidth1, g_Buttons.HpBar1.height);
-	FillRect(g_Buttons.HpBar2.left, g_Buttons.HpBar2.top, g_HPBarWidth2, g_Buttons.HpBar2.height);
+	FillRect(g_Rects.HpBar1.left, g_Rects.HpBar1.top, g_HPBarWidth1, g_Rects.HpBar1.height);
+	FillRect(g_Rects.HpBar2.left, g_Rects.HpBar2.top, g_HPBarWidth2, g_Rects.HpBar2.height);
 	SetColor(0.f, 0.f, 0.f);
-	DrawRect(g_Buttons.HpBar1.left, g_Buttons.HpBar1.top, g_Buttons.HpBar1.width, g_Buttons.HpBar1.height);
-	DrawRect(g_Buttons.HpBar2.left, g_Buttons.HpBar2.top, g_Buttons.HpBar2.width, g_Buttons.HpBar2.height, 2.f);
-	utils::DrawTexture(g_GreenTexture, destinationBackground, sourceBackground);
+	DrawRect(g_Rects.HpBar1.left, g_Rects.HpBar1.top, g_Rects.HpBar1.width, g_Rects.HpBar1.height);
+	DrawRect(g_Rects.HpBar2.left, g_Rects.HpBar2.top, g_Rects.HpBar2.width, g_Rects.HpBar2.height, 2.f);
+	utils::DrawTexture(g_GreenTexture, destinationBackground);
 
 
 }
 
-void Attack()
+void Attack(float elapsedSec)
 {
-
-
-	float speedLax{ 5.f };
-	float speedGmoonguss{ 2.5f };
 	float speedHPBar{ 1.f };
-	static float PhaseWaitCounter{ 0.f };
 	static float PhaseFaintCounter{ 0.f };
-	static float speedAttack{ 0.f };
-	static float HPBar1Target = g_HPBarWidth1 - (g_WindowWidth * 0.03125f);
-	static AttackPhase phase = AttackPhase::phase_lax_forward;
 
-	switch (phase)
+	switch (Attackphase)
 	{
 	case AttackPhase::phase_lax_forward:
-		g_LaxManX += speedLax;
-		g_LaxAttackX = (g_WindowWidth * 0.0062548866f);
-		g_LaxAttackY = (g_WindowHeight * 0.674196351f);
-		if (g_LaxManX >= g_WindowWidth * 0.13125f)
-		{
-			g_LaxManX = g_WindowWidth * 0.13125f;
-			phase = AttackPhase::phase_lax_backward;
-
-		}
+		LaxForward(elapsedSec);
+		g_LaxAttackTextureIsOn = true;
 		break;
 
 	case AttackPhase::phase_lax_backward:
-		g_LaxManX -= speedLax;
-		if (g_LaxManX <= g_WindowWidth * 0.0625f)
-		{
-			g_LaxManX = g_WindowWidth * 0.0625f;
-			phase = AttackPhase::phase_attack;
-
-		}
+		LaxBackward(elapsedSec);
 		break;
 
 	case AttackPhase::phase_attack:
-		speedAttack += 1.f;
-		if (speedAttack < 20.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.59375f);
-			g_AttackY = (g_WindowHeight * 0.125f);
-		}
-		else if (speedAttack < 40.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.70f);
-			g_AttackY = (g_WindowHeight * 0.175f);
-		}
-		else if (speedAttack < 60.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.80f);
-			g_AttackY = (g_WindowHeight * 0.225f);
-		}
-		else
-		{
-			speedAttack = 0.f;
-			g_AttackX = (g_WindowWidth * -0.99375f);
-			g_AttackY = (g_WindowHeight * -0.025f);
-			g_GodmoongussX = g_WindowWidth * 0.59375f;
-			phase = AttackPhase::phase_gmoonguss_forward;
-		}
+		AttackEffect(elapsedSec, g_GodmoongussX, g_GodmoongussY);
 		break;
 	case AttackPhase::phase_gmoonguss_forward:
-		g_GodmoongussX += speedGmoonguss;
-		if (g_GodmoongussX >= g_WindowWidth * 0.6625f)
-		{
-			g_GodmoongussX = g_WindowWidth * 0.6625f;
-			phase = AttackPhase::phase_gmoonguss_backward;
-		}
+		GMoongussForward(elapsedSec);
 		break;
 	case AttackPhase::phase_gmoonguss_backward:
-		g_GodmoongussX -= speedGmoonguss;
-		if (g_GodmoongussX <= g_WindowWidth * 0.59375f)
-		{
-			g_GodmoongussX = g_WindowWidth * 0.59375f;
-			phase = AttackPhase::phase_hpbar1_down;
-		}
+		GMoongussBackward(elapsedSec);
 		break;
 	case AttackPhase::phase_hpbar1_down:
-		g_HPBarWidth1 -= speedHPBar;
-		if (g_HPBarWidth1 <= HPBar1Target)
-		{
-			g_HPBarWidth1 = HPBar1Target;
-			HPBar1Target = HPBar1Target - (g_WindowWidth * 0.03125f);
-			g_LaxAttackX = (g_WindowWidth * -0.99375f);
-			g_LaxAttackY = (g_WindowHeight * -0.025f);
-			g_WaitX = (g_WindowWidth * 0.0062548866f);
-			g_WaitY = (g_WindowHeight * 0.674196351f);
-			phase = AttackPhase::phase_wait;
-		}
+		HPBar1Down(elapsedSec);
 		break;
 	case AttackPhase::phase_wait:
-		PhaseWaitCounter += 1.f;
-
-		if (PhaseWaitCounter >= 180)
-		{
-			PhaseWaitCounter = 0;
-
-			phase = AttackPhase::phase_gmoongusscounter_backward;
-		}
+		g_LaxAttackTextureIsOn = false;
+		Wait(elapsedSec);
 		break;
 	case AttackPhase::phase_gmoongusscounter_backward:
-		g_GodmoongussX -= speedGmoonguss;
-		g_WaitX = (g_WindowWidth * -0.99375f);
-		g_WaitY = (g_WindowHeight * -0.025f);
-		g_GodmoongussAttackX = (g_WindowWidth * 0.0062548866f);
-		g_GodmoongussAttackY = (g_WindowHeight * 0.674196351f);
-		if (g_GodmoongussX <= g_WindowWidth * 0.525f)
-		{
-			g_GodmoongussX = g_WindowWidth * 0.525f;
-			phase = AttackPhase::phase_gmoongusscounter_forward;
-
-		}
+		GMoongussBackward(elapsedSec);
+		g_GMoongussAttackTextureIsOn = true;
 		break;
 	case AttackPhase::phase_gmoongusscounter_forward:
-		g_GodmoongussX += speedGmoonguss;
-		if (g_GodmoongussX >= g_WindowWidth * 0.59375f)
-		{
-			g_GodmoongussX = g_WindowWidth * 0.59375f;
-			phase = AttackPhase::phase_attackcounter;
-		}
+		GMoongussForward(elapsedSec);
 		break;
 	case AttackPhase::phase_attackcounter:
-		speedAttack += 1.f;
-		if (speedAttack < 20.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.0625f);
-			g_AttackY = (g_WindowHeight * 0.350f);
-		}
-		else if (speedAttack < 40.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.1625f);
-			g_AttackY = (g_WindowHeight * 0.410f);
-		}
-		else if (speedAttack < 60.f)
-		{
-			g_AttackX = (g_WindowWidth * 0.2625f);
-			g_AttackY = (g_WindowHeight * 0.470f);
-		}
-		else
-		{
-			speedAttack = 0.f;
-			g_AttackX = (g_WindowWidth * -0.99375f);
-			g_AttackY = (g_WindowHeight * -0.025f);
-			g_GodmoongussX = g_WindowWidth * 0.59375f;
-			phase = AttackPhase::phase_laxcounter_backward;
-		}
+		AttackEffect(elapsedSec, g_LaxManX, g_LaxManY);
 		break;
 	case AttackPhase::phase_laxcounter_backward:
-		g_LaxManX -= speedLax;
-		if (g_LaxManX <= g_WindowWidth * 0.f)
-		{
-			g_LaxManX = g_WindowWidth * 0.f;
-			phase = AttackPhase::phase_laxcounter_forward;
-
-		}
+		LaxBackward(elapsedSec);
 		break;
 
 	case AttackPhase::phase_laxcounter_forward:
-		g_LaxManX += speedLax;
-		if (g_LaxManX >= g_WindowWidth * 0.0625f)
-		{
-			g_LaxManX = g_WindowWidth * 0.0625f;
-			phase = AttackPhase::phase_hpbar2_down;
-		}
+		LaxForward(elapsedSec);
 		break;
 	case AttackPhase::phase_hpbar2_down:
-		g_HPBarWidth2 -= speedHPBar;
-		if (g_HPBarWidth2 <= HPBar2Target)
-		{
-			g_HPBarWidth2 = HPBar2Target;
-			HPBar2Target = HPBar2Target - (g_WindowWidth * 0.0625f);
-			g_GodmoongussAttackX = (g_WindowWidth * -0.99375f);
-			g_GodmoongussAttackY = (g_WindowHeight * -0.025f);
-			if (g_HPBarWidth2 <= 0.f)
-			{
-				g_FaintX = (g_WindowWidth * 0.0062548866f);
-				g_FaintY = (g_WindowHeight * 0.674196351f);
-			}
-			phase = AttackPhase::phase_done;
-		}
+		HPBar2Down(elapsedSec);
 		break;
 	case AttackPhase::phase_done:
+		g_GMoongussAttackTextureIsOn = false;
 		if (g_Move)
 		{
-			phase = AttackPhase::phase_lax_forward;
+			Attackphase = AttackPhase::phase_lax_forward;
 			g_Move = false;
 			g_notFirstTurn = true;
 		}
 		break;
 	}
 }
-
-
-void Item()
+void Item(float elapsedSec)
 {
 	static bool onlyOnce{ false };
 	static float phaseWaitCounter{ 0.f };
 	static float phaseDoneCounter{ 0.f };
 	static float phaseFaintCounter{ 0.f };
 	float speedHPBar{ 1.f };
-	static float speedAttack{ 0.f };
-	float speedLax{ 5.f };
-	float speedGmoonguss{ 2.5f };
-	static ItemPhase phase = ItemPhase::phase_hpbar2_up;
 	if (g_notFirstTurn == true)
 	{
 		if (onlyOnce == false)
 		{
-			switch (phase)
+			switch (Itemphase)
 			{
 			case ItemPhase::phase_hpbar2_up:
-				g_ItemX = (g_WindowWidth * 0.0062548866f);
-				g_ItemY = (g_WindowHeight * 0.674196351f);
-				g_HPBarWidth2 += speedHPBar;
-				if (g_HPBarWidth2 >= g_Buttons.HpBar2.width)
-				{
-					g_HPBarWidth2 = g_Buttons.HpBar2.width;
-					HPBar2Target = g_Buttons.HpBar2.width - (g_WindowWidth * 0.0625f);
-					g_ItemX = (g_WindowWidth * -0.99375f);
-					g_ItemY = (g_WindowHeight * -0.025f);
-					g_WaitX = (g_WindowWidth * 0.0062548866f);
-					g_WaitY = (g_WindowHeight * 0.674196351f);
-					phase = ItemPhase::phase_itemwait;
-				}
+				HPBar2Up(elapsedSec);
+				g_ItemTextureIsOn = true;
 				break;
 			case ItemPhase::phase_itemwait:
-				phaseWaitCounter += 1.f;
-
-				if (phaseWaitCounter >= 180)
-				{
-					phaseWaitCounter = 0;
-
-					phase = ItemPhase::phase_itemgmoongusscounter_backward;
-				}
+				g_ItemTextureIsOn = false;
+				Wait(elapsedSec);
 				break;
 			case ItemPhase::phase_itemgmoongusscounter_backward:
-				g_GodmoongussX -= speedGmoonguss;
-				g_WaitX = (g_WindowWidth * -0.99375f);
-				g_WaitY = (g_WindowHeight * -0.025f);
-				g_GodmoongussAttackX = (g_WindowWidth * 0.0062548866f);
-				g_GodmoongussAttackY = (g_WindowHeight * 0.674196351f);
-				if (g_GodmoongussX <= g_WindowWidth * 0.525f)
-				{
-					g_GodmoongussX = g_WindowWidth * 0.525f;
-					phase = ItemPhase::phase_itemgmoongusscounter_forward;
-
-				}
+				GMoongussBackward(elapsedSec);
+				g_GMoongussAttackTextureIsOn = true;
 				break;
 			case ItemPhase::phase_itemgmoongusscounter_forward:
-				g_GodmoongussX += speedGmoonguss;
-				if (g_GodmoongussX >= g_WindowWidth * 0.59375f)
-				{
-					g_GodmoongussX = g_WindowWidth * 0.59375f;
-					phase = ItemPhase::phase_itemattackcounter;
-				}
+				GMoongussForward(elapsedSec);
 				break;
 			case ItemPhase::phase_itemattackcounter:
-				speedAttack += 1.f;
-				if (speedAttack < 20.f)
-				{
-					g_AttackX = (g_WindowWidth * 0.0625f);
-					g_AttackY = (g_WindowHeight * 0.350f);
-				}
-				else if (speedAttack < 40.f)
-				{
-					g_AttackX = (g_WindowWidth * 0.1625f);
-					g_AttackY = (g_WindowHeight * 0.410f);
-				}
-				else if (speedAttack < 60.f)
-				{
-					g_AttackX = (g_WindowWidth * 0.2625f);
-					g_AttackY = (g_WindowHeight * 0.470f);
-				}
-				else
-				{
-					speedAttack = 0.f;
-					g_AttackX = (g_WindowWidth * -0.99375f);
-					g_AttackY = (g_WindowHeight * -0.025f);
-					g_GodmoongussX = g_WindowWidth * 0.59375f;
-					phase = ItemPhase::phase_itemlaxcounter_backward;
-				}
+				AttackEffect(elapsedSec, g_LaxManX, g_LaxManY);
 				break;
 			case ItemPhase::phase_itemlaxcounter_backward:
-				g_LaxManX -= speedLax;
-				if (g_LaxManX <= g_WindowWidth * 0.f)
-				{
-					g_LaxManX = g_WindowWidth * 0.f;
-					phase = ItemPhase::phase_itemlaxcounter_forward;
-
-				}
+				LaxBackward(elapsedSec);
 				break;
-
 			case ItemPhase::phase_itemlaxcounter_forward:
-				g_LaxManX += speedLax;
-				if (g_LaxManX >= g_WindowWidth * 0.0625f)
-				{
-					g_LaxManX = g_WindowWidth * 0.0625f;
-					phase = ItemPhase::phase_itemhpbar2_down;
-				}
+				LaxForward(elapsedSec);
 				break;
 			case ItemPhase::phase_itemhpbar2_down:
-				g_HPBarWidth2 -= speedHPBar;
-				if (g_HPBarWidth2 <= HPBar2Target)
-				{
-					g_HPBarWidth2 = HPBar2Target;
-					HPBar2Target = HPBar2Target - (g_WindowWidth * 0.0625f);
-					g_GodmoongussAttackX = (g_WindowWidth * -0.99375f);
-					g_GodmoongussAttackY = (g_WindowHeight * -0.025f);
-					phase = ItemPhase::phase_itemdone;
-				}
+				HPBar2Down(elapsedSec);
 				break;
 			case ItemPhase::phase_itemdone:
+				g_GMoongussAttackTextureIsOn = false;
 				if (g_Item)
 				{
-					phase = ItemPhase::phase_hpbar2_up;
 					g_Item = false;
 					onlyOnce = true;
 					if (g_HPBarWidth2 <= 0.f)
 					{
-						g_FaintX = (g_WindowWidth * 0.0062548866f);
-						g_FaintY = (g_WindowHeight * 0.674196351f);
+						g_FaintTextureIsOn = true;
 					}
 				}
 				break;
@@ -715,14 +459,12 @@ void Item()
 		}
 		else
 		{
-			g_ItemDoneX = (g_WindowWidth * 0.0062548866f);
-			g_ItemDoneY = (g_WindowHeight * 0.674196351f);
+			g_ItemDoneTextureIsOn = true;
 			phaseDoneCounter += 1.f;
 			if (phaseDoneCounter >= 180)
 			{
+				g_ItemDoneTextureIsOn = false;
 				phaseDoneCounter = 0;
-				g_ItemDoneX = (g_WindowWidth * -0.99375f);
-				g_ItemDoneY = (g_WindowHeight * -0.025f);
 				g_Item = false;
 
 			}
@@ -730,46 +472,213 @@ void Item()
 	}
 	else
 	{
-		g_NotFirstTurnX = (g_WindowWidth * 0.0062548866f);
-		g_NotFirstTurnY = (g_WindowHeight * 0.674196351f);
+
+		g_NotFirstTurnTextureIsOn = true;
 		phaseDoneCounter += 1.f;
 		if (phaseDoneCounter >= 180)
 		{
 			phaseDoneCounter = 0;
-			g_NotFirstTurnX = (g_WindowWidth * -0.99375f);
-			g_NotFirstTurnY = (g_WindowHeight * -0.025f);
+			g_NotFirstTurnTextureIsOn = false;
 			g_Item = false;
 
 		}
 	}
 }
-void Switch()
+void Switch(float elapsedSec)
 {
+	const float SwitchIncrementation{ 50.f };
 	static float g_PhaseWaitCounter{ 0.f };
-	g_SwitchX = (g_WindowWidth * 0.0062548866f);
-	g_SwitchY = (g_WindowHeight * 0.674196351f);
-	g_PhaseWaitCounter += 1.f;
-	if (g_PhaseWaitCounter >= 180)
+	g_SwitchTextureIsOn = true;
+	g_PhaseWaitCounter += SwitchIncrementation * elapsedSec;
+	if (g_PhaseWaitCounter >= 100)
 	{
 		g_PhaseWaitCounter = 0;
-		g_SwitchX = (g_WindowWidth * -0.99375f);
-		g_SwitchY = (g_WindowHeight * -0.025f);
+		g_SwitchTextureIsOn = false;
 		g_Switch = false;
 	}
 }
-void RunAway()
+void RunAway(float elapsedSec)
 {
+	const float RunIncrementation{ 50.f };
 	static float g_PhaseWaitCounter{ 0.f };
-	g_RunX = (g_WindowWidth * 0.0062548866f);
-	g_RunY = (g_WindowHeight * 0.674196351f);
-	g_PhaseWaitCounter += 1.f;
-	if (g_PhaseWaitCounter >= 180)
+	g_RunTextureIsOn = true;
+	g_PhaseWaitCounter += RunIncrementation * elapsedSec;
+	if (g_PhaseWaitCounter >= 100)
 	{
 		g_PhaseWaitCounter = 0;
-		g_RunX = (g_WindowWidth * -0.99375f);
-		g_RunY = (g_WindowHeight * -0.025f);
+		g_RunTextureIsOn = false;
 		g_Run = false;
 	}
 }
+void LaxForward(float elapsedSec)
+{
+	static float savedPosition = -1;
 
+	if (savedPosition < 0) {
+		savedPosition = g_LaxManX;
+	}
+
+	float target = savedPosition + g_MovementLength;
+
+	if (g_LaxManX < target) {
+		g_LaxManX += g_SpeedLax * elapsedSec;
+		if (g_LaxManX > target) {
+			g_LaxManX = target;
+			savedPosition = -1;
+			if (Attackphase == AttackPhase::phase_lax_forward|| Attackphase == AttackPhase::phase_laxcounter_forward)
+				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+			else if (Itemphase == ItemPhase::phase_itemlaxcounter_forward)
+				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		}
+	}
+}
+void LaxBackward(float elapsedSec)
+{
+	static float savedPosition = -1;
+
+	if (savedPosition < 0) {
+		savedPosition = g_LaxManX;
+	}
+
+	float target = savedPosition - g_MovementLength;
+
+	if (g_LaxManX > target) {
+		g_LaxManX -= g_SpeedLax * elapsedSec;
+		if (g_LaxManX < target) {
+			g_LaxManX = target;
+			savedPosition = -1;
+			if (Attackphase == AttackPhase::phase_lax_backward || Attackphase == AttackPhase::phase_laxcounter_backward)
+				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+			else if (Itemphase == ItemPhase::phase_itemlaxcounter_backward)
+				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		}
+	}
+}
+void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
+{
+	float attackIncrimintation{ 60.f };
+	float attackDistance{ 100.f };
+	g_SpeedAttack += attackIncrimintation * elapsedSec;
+	if (g_SpeedAttack < 20.f)
+	{
+		g_AttackX = attackPositionX;
+		g_AttackY = attackPositionY;
+	}
+	else if (g_SpeedAttack < 40.f)
+	{
+		g_AttackX = attackPositionX + attackDistance;
+		g_AttackY = attackPositionY + attackDistance;
+	}
+	else if (g_SpeedAttack < 60.f)
+	{
+		g_AttackX = attackPositionX + (attackDistance * 2);
+		g_AttackY = attackPositionY + (attackDistance * 2);
+	}
+	else
+	{
+		g_SpeedAttack = 0.f;
+		g_AttackX = (g_WindowWidth * -0.99375f);
+		g_AttackY = (g_WindowHeight * -0.025f);
+		if (Attackphase == AttackPhase::phase_attack || Attackphase == AttackPhase::phase_attackcounter)
+			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+		else if (Itemphase == ItemPhase::phase_itemattackcounter)
+			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+	}
+}
+void GMoongussForward(float elapsedSec)
+{
+	static float savedPosition = -1; 
+
+	if (savedPosition < 0) {
+		savedPosition = g_GodmoongussX;
+	}
+
+	float target = savedPosition + g_MovementLength;
+
+	if (g_GodmoongussX < target) {
+		g_GodmoongussX += g_SpeedGmoonguss * elapsedSec;
+		if (g_GodmoongussX > target) {
+			g_GodmoongussX = target;
+			savedPosition = -1; 
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward|| Attackphase == AttackPhase::phase_gmoonguss_forward)
+				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_forward)
+				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		}
+	}
+
+}
+void GMoongussBackward(float elapsedSec)
+{
+	
+	static float savedPosition = -1;
+
+	if (savedPosition < 0) {
+		savedPosition = g_GodmoongussX;
+	}
+
+	float target = savedPosition - g_MovementLength;
+
+	if (g_GodmoongussX > target) {
+		g_GodmoongussX -= g_SpeedGmoonguss * elapsedSec;
+		if (g_GodmoongussX < target) {
+			g_GodmoongussX = target;
+			savedPosition = -1;
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward|| Attackphase == AttackPhase::phase_gmoonguss_backward)
+				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_backward)
+				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		}
+	}
+}
+void HPBar1Down(float elapsedSec)
+{
+
+	g_HPBarWidth1 -= g_SpeedHPBar * elapsedSec;
+	if (g_HPBarWidth1 <= g_HPBar1Target)
+	{
+		g_HPBarWidth1 = g_HPBar1Target;
+		g_HPBar1Target = g_HPBar1Target - (g_HPBar1HitAmmount);
+		Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+	}
+}
+void Wait(float elapsedSec)
+{
+	g_WaitTextBlock = true;
+	float waitIncrementation{ 50.f };
+	g_PhaseWaitCounter += waitIncrementation * elapsedSec;
+
+	if (g_PhaseWaitCounter >= 100)
+	{
+		g_PhaseWaitCounter = 0;
+		if (Attackphase == AttackPhase::phase_wait)
+			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+		else if (Itemphase == ItemPhase::phase_itemwait)
+		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		g_WaitTextBlock = false;
+	}
+}
+void HPBar2Down(float elapsedSec)
+{
+	g_HPBarWidth2 -= g_SpeedHPBar * elapsedSec;
+	if (g_HPBarWidth2 <= g_HPBar2Target)
+	{
+		g_HPBarWidth2 = g_HPBar2Target;
+		g_HPBar2Target = g_HPBar2Target - (g_HPBar2HitAmmount);
+		if (Attackphase == AttackPhase::phase_hpbar2_down)
+			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
+		else if (Itemphase == ItemPhase::phase_itemhpbar2_down)
+			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+	}
+}
+void HPBar2Up(float elapsedSec)
+{
+	g_HPBarWidth2 += g_SpeedHPBar*elapsedSec;
+	if (g_HPBarWidth2 >= g_Rects.HpBar2.width)
+	{
+		g_HPBarWidth2 = g_Rects.HpBar2.width;
+		g_HPBar2Target = g_Rects.HpBar2.width - (g_HPBar2HitAmmount);
+		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+	}
+}
 #pragma endregion ownDefinitions
