@@ -1,0 +1,14 @@
+x64
+.vs
+Prog1Engine
+*.user
+*.cachefile
+Debug
+debug
+Bin
+bin
+Release
+release
+x86
+.DS_Store
+.vscode
