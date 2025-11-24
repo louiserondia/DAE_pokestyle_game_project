@@ -16,10 +16,48 @@ float g_WindowHeight{ 800 };
 #pragma region ownDeclarations
 // Declare your own global variables here
 
+// --- /!\ GLOBAL /!\ ---
+
+
+bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
+
+
 // --- /!\ MAP & TILES PART /!\ ---
 
-utils::Texture
-g_Level1Texture{},
+const int g_NrScenes{ 1 };
+
+struct Character {
+	Point2f pos{};
+	Point2f	dir{};
+	float vx{};
+	float vy{};
+};
+
+struct Scene {
+	Texture	texture{};
+	Point2f	pos{};
+	float	zoom{};
+	Rectf	src{};
+	Rectf	dst{};
+};
+
+struct World {
+	Scene	scenes[g_NrScenes]{};
+	int		currentSceneIndex{};
+};
+
+World	g_World{};
+
+const float	g_TileSize{ 32.f };
+
+void	InitWorld();
+void	DrawMap();
+void	UpdateMapPos();
+void	UpdateCharacterDir();
+void	FreeWorld();
+
+
+Texture g_Level1Texture{},
 g_MCTexture{};
 
 const int
@@ -35,13 +73,10 @@ g_ArraySizeMap1{ (g_Map1SourceSizeWidth / 8) * (g_Map1SourceSizeHeight / 8) };
 Point2f ArrTiles[g_ArraySizeMap1]{};
 
 // Declare your own functions here
+
 void InitializeTiles();
-int GetIndex(int rowIdx, int colIdx, int nrCols);
-int GetRow(int index, int numCols);
-int GetCol(int index, int numCols);
 void DrawMap1();
 void DrawMC();
-
 
 
 // --- /!\ BATTLE PART /!\ ---

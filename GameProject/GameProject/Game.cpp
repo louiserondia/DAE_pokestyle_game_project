@@ -14,28 +14,31 @@ void Start()
 
 	// MAP & TILES PART INITIALIZATION
 
-	utils::TextureFromFile("Resources//Mt.Moon1.png", g_Level1Texture);
-	utils::TextureFromFile("Resources//MC.png", g_MCTexture);
+	InitWorld();
+
+
+	utils::TextureFromFile("Resources/Mt.Moon1.png", g_Level1Texture);
+	utils::TextureFromFile("Resources/MC.png", g_MCTexture);
 	InitializeTiles();
 
 	// BATTLE PART INITIALIZATION
 
 	PlaySound(TEXT("C:\\School\\2025-2026\\semester1\\Programming1\\week4\\1DAE12_L04_RAHIMOV_JAVID\\CodingCraftmanship04\\Resources\\Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC);
 
-	utils::TextureFromFile("Resources//Background.png", g_BackgroundTexture);
-	utils::TextureFromFile("Resources//LaxMan.png", g_LaxManTexture);
-	utils::TextureFromFile("Resources//Green2.png", g_GreenTexture);
-	utils::TextureFromFile("Resources//Godmoonguss.png", g_GodmoongussTexture);
-	utils::TextureFromFile("Resources//Attack.png", g_AttackTexture);
-	utils::TextureFromFile("Resources//LaxAttack.png", g_LaxAttackTexture);
-	utils::TextureFromFile("Resources//GodmoongussAttack.png", g_GodmoongussAttackTexture);
-	utils::TextureFromFile("Resources//Wait.png", g_WaitTexture);
-	utils::TextureFromFile("Resources//Item.png", g_ItemTexture);
-	utils::TextureFromFile("Resources//Switch.png", g_SwitchTexture);
-	utils::TextureFromFile("Resources//Run.png", g_RunTexture);
-	utils::TextureFromFile("Resources//ItemsDone.png", g_ItemDoneTexture);
-	utils::TextureFromFile("Resources//NotFirstTurn.png", g_NotFirstTurnTexture);
-	utils::TextureFromFile("Resources//Faint.png", g_FaintTexture);
+	utils::TextureFromFile("Resources/Background.png", g_BackgroundTexture);
+	utils::TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
+	utils::TextureFromFile("Resources/Green2.png", g_GreenTexture);
+	utils::TextureFromFile("Resources/Godmoonguss.png", g_GodmoongussTexture);
+	utils::TextureFromFile("Resources/Attack.png", g_AttackTexture);
+	utils::TextureFromFile("Resources/LaxAttack.png", g_LaxAttackTexture);
+	utils::TextureFromFile("Resources/GodmoongussAttack.png", g_GodmoongussAttackTexture);
+	utils::TextureFromFile("Resources/Wait.png", g_WaitTexture);
+	utils::TextureFromFile("Resources/Item.png", g_ItemTexture);
+	utils::TextureFromFile("Resources/Switch.png", g_SwitchTexture);
+	utils::TextureFromFile("Resources/Run.png", g_RunTexture);
+	utils::TextureFromFile("Resources/ItemsDone.png", g_ItemDoneTexture);
+	utils::TextureFromFile("Resources/NotFirstTurn.png", g_NotFirstTurnTexture);
+	utils::TextureFromFile("Resources/Faint.png", g_FaintTexture);
 
 	std::cout << "press every other button before fight \n" << "Music and sprites by Jasper Bouchet" << std::endl;
 }
@@ -44,37 +47,45 @@ void Draw()
 {
 	// MAP & TILES PART DRAW
 	ClearBackground(0.f, 0.f, 0.f);
-	DrawMap1();
-	DrawMC();
-
+	if (g_IsBattleOn) {
+		DrawMap();
+		/*	DrawMap1();
+			DrawMC();*/
+	}
 	// BATTLE PART DRAW
-	ClearBackground();
-	DrawEverything();
+	else {
+		DrawEverything();
+	}
 }
 
 void Update(float elapsedSec)
 {
 	// BATTLE PART UPDATE
-	if (g_Move)
-	{
-		Attack();
-	}
-	if (g_Item == true)
-	{
-		Item();
-	}
-	if (g_Switch == true)
-	{
-		Switch();
-	}
-	if (g_Run == true)
-	{
-		RunAway();
+	if (g_IsBattleOn) {
+
+		if (g_Move)
+		{
+			Attack();
+		}
+		if (g_Item == true)
+		{
+			Item();
+		}
+		if (g_Switch == true)
+		{
+			Switch();
+		}
+		if (g_Run == true)
+		{
+			RunAway();
+		}
 	}
 }
 
 void End()
 {
+	FreeWorld();
+	// we need to delete all the textures here !!
 }
 #pragma endregion gameFunctions
 
@@ -82,6 +93,8 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
+	if (key == SDLK_b)
+		g_IsBattleOn = !g_IsBattleOn;
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
@@ -102,28 +115,31 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 	const float mouseX{ float(e.x) };
 	const float mouseY{ float(e.y) };
-	if (!(g_Move or g_Switch or g_Item or g_Run))
-	{
-		if (mouseX >= g_Buttons.fightButton.left && mouseX <= (g_Buttons.fightButton.left + g_Buttons.fightButton.width) &&
-			mouseY >= g_Buttons.fightButton.top && mouseY <= (g_Buttons.fightButton.top + g_Buttons.fightButton.height))
-		{
-			g_Move = true;
 
-		}
-		else if (mouseX >= g_Buttons.pokemonButton.left && mouseX <= (g_Buttons.pokemonButton.left + g_Buttons.pokemonButton.width) &&
-			mouseY >= g_Buttons.pokemonButton.top && mouseY <= (g_Buttons.pokemonButton.top + g_Buttons.pokemonButton.height))
+	if (g_IsBattleOn) {
+		if (!(g_Move or g_Switch or g_Item or g_Run))
 		{
-			g_Switch = true;
-		}
-		else if (mouseX >= g_Buttons.itemButton.left && mouseX <= (g_Buttons.itemButton.left + g_Buttons.itemButton.width) &&
-			mouseY >= g_Buttons.itemButton.top && mouseY <= (g_Buttons.itemButton.top + g_Buttons.itemButton.height))
-		{
-			g_Item = true;
-		}
-		else if (mouseX >= g_Buttons.runButton.left && mouseX <= (g_Buttons.runButton.left + g_Buttons.runButton.width) &&
-			mouseY >= g_Buttons.runButton.top && mouseY <= (g_Buttons.runButton.top + g_Buttons.runButton.height))
-		{
-			g_Run = true;
+			if (mouseX >= g_Buttons.fightButton.left && mouseX <= (g_Buttons.fightButton.left + g_Buttons.fightButton.width) &&
+				mouseY >= g_Buttons.fightButton.top && mouseY <= (g_Buttons.fightButton.top + g_Buttons.fightButton.height))
+			{
+				g_Move = true;
+
+			}
+			else if (mouseX >= g_Buttons.pokemonButton.left && mouseX <= (g_Buttons.pokemonButton.left + g_Buttons.pokemonButton.width) &&
+				mouseY >= g_Buttons.pokemonButton.top && mouseY <= (g_Buttons.pokemonButton.top + g_Buttons.pokemonButton.height))
+			{
+				g_Switch = true;
+			}
+			else if (mouseX >= g_Buttons.itemButton.left && mouseX <= (g_Buttons.itemButton.left + g_Buttons.itemButton.width) &&
+				mouseY >= g_Buttons.itemButton.top && mouseY <= (g_Buttons.itemButton.top + g_Buttons.itemButton.height))
+			{
+				g_Item = true;
+			}
+			else if (mouseX >= g_Buttons.runButton.left && mouseX <= (g_Buttons.runButton.left + g_Buttons.runButton.width) &&
+				mouseY >= g_Buttons.runButton.top && mouseY <= (g_Buttons.runButton.top + g_Buttons.runButton.height))
+			{
+				g_Run = true;
+			}
 		}
 	}
 }
@@ -133,6 +149,36 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // Define your own functions here
 
 // MAP & TILES PART FUNCTIONS
+
+void	InitWorld() {
+	TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture);
+	g_World.scenes[0].zoom = 1.8f;
+
+	const float width{ g_World.scenes[0].texture.width }, height{ g_World.scenes[0].texture.height },
+		screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
+
+	g_World.scenes[0].src = Rectf{ 0.f, 0.f, screenWidth, screenWidth };
+	g_World.scenes[0].dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
+
+}
+
+void	FreeWorld() {
+	DeleteTexture(g_World.scenes[0].texture);
+}
+
+void	DrawMap() {
+	const Scene curScene{ g_World.scenes[g_World.currentSceneIndex] };
+	DrawTexture(curScene.texture, curScene.dst, curScene.src);
+}
+
+void	UpdateMapPos() {
+
+}
+
+void	UpdateCharacterDir() {
+
+}
+
 
 void DrawMap1()
 {
@@ -172,9 +218,9 @@ void DrawMC()
 	};
 	utils::DrawTexture(g_MCTexture, destinationMC, sourceMC);
 }
+
 void InitializeTiles()
 {
-
 	int
 		rowsTotal{ 72 },
 		colsTotal{ 80 };
@@ -192,27 +238,7 @@ void InitializeTiles()
 		xPos = 0.f;
 	}
 
-
 }
-int GetCol(int index, int numCols)
-{
-	int col{};
-	col = index % numCols;
-	return col;
-}
-int GetRow(int index, int numCols)
-{
-	int row{};
-	row = index / numCols;
-	return row;
-}
-int GetIndex(int rowIdx, int colIdx, int nrCols)
-{
-	int index{};
-	index = rowIdx * nrCols + colIdx;
-	return index;
-}
-
 
 // BATTLE PART FUNCTIONS
 
