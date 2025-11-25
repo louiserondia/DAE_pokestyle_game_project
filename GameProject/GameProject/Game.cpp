@@ -20,6 +20,8 @@ void Start()
 	utils::TextureFromFile("Resources/Mt.Moon1.png", g_Level1Texture);
 	utils::TextureFromFile("Resources/MC.png", g_MCTexture);
 	InitializeTiles();
+	InitCharacter();
+
 
 	// BATTLE PART INITIALIZATION
 
@@ -55,6 +57,8 @@ void Draw()
 	// BATTLE PART DRAW
 	else {
 		DrawMap();
+		DrawCharacter();
+
 	}
 }
 
@@ -166,6 +170,12 @@ void	InitWorld() {
 
 }
 
+void	InitCharacter() {
+	if (!TextureFromFile("Resources/MC.png", g_Character.texture))
+		std::cout << "Couldn't load character texture at Resources/MC.png";
+	g_Character.rect = Rectf{ g_WindowWidth / 2 + g_TileSize / 2, g_WindowWidth / 2 + g_TileSize / 2,  g_TileSize, g_TileSize};
+}
+
 void	FreeWorld() {
 	DeleteTexture(g_World.scenes[0].texture);
 }
@@ -173,6 +183,11 @@ void	FreeWorld() {
 void	DrawMap() {
 	const Scene curScene{ g_World.scenes[g_World.currentSceneIndex] };
 	DrawTexture(curScene.texture, curScene.dst, curScene.src);
+}
+
+void	DrawCharacter() {
+	const Rectf src{0.f, 0.f, 16.f, 16.f}; // temporary 
+	DrawTexture(g_Character.texture, g_Character.rect, src);
 }
 
 void	UpdateMapPos() {

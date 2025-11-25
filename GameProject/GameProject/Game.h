@@ -27,10 +27,11 @@ bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
 const int g_NrScenes{ 1 };
 
 struct Character {
-	Point2f pos{};
+	Rectf	rect{};
 	Point2f	dir{};
-	float vx{};
-	float vy{};
+	float	vx{};
+	float	vy{};
+	Texture texture{};
 };
 
 struct Scene {
@@ -46,12 +47,15 @@ struct World {
 	int		currentSceneIndex{};
 };
 
-World	g_World{};
-
 const float	g_TileSize{ 32.f };
 
+World		g_World{};
+Character	g_Character{};
+
 void	InitWorld();
+void	InitCharacter();
 void	DrawMap();
+void	DrawCharacter();
 void	UpdateMapPos();
 void	UpdateCharacterDir();
 void	FreeWorld();
@@ -61,7 +65,7 @@ Texture g_Level1Texture{},
 g_MCTexture{};
 
 const int
-g_Map1SourceSizeWidth{ 640 },
+g_Map1SourceSizeWidth{ 640 }, // normally you don't need these source variables because the struct Texture has width ad height when you load an image in it (texture.width)
 g_Map1SourceSizeHeight{ 576 },
 g_Map1DestinationSizeWidth{ 3840 },
 g_Map1DestinationSizeHeight{ 3456 },
@@ -95,13 +99,16 @@ g_SwitchTexture{},
 g_RunTexture{},
 g_ItemDoneTexture{},
 g_NotFirstTurnTexture{},
-g_FaintTexture{};
+g_FaintTexture{}; // you need a function to init and one to delete them
 
 float
 g_AttackX{ g_WindowWidth * -0.99375f },
 g_AttackY{ g_WindowHeight * -0.025f },
-TextBlockX{ g_WindowWidth * 0.0062548866f },
+TextBlockX{ g_WindowWidth * 0.0062548866f }, 
 TextBlockY{ g_WindowHeight * 0.674196351f };
+// i'm not sure what this textblock is but the position is weird, it could be a Point2f
+// and * 0.0062548866f -> also you can define it's position directly on the screen but you could also define it compared to another thing
+//for ex maybe it's just 10px under the ennemy position
 
 const int
 g_BackgroundSizeWidth{ 1279 },
@@ -110,8 +117,10 @@ g_PokemonSize{ 1176 },
 g_TextBlockSizeWidth{ 1280 },
 g_TextBlockSizeHeight{ 306 };
 
+// all those could be Point2f, but also maybe it'd easier to have a struct for the character and the ennemy 
+// and you create an instance of that struct of each of them since they have common variables and behaviour
 float
-g_LaxManX{ g_WindowWidth * 0.0625f },
+g_LaxManX{ g_WindowWidth * 0.0625f }, 
 g_LaxManY{ g_WindowHeight * 0.255f },
 g_GodmoongussX{ g_WindowWidth * 0.59375f },
 g_GodmoongussY{ g_WindowHeight * 0.025f },
@@ -129,14 +138,14 @@ g_PhaseWaitCounter{ 0.f },
 g_MovementLength{ 55.f };
 
 bool
-g_Move{ false },
+g_Move{ false }, // not clear
 g_Item{ false },
 g_Run{ false },
 g_Switch{ false },
 g_notFirstTurn{ false },
 g_LaxAttackTextureIsOn{ false },
 g_WaitTextBlock{ false },
-g_GMoongussAttackTextureIsOn{ false },
+g_GMoongussAttackTextureIsOn{ false }, // this could be in the struct
 g_ItemTextureIsOn{ false },
 g_SwitchTextureIsOn{ false },
 g_RunTextureIsOn{ false },
@@ -164,7 +173,7 @@ enum class ItemPhase
 {
 	phase_hpbar2_up,
 	phase_itemwait,
-	phase_itemgmoongusscounter_backward,
+	phase_itemgmoongusscounter_backward, // maybe there's a way like you said to avoid this repetition ?
 	phase_itemgmoongusscounter_forward,
 	phase_itemattackcounter,
 	phase_itemlaxcounter_backward,
@@ -174,7 +183,7 @@ enum class ItemPhase
 };
 AttackPhase Attackphase = AttackPhase::phase_lax_forward;
 ItemPhase Itemphase = ItemPhase::phase_hpbar2_up;
-struct Rects
+struct Rects // you could also try to define their position from another variable
 {
 	Rectf
 		fightButton
@@ -229,7 +238,7 @@ void Attack(float elapsedSec);
 void Item(float elapsedSec);
 void Switch(float elapsedSec);
 void RunAway(float elapsedSec);
-void LaxForward(float elapsedSec);
+void LaxForward(float elapsedSec); // maybe try to have a MoveForward where you send lax or gmoongus as argument
 void LaxBackward(float elapsedSec);
 void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
 void GMoongussForward(float elapsedSec);
