@@ -14,16 +14,20 @@ void Start()
 
 	// MAP & TILES PART INITIALIZATION
 
+	InitCamera();
 	InitWorld();
+	InitAnimFrames();
+	InitCharacter();
 
 
 	utils::TextureFromFile("Resources/Mt.Moon1.png", g_Level1Texture);
 	utils::TextureFromFile("Resources/MC.png", g_MCTexture);
 	InitializeTiles();
 
+
 	// BATTLE PART INITIALIZATION
 
-	PlaySound(TEXT("C:\\School\\2025-2026\\semester1\\Programming1\\week4\\1DAE12_L04_RAHIMOV_JAVID\\CodingCraftmanship04\\Resources\\Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC);
+	PlaySound(TEXT("Resources/Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC); // changed to local path hope its still working
 
 	utils::TextureFromFile("Resources/Background.png", g_BackgroundTexture);
 	utils::TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
@@ -55,15 +59,25 @@ void Draw()
 	// BATTLE PART DRAW
 	else {
 		DrawMap();
+		DrawCharacter();
 	}
 }
 
 void Update(float elapsedSec)
 {
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+
+	UpdateCharacterDirSpeed(pStates, elapsedSec);
+	UpdateCharacterFrame(pStates, elapsedSec);
+	UpdateMapPos(elapsedSec);
+	UpdateCameraPos(elapsedSec);
+
+	g_FrameTime += elapsedSec;
+
 	// BATTLE PART UPDATE
 	if (g_IsBattleOn) {
 
-		if (g_Move)
+		if (g_Attack)
 		{
 			Attack(elapsedSec);
 		}
@@ -117,12 +131,12 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 	const float mouseY{ float(e.y) };
 
 	if (g_IsBattleOn) {
-		if (!(g_Move or g_Switch or g_Item or g_Run))
+		if (!(g_Attack or g_Switch or g_Item or g_Run))
 		{
 			if (mouseX >= g_Rects.fightButton.left && mouseX <= (g_Rects.fightButton.left + g_Rects.fightButton.width) &&
 				mouseY >= g_Rects.fightButton.top && mouseY <= (g_Rects.fightButton.top + g_Rects.fightButton.height))
 			{
-				g_Move = true;
+				g_Attack = true;
 				std::cout << "it works" << std::endl;
 
 			}
@@ -154,35 +168,191 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 // MAP & TILES PART FUNCTIONS
 
-void	InitWorld() {
-	TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture);
-	g_World.scenes[0].zoom = 1.8f;
-
-	const float width{ g_World.scenes[0].texture.width }, height{ g_World.scenes[0].texture.height },
-		screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
-
-	g_World.scenes[0].src = Rectf{ 0.f, 0.f, screenWidth, screenWidth };
-	g_World.scenes[0].dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
-
+void	InitCamera() {
+	g_Camera.zoom = 2.f;
 }
 
-void	FreeWorld() {
+void	InitWorld() {
+	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
+		std::cout << "Couldn't load map texture at Resources/map_three_island.png";
+	Scene* pScene{ &g_World.scenes[0] };
+
+	const float width{ pScene->texture.width },
+		height{ pScene->texture.height },
+		screenWidth{ pScene->texture.width * g_Camera.zoom },
+		screenHeight{ pScene->texture.height * g_Camera.zoom };
+
+	pScene->screenWidth = screenWidth;
+	pScene->screenHeight = screenHeight;
+	pScene->startOffset = g_TileSize / 4;
+	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
+}
+
+void	InitAnimFrames() {
+	g_AnimFrames["idledown"] = AnimFrame{ 0, 0, 1 };
+	g_AnimFrames["idleup"] = AnimFrame{ 0, 3, 1 };
+	g_AnimFrames["idleleft"] = AnimFrame{ 0, 6, 1 };
+	g_AnimFrames["idleright"] = AnimFrame{ 0, 9, 1 };
+	g_AnimFrames["walkdown"] = AnimFrame{ 0, 1, 2 };
+	g_AnimFrames["walkup"] = AnimFrame{ 0, 4, 2 };
+	g_AnimFrames["walkleft"] = AnimFrame{ 0, 7, 2 };
+	g_AnimFrames["walkright"] = AnimFrame{ 0, 10, 2 };
+}
+
+void	InitCharacter() {
+	if (!TextureFromFile("Resources/character.png", g_Character.texture))
+		std::cout << "Couldn't load character texture at Resources/character.png";
+
+	g_Character.dst = Rectf{
+		8 * g_TileSize,
+		8 * g_TileSize,
+		g_TileSize * (g_Camera.zoom / 2),
+		g_TileSize * 1.5f * (g_Camera.zoom / 2)
+	};
+	g_Character.curAnimFrame = g_AnimFrames["idledown"];
+	g_Character.dir = Point2f{ 0.f, 1.f };
+}
+
+void	FreeWorld() { // FreeAll instead ?
 	DeleteTexture(g_World.scenes[0].texture);
+	DeleteTexture(g_Character.texture);
 }
 
 void	DrawMap() {
-	const Scene curScene{ g_World.scenes[g_World.currentSceneIndex] };
-	DrawTexture(curScene.texture, curScene.dst, curScene.src);
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	DrawTexture(pScene->texture, pScene->dst);
 }
 
-void	UpdateMapPos() {
+void	DrawCharacter() {
+	const Rectf rect{
+		g_Character.dst.left - g_Camera.pos.x,
+		g_Character.dst.top - g_Camera.pos.y,
+		g_Character.dst.width ,
+		g_Character.dst.height
+	};
+	DrawTexture(g_Character.texture, rect, g_Character.src);
+}
+
+bool	IsPosInCenterX(float pos) {
+	const float centerX = g_WindowWidth / 2.f;
+	const float epsilon = 10.f;
+
+	return std::abs(pos - centerX) < epsilon;
+}
+
+bool	IsPosInCenterY(float pos) {
+	float pos1{ pos - 5.f };
+	const float centerY = g_WindowHeight / 2.f;
+	const float epsilon = g_TileSize;
+
+	return std::abs(pos - centerY) < epsilon;
+}
+
+void UpdateCameraPos(float elapsedSec) {
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const float screenWidth{ pScene->texture.width * g_Camera.zoom },
+		screenHeight{ pScene->texture.height * g_Camera.zoom };
+	const float dX{ g_Character.dir.x * g_Character.vx * elapsedSec },
+		dY{ g_Character.dir.y * g_Character.vy * elapsedSec };
+
+	g_Character.dst.left += dX;
+	g_Character.dst.top += dY;
+
+	if (IsPosInCenterX(g_Character.dst.left - g_Camera.pos.x - dX)
+		&& g_Camera.pos.x + dX >= 0.f
+		&& g_Camera.pos.x + dX <= screenWidth - g_WindowWidth)
+	{
+		g_Camera.pos.x += dX;
+	}
+	if (IsPosInCenterY(g_Character.dst.top - g_Camera.pos.y - dY)
+		&& g_Camera.pos.y + dY >= 0.f
+		&& g_Camera.pos.y + dY <= screenHeight - g_WindowHeight)
+	{
+		g_Camera.pos.y += dY;
+	}
 
 }
 
-void	UpdateCharacterDir() {
+void	UpdateMapPos(float elapsedSec) {
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
+	pScene->dst.left = -g_Camera.pos.x;
+	pScene->dst.top = -g_Camera.pos.y;
 }
 
+bool IsBetweenTiles() {
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+
+	return (static_cast<int>(g_Character.dst.left) % static_cast<int>(g_TileSize)
+		|| static_cast<int>(g_Character.dst.top) % static_cast<int>(g_TileSize));
+}
+
+void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec) {
+	if (pStates[SDL_SCANCODE_RIGHT] && !IsBetweenTiles()) {
+		g_Character.vx = g_MoveSpeed;
+		g_Character.dir = Point2f{ 1.f, 0.f };
+	}
+	else if (pStates[SDL_SCANCODE_LEFT] && !IsBetweenTiles()) {
+		g_Character.vx = g_MoveSpeed;
+		g_Character.dir = Point2f{ -1.f, 0.f };
+	}
+	else if (pStates[SDL_SCANCODE_UP] && !IsBetweenTiles()) {
+		g_Character.vy = g_MoveSpeed;
+		g_Character.dir = Point2f{ 0.f, -1.f };
+	}
+	else if (pStates[SDL_SCANCODE_DOWN] && !IsBetweenTiles()) {
+		g_Character.vy = g_MoveSpeed;
+		g_Character.dir = Point2f{ 0.f, 1.f };
+	}
+	else {
+		if (!IsBetweenTiles()) {
+			g_Character.vx = 0.f;
+			g_Character.vy = 0.f;
+		}
+	}
+}
+
+void	UpdateCharacterFrame(const Uint8* pStates, float elapsedSec) {
+
+	// Update when moving or not (should i only change when there is update ? here it updates continuously the walk when i move)
+	if (g_Character.vx || g_Character.vy) {
+		if (g_Character.vx /* maybe check vx is useless */ && g_Character.dir.x == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkright"];
+		}
+		else if (g_Character.vx && g_Character.dir.x == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkleft"];
+		}
+		else if (g_Character.vy && g_Character.dir.y == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkup"];
+		}
+		else if (g_Character.vy && g_Character.dir.y == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkdown"];
+		}
+	}
+	else {
+		if (g_Character.dir.x == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleright"];
+		}
+		else if (g_Character.dir.x == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleleft"];
+		}
+		else if (g_Character.dir.y == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleup"];
+		}
+		else if (g_Character.dir.y == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idledown"];
+		}
+	}
+	//g_Character.frameStartIndex = GetIndex(g_Character.curAnimFrame.row, g_Character.curAnimFrame.col, g_CharacterNrFrames);
+	//g_Character.src.left = GetCol(g_Character.frameStartIndex + g_Character.frameIndex, g_CharacterNrFrames) * g_Character.frameDimensions.x;
+
+	const float frameRate{ 1.f / 4 };
+
+	if (g_FrameTime > frameRate) {
+		g_FrameTime = 0.f;
+		g_Character.frameIndex = (g_Character.frameIndex + 1) % g_Character.curAnimFrame.nrFrames;
+	}
+}
 
 void DrawMap1()
 {
@@ -275,15 +445,15 @@ void DrawEverything()
 	},
 	destinationAttack
 	{
-		g_AttackX,
-		g_AttackY,
+		attackSpriteSize.x,
+		attackSpriteSize.y,
 		g_WindowWidth * 0.1f,
 		g_WindowHeight * 0.1f,
 	},
 	destinationTextBlock
 	{
-		TextBlockX,
-		TextBlockY,
+		textBlockSpriteSize.x,
+		textBlockSpriteSize.y,
 		g_WindowWidth * 0.987f,
 		g_WindowHeight * 0.3197f,
 	};
@@ -293,7 +463,7 @@ void DrawEverything()
 	utils::DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
 	utils::DrawTexture(g_AttackTexture, destinationAttack);
 
-	if(g_GMoongussAttackTextureIsOn==true)
+	if (g_GMoongussAttackTextureIsOn == true)
 	{
 		utils::DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
 	}
@@ -330,11 +500,11 @@ void DrawEverything()
 		utils::DrawTexture(g_FaintTexture, destinationTextBlock);
 	}
 	SetColor(0.27f, 0.27f, 0.27f);
-	FillRect(g_Rects.HpBar1.left, g_Rects.HpBar1.top, g_HPBarWidth1, g_Rects.HpBar1.height);
-	FillRect(g_Rects.HpBar2.left, g_Rects.HpBar2.top, g_HPBarWidth2, g_Rects.HpBar2.height);
+	FillRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, HPBarEnemyPokemon.hPBarWidth, g_Rects.HpBarEnemy.height);
+	FillRect(g_Rects.HpBarAlly.left, g_Rects.HpBarAlly.top, HPBarAllyPokemon.hPBarWidth, g_Rects.HpBarAlly.height);
 	SetColor(0.f, 0.f, 0.f);
-	DrawRect(g_Rects.HpBar1.left, g_Rects.HpBar1.top, g_Rects.HpBar1.width, g_Rects.HpBar1.height);
-	DrawRect(g_Rects.HpBar2.left, g_Rects.HpBar2.top, g_Rects.HpBar2.width, g_Rects.HpBar2.height, 2.f);
+	DrawRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, g_Rects.HpBarEnemy.width, g_Rects.HpBarEnemy.height);
+	DrawRect(g_Rects.HpBarAlly.left, g_Rects.HpBarAlly.top, g_Rects.HpBarAlly.width, g_Rects.HpBarAlly.height, 2.f);
 	utils::DrawTexture(g_GreenTexture, destinationBackground);
 
 
@@ -394,10 +564,10 @@ void Attack(float elapsedSec)
 		break;
 	case AttackPhase::phase_done:
 		g_GMoongussAttackTextureIsOn = false;
-		if (g_Move)
+		if (g_Attack)
 		{
 			Attackphase = AttackPhase::phase_lax_forward;
-			g_Move = false;
+			g_Attack = false;
 			g_notFirstTurn = true;
 		}
 		break;
@@ -449,7 +619,7 @@ void Item(float elapsedSec)
 				{
 					g_Item = false;
 					onlyOnce = true;
-					if (g_HPBarWidth2 <= 0.f)
+					if (HPBarAllyPokemon.hPBarWidth <= 0.f)
 					{
 						g_FaintTextureIsOn = true;
 					}
@@ -525,7 +695,7 @@ void LaxForward(float elapsedSec)
 		if (g_LaxManX > target) {
 			g_LaxManX = target;
 			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_lax_forward|| Attackphase == AttackPhase::phase_laxcounter_forward)
+			if (Attackphase == AttackPhase::phase_lax_forward || Attackphase == AttackPhase::phase_laxcounter_forward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemlaxcounter_forward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -561,24 +731,24 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 	g_SpeedAttack += attackIncrimintation * elapsedSec;
 	if (g_SpeedAttack < 20.f)
 	{
-		g_AttackX = attackPositionX;
-		g_AttackY = attackPositionY;
+		attackSpriteSize.x = attackPositionX;
+		attackSpriteSize.y = attackPositionY;
 	}
 	else if (g_SpeedAttack < 40.f)
 	{
-		g_AttackX = attackPositionX + attackDistance;
-		g_AttackY = attackPositionY + attackDistance;
+		attackSpriteSize.x = attackPositionX + attackDistance;
+		attackSpriteSize.y = attackPositionY + attackDistance;
 	}
 	else if (g_SpeedAttack < 60.f)
 	{
-		g_AttackX = attackPositionX + (attackDistance * 2);
-		g_AttackY = attackPositionY + (attackDistance * 2);
+		attackSpriteSize.x = attackPositionX + (attackDistance * 2);
+		attackSpriteSize.y = attackPositionY + (attackDistance * 2);
 	}
 	else
 	{
 		g_SpeedAttack = 0.f;
-		g_AttackX = (g_WindowWidth * -0.99375f);
-		g_AttackY = (g_WindowHeight * -0.025f);
+		attackSpriteSize.x = (g_WindowWidth * -0.99375f);
+		attackSpriteSize.y = (g_WindowHeight * -0.025f);
 		if (Attackphase == AttackPhase::phase_attack || Attackphase == AttackPhase::phase_attackcounter)
 			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 		else if (Itemphase == ItemPhase::phase_itemattackcounter)
@@ -587,7 +757,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 }
 void GMoongussForward(float elapsedSec)
 {
-	static float savedPosition = -1; 
+	static float savedPosition = -1;
 
 	if (savedPosition < 0) {
 		savedPosition = g_GodmoongussX;
@@ -599,8 +769,8 @@ void GMoongussForward(float elapsedSec)
 		g_GodmoongussX += g_SpeedGmoonguss * elapsedSec;
 		if (g_GodmoongussX > target) {
 			g_GodmoongussX = target;
-			savedPosition = -1; 
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward|| Attackphase == AttackPhase::phase_gmoonguss_forward)
+			savedPosition = -1;
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward || Attackphase == AttackPhase::phase_gmoonguss_forward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_forward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -610,7 +780,7 @@ void GMoongussForward(float elapsedSec)
 }
 void GMoongussBackward(float elapsedSec)
 {
-	
+
 	static float savedPosition = -1;
 
 	if (savedPosition < 0) {
@@ -624,7 +794,7 @@ void GMoongussBackward(float elapsedSec)
 		if (g_GodmoongussX < target) {
 			g_GodmoongussX = target;
 			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward|| Attackphase == AttackPhase::phase_gmoonguss_backward)
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward || Attackphase == AttackPhase::phase_gmoonguss_backward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_backward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -634,11 +804,11 @@ void GMoongussBackward(float elapsedSec)
 void HPBar1Down(float elapsedSec)
 {
 
-	g_HPBarWidth1 -= g_SpeedHPBar * elapsedSec;
-	if (g_HPBarWidth1 <= g_HPBar1Target)
+	HPBarEnemyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
+	if (HPBarEnemyPokemon.hPBarWidth <= HPBarEnemyPokemon.hPBarTarget)
 	{
-		g_HPBarWidth1 = g_HPBar1Target;
-		g_HPBar1Target = g_HPBar1Target - (g_HPBar1HitAmmount);
+		HPBarEnemyPokemon.hPBarWidth = HPBarEnemyPokemon.hPBarTarget;
+		HPBarEnemyPokemon.hPBarTarget = HPBarEnemyPokemon.hPBarTarget - (HPBarEnemyPokemon.hPBarHitAmmount);
 		Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 	}
 }
@@ -654,17 +824,17 @@ void Wait(float elapsedSec)
 		if (Attackphase == AttackPhase::phase_wait)
 			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 		else if (Itemphase == ItemPhase::phase_itemwait)
-		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
 		g_WaitTextBlock = false;
 	}
 }
 void HPBar2Down(float elapsedSec)
 {
-	g_HPBarWidth2 -= g_SpeedHPBar * elapsedSec;
-	if (g_HPBarWidth2 <= g_HPBar2Target)
+	HPBarAllyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
+	if (HPBarAllyPokemon.hPBarWidth <= HPBarAllyPokemon.hPBarTarget)
 	{
-		g_HPBarWidth2 = g_HPBar2Target;
-		g_HPBar2Target = g_HPBar2Target - (g_HPBar2HitAmmount);
+		HPBarAllyPokemon.hPBarWidth = HPBarAllyPokemon.hPBarTarget;
+		HPBarAllyPokemon.hPBarTarget = HPBarAllyPokemon.hPBarTarget - (HPBarAllyPokemon.hPBarHitAmmount);
 		if (Attackphase == AttackPhase::phase_hpbar2_down)
 			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 		else if (Itemphase == ItemPhase::phase_itemhpbar2_down)
@@ -673,11 +843,11 @@ void HPBar2Down(float elapsedSec)
 }
 void HPBar2Up(float elapsedSec)
 {
-	g_HPBarWidth2 += g_SpeedHPBar*elapsedSec;
-	if (g_HPBarWidth2 >= g_Rects.HpBar2.width)
+	HPBarAllyPokemon.hPBarWidth += g_SpeedHPBar * elapsedSec;
+	if (HPBarAllyPokemon.hPBarWidth >= g_Rects.HpBarAlly.width)
 	{
-		g_HPBarWidth2 = g_Rects.HpBar2.width;
-		g_HPBar2Target = g_Rects.HpBar2.width - (g_HPBar2HitAmmount);
+		HPBarAllyPokemon.hPBarWidth = g_Rects.HpBarAlly.width;
+		HPBarAllyPokemon.hPBarTarget = g_Rects.HpBarAlly.width - (HPBarAllyPokemon.hPBarHitAmmount);
 		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
 	}
 }
