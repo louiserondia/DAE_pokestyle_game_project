@@ -235,7 +235,7 @@ void InitializeTiles()
 	{
 		for (int col{ 0 }; col < colsTotal; ++col)
 		{
-			ArrTiles[row * colsTotal + col] = Point2f{ xPos, yPos };
+			arrTiles[row * colsTotal + col] = Point2f{ xPos, yPos };
 			xPos += 48.f;
 		}
 		yPos += 48.f;

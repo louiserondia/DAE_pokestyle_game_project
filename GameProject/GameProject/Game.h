@@ -103,13 +103,6 @@ g_AttackY{ g_WindowHeight * -0.025f },
 TextBlockX{ g_WindowWidth * 0.0062548866f },
 TextBlockY{ g_WindowHeight * 0.674196351f };
 
-const int
-g_BackgroundSizeWidth{ 1279 },
-g_BackgroundSizeHeight{ 1151 },
-g_PokemonSize{ 1176 },
-g_TextBlockSizeWidth{ 1280 },
-g_TextBlockSizeHeight{ 306 };
-
 float
 g_LaxManX{ g_WindowWidth * 0.0625f },
 g_LaxManY{ g_WindowHeight * 0.255f },
