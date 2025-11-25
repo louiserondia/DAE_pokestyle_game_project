@@ -1,5 +1,6 @@
 #pragma once
 #include <utils.h>
+#include <map>
 using namespace utils;
 
 #pragma region gameInformation
@@ -26,17 +27,37 @@ bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
 
 const int g_NrScenes{ 1 };
 
+enum class CharacterAnimState {
+	IdleFront,
+	IdleBack,
+	IdleLeft,
+	IdleRight,
+	WalkFront,
+	WalkBack,
+	WalkLeft,
+	WalkRight,
+};
+
+struct AnimFrame {
+	int row{};
+	int col{};
+	int nrFrames{};
+};
+
 struct Character {
-	Rectf	rect{};
+	Rectf	dst{};
+	Rectf	src{ 0.f, 0.f, 16.f, 24.f };
 	Point2f	dir{};
 	float	vx{};
 	float	vy{};
+	Point2f	frameDimensions{ 16.f, 24.f };
 	Texture texture{};
 };
 
+// make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
 struct Scene {
 	Texture	texture{};
-	Point2f	pos{};
+	Point2f	center{};
 	float	zoom{};
 	Rectf	src{};
 	Rectf	dst{};
@@ -51,13 +72,19 @@ const float	g_TileSize{ 32.f };
 
 World		g_World{};
 Character	g_Character{};
+std::map<std::string, AnimFrame> g_AnimFrames{};
+const int	g_CharacterNrFrames{ 12 };
+const float g_MoveSpeed{ 50.f };
+
 
 void	InitWorld();
 void	InitCharacter();
+void	InitAnimFrames();
 void	DrawMap();
 void	DrawCharacter();
-void	UpdateMapPos();
-void	UpdateCharacterDir();
+void	UpdateMapPos(float elapsedSec);
+void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec);
+void	UpdateCharacterFrame(float elapsedSec);
 void	FreeWorld();
 
 
@@ -104,7 +131,7 @@ g_FaintTexture{}; // you need a function to init and one to delete them
 float
 g_AttackX{ g_WindowWidth * -0.99375f },
 g_AttackY{ g_WindowHeight * -0.025f },
-TextBlockX{ g_WindowWidth * 0.0062548866f }, 
+TextBlockX{ g_WindowWidth * 0.0062548866f },
 TextBlockY{ g_WindowHeight * 0.674196351f };
 // i'm not sure what this textblock is but the position is weird, it could be a Point2f
 // and * 0.0062548866f -> also you can define it's position directly on the screen but you could also define it compared to another thing
@@ -120,7 +147,7 @@ g_TextBlockSizeHeight{ 306 };
 // all those could be Point2f, but also maybe it'd easier to have a struct for the character and the ennemy 
 // and you create an instance of that struct of each of them since they have common variables and behaviour
 float
-g_LaxManX{ g_WindowWidth * 0.0625f }, 
+g_LaxManX{ g_WindowWidth * 0.0625f },
 g_LaxManY{ g_WindowHeight * 0.255f },
 g_GodmoongussX{ g_WindowWidth * 0.59375f },
 g_GodmoongussY{ g_WindowHeight * 0.025f },

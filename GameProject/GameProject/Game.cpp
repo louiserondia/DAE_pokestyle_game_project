@@ -15,12 +15,13 @@ void Start()
 	// MAP & TILES PART INITIALIZATION
 
 	InitWorld();
+	InitAnimFrames();
+	InitCharacter();
 
 
 	utils::TextureFromFile("Resources/Mt.Moon1.png", g_Level1Texture);
 	utils::TextureFromFile("Resources/MC.png", g_MCTexture);
 	InitializeTiles();
-	InitCharacter();
 
 
 	// BATTLE PART INITIALIZATION
@@ -58,12 +59,17 @@ void Draw()
 	else {
 		DrawMap();
 		DrawCharacter();
-
 	}
 }
 
 void Update(float elapsedSec)
 {
+	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+
+	UpdateCharacterDirSpeed(pStates, elapsedSec);
+	UpdateMapPos(elapsedSec);
+
+
 	// BATTLE PART UPDATE
 	if (g_IsBattleOn) {
 
@@ -159,25 +165,38 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 // MAP & TILES PART FUNCTIONS
 
 void	InitWorld() {
-	TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture);
-	g_World.scenes[0].zoom = 1.8f;
+	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
+		std::cout << "Couldn't load map texture at Resources/map_three_island.png";
+	g_World.scenes[0].zoom = 1.f;
 
 	const float width{ g_World.scenes[0].texture.width }, height{ g_World.scenes[0].texture.height },
 		screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
 
-	g_World.scenes[0].src = Rectf{ 0.f, 0.f, screenWidth, screenWidth };
+	g_World.scenes[0].center = Point2f{ 136.f - screenWidth / 2, 222.f - screenWidth / 2 };
+	g_World.scenes[0].src = Rectf{ g_World.scenes[0].center.x, g_World.scenes[0].center.y, screenWidth, screenWidth };
 	g_World.scenes[0].dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
+}
 
+void	InitAnimFrames() {
+	g_AnimFrames["idlefront"] = AnimFrame{ 0, 0, 1 };
+	g_AnimFrames["idleback"] = AnimFrame{ 0, 3, 1 };
+	g_AnimFrames["idleleft"] = AnimFrame{ 0, 6, 1 };
+	g_AnimFrames["idleright"] = AnimFrame{ 0, 9, 1 };
+	g_AnimFrames["walkfront"] = AnimFrame{ 0, 1, 2 };
+	g_AnimFrames["walkback"] = AnimFrame{ 0, 4, 2 };
+	g_AnimFrames["walkleft"] = AnimFrame{ 0, 7, 2 };
+	g_AnimFrames["walkright"] = AnimFrame{ 0, 10, 2 };
 }
 
 void	InitCharacter() {
-	if (!TextureFromFile("Resources/MC.png", g_Character.texture))
-		std::cout << "Couldn't load character texture at Resources/MC.png";
-	g_Character.rect = Rectf{ g_WindowWidth / 2 + g_TileSize / 2, g_WindowWidth / 2 + g_TileSize / 2,  g_TileSize, g_TileSize};
+	if (!TextureFromFile("Resources/character.png", g_Character.texture))
+		std::cout << "Couldn't load character texture at Resources/character.png";
+	g_Character.dst = Rectf{ g_WindowWidth / 2 - g_TileSize / 2, g_WindowWidth / 2 - g_TileSize / 2,  g_TileSize , g_TileSize * 1.5f };
 }
 
-void	FreeWorld() {
+void	FreeWorld() { // FreeAll instead ?
 	DeleteTexture(g_World.scenes[0].texture);
+	DeleteTexture(g_Character.texture);
 }
 
 void	DrawMap() {
@@ -186,15 +205,43 @@ void	DrawMap() {
 }
 
 void	DrawCharacter() {
-	const Rectf src{0.f, 0.f, 16.f, 16.f}; // temporary 
-	DrawTexture(g_Character.texture, g_Character.rect, src);
+	DrawTexture(g_Character.texture, g_Character.dst, g_Character.src);
 }
 
-void	UpdateMapPos() {
+void	UpdateMapPos(float elapsedSec) {
+	const float screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
+	pScene->center.x += g_Character.dir.x * g_Character.vx * elapsedSec;
+	pScene->center.y += g_Character.dir.y * g_Character.vy * elapsedSec;
+	pScene->src.left = pScene->center.x;
+	pScene->src.top = pScene->center.y;
 }
 
-void	UpdateCharacterDir() {
+void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec) {
+	if (pStates[SDL_SCANCODE_RIGHT]) {
+		g_Character.vx = g_MoveSpeed;
+		g_Character.dir = Point2f{ 1.f, 0.f };
+	}
+	else if (pStates[SDL_SCANCODE_LEFT]) {
+		g_Character.vx = g_MoveSpeed;
+		g_Character.dir = Point2f{ -1.f, 0.f };
+	}
+	else if (pStates[SDL_SCANCODE_UP]) {
+		g_Character.vy = g_MoveSpeed;
+		g_Character.dir = Point2f{ 0.f, -1.f };
+	}
+	else if (pStates[SDL_SCANCODE_DOWN]) {
+		g_Character.vy = g_MoveSpeed;
+		g_Character.dir = Point2f{ 0.f, 1.f };
+	}
+	else {
+		g_Character.vx = 0.f;
+		g_Character.vy = 0.f;
+	}
+}
+
+void	UpdateCharacterFrame(float elapsedSec) {
 
 }
 
@@ -308,7 +355,7 @@ void DrawEverything()
 	utils::DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
 	utils::DrawTexture(g_AttackTexture, destinationAttack);
 
-	if(g_GMoongussAttackTextureIsOn==true)
+	if (g_GMoongussAttackTextureIsOn == true)
 	{
 		utils::DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
 	}
@@ -540,7 +587,7 @@ void LaxForward(float elapsedSec)
 		if (g_LaxManX > target) {
 			g_LaxManX = target;
 			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_lax_forward|| Attackphase == AttackPhase::phase_laxcounter_forward)
+			if (Attackphase == AttackPhase::phase_lax_forward || Attackphase == AttackPhase::phase_laxcounter_forward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemlaxcounter_forward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -602,7 +649,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 }
 void GMoongussForward(float elapsedSec)
 {
-	static float savedPosition = -1; 
+	static float savedPosition = -1;
 
 	if (savedPosition < 0) {
 		savedPosition = g_GodmoongussX;
@@ -614,8 +661,8 @@ void GMoongussForward(float elapsedSec)
 		g_GodmoongussX += g_SpeedGmoonguss * elapsedSec;
 		if (g_GodmoongussX > target) {
 			g_GodmoongussX = target;
-			savedPosition = -1; 
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward|| Attackphase == AttackPhase::phase_gmoonguss_forward)
+			savedPosition = -1;
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward || Attackphase == AttackPhase::phase_gmoonguss_forward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_forward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -625,7 +672,7 @@ void GMoongussForward(float elapsedSec)
 }
 void GMoongussBackward(float elapsedSec)
 {
-	
+
 	static float savedPosition = -1;
 
 	if (savedPosition < 0) {
@@ -639,7 +686,7 @@ void GMoongussBackward(float elapsedSec)
 		if (g_GodmoongussX < target) {
 			g_GodmoongussX = target;
 			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward|| Attackphase == AttackPhase::phase_gmoonguss_backward)
+			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward || Attackphase == AttackPhase::phase_gmoonguss_backward)
 				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_backward)
 				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
@@ -669,7 +716,7 @@ void Wait(float elapsedSec)
 		if (Attackphase == AttackPhase::phase_wait)
 			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
 		else if (Itemphase == ItemPhase::phase_itemwait)
-		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
 		g_WaitTextBlock = false;
 	}
 }
@@ -688,7 +735,7 @@ void HPBar2Down(float elapsedSec)
 }
 void HPBar2Up(float elapsedSec)
 {
-	g_HPBarWidth2 += g_SpeedHPBar*elapsedSec;
+	g_HPBarWidth2 += g_SpeedHPBar * elapsedSec;
 	if (g_HPBarWidth2 >= g_Rects.HpBar2.width)
 	{
 		g_HPBarWidth2 = g_Rects.HpBar2.width;
