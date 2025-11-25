@@ -28,12 +28,12 @@ bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
 const int g_NrScenes{ 1 };
 
 enum class CharacterAnimState {
-	IdleFront,
-	IdleBack,
+	IdleDown,
+	IdleUp,
 	IdleLeft,
 	IdleRight,
-	WalkFront,
-	WalkBack,
+	WalkDown,
+	WalkUp,
 	WalkLeft,
 	WalkRight,
 };
@@ -45,13 +45,16 @@ struct AnimFrame {
 };
 
 struct Character {
-	Rectf	dst{};
-	Rectf	src{ 0.f, 0.f, 16.f, 24.f };
-	Point2f	dir{};
-	float	vx{};
-	float	vy{};
-	Point2f	frameDimensions{ 16.f, 24.f };
-	Texture texture{};
+	Rectf		dst{};
+	Rectf		src{ 0.f, 0.f, 16.f, 24.f };
+	Point2f		dir{};
+	float		vx{};
+	float		vy{};
+	AnimFrame	curAnimFrame;
+	Point2f		frameDimensions{ 16.f, 24.f };
+	int			frameStartIndex{};
+	int			frameIndex{};
+	Texture		texture{};
 };
 
 // make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
@@ -61,6 +64,7 @@ struct Scene {
 	float	zoom{};
 	Rectf	src{};
 	Rectf	dst{};
+	float	startOffset{};
 };
 
 struct World {
@@ -72,9 +76,12 @@ const float	g_TileSize{ 32.f };
 
 World		g_World{};
 Character	g_Character{};
+
+
 std::map<std::string, AnimFrame> g_AnimFrames{};
-const int	g_CharacterNrFrames{ 12 };
+const int	g_CharacterNrFrames{ 12 }; // maybe should be nrCol and rows
 const float g_MoveSpeed{ 50.f };
+float		g_FrameTime{};
 
 
 void	InitWorld();
@@ -84,8 +91,10 @@ void	DrawMap();
 void	DrawCharacter();
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec);
-void	UpdateCharacterFrame(float elapsedSec);
+void	UpdateCharacterFrame(const Uint8* pStates, float elapsedSec);
 void	FreeWorld();
+
+bool	IsBetweenTiles();
 
 
 Texture g_Level1Texture{},

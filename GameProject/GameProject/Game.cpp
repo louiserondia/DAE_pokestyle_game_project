@@ -26,7 +26,7 @@ void Start()
 
 	// BATTLE PART INITIALIZATION
 
-	PlaySound(TEXT("C:\\School\\2025-2026\\semester1\\Programming1\\week4\\1DAE12_L04_RAHIMOV_JAVID\\CodingCraftmanship04\\Resources\\Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC);
+	PlaySound(TEXT("Resources/Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC); // changed to local path hope its still working
 
 	utils::TextureFromFile("Resources/Background.png", g_BackgroundTexture);
 	utils::TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
@@ -67,8 +67,10 @@ void Update(float elapsedSec)
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
 	UpdateCharacterDirSpeed(pStates, elapsedSec);
+	UpdateCharacterFrame(pStates, elapsedSec);
 	UpdateMapPos(elapsedSec);
 
+	g_FrameTime += elapsedSec;
 
 	// BATTLE PART UPDATE
 	if (g_IsBattleOn) {
@@ -167,23 +169,26 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 void	InitWorld() {
 	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
 		std::cout << "Couldn't load map texture at Resources/map_three_island.png";
-	g_World.scenes[0].zoom = 1.f;
+	Scene* pScene{ &g_World.scenes[0] };
+	pScene->zoom = 1.f;
 
-	const float width{ g_World.scenes[0].texture.width }, height{ g_World.scenes[0].texture.height },
-		screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
+	const float width{ pScene->texture.width },
+		height{ pScene->texture.height },
+		screenWidth{ pScene->texture.width / pScene->zoom };
 
-	g_World.scenes[0].center = Point2f{ 136.f - screenWidth / 2, 222.f - screenWidth / 2 };
-	g_World.scenes[0].src = Rectf{ g_World.scenes[0].center.x, g_World.scenes[0].center.y, screenWidth, screenWidth };
-	g_World.scenes[0].dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
+	pScene->startOffset = g_TileSize / 4;
+	pScene->center = Point2f{ 4 * g_TileSize + pScene->startOffset, 4 * g_TileSize + pScene->startOffset };
+	pScene->src = Rectf{ pScene->center.x - screenWidth / 2, pScene->center.y - screenWidth / 2, screenWidth, screenWidth };
+	pScene->dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
 }
 
 void	InitAnimFrames() {
-	g_AnimFrames["idlefront"] = AnimFrame{ 0, 0, 1 };
-	g_AnimFrames["idleback"] = AnimFrame{ 0, 3, 1 };
+	g_AnimFrames["idledown"] = AnimFrame{ 0, 0, 1 };
+	g_AnimFrames["idleup"] = AnimFrame{ 0, 3, 1 };
 	g_AnimFrames["idleleft"] = AnimFrame{ 0, 6, 1 };
 	g_AnimFrames["idleright"] = AnimFrame{ 0, 9, 1 };
-	g_AnimFrames["walkfront"] = AnimFrame{ 0, 1, 2 };
-	g_AnimFrames["walkback"] = AnimFrame{ 0, 4, 2 };
+	g_AnimFrames["walkdown"] = AnimFrame{ 0, 1, 2 };
+	g_AnimFrames["walkup"] = AnimFrame{ 0, 4, 2 };
 	g_AnimFrames["walkleft"] = AnimFrame{ 0, 7, 2 };
 	g_AnimFrames["walkright"] = AnimFrame{ 0, 10, 2 };
 }
@@ -191,7 +196,10 @@ void	InitAnimFrames() {
 void	InitCharacter() {
 	if (!TextureFromFile("Resources/character.png", g_Character.texture))
 		std::cout << "Couldn't load character texture at Resources/character.png";
+
 	g_Character.dst = Rectf{ g_WindowWidth / 2 - g_TileSize / 2, g_WindowWidth / 2 - g_TileSize / 2,  g_TileSize , g_TileSize * 1.5f };
+	g_Character.curAnimFrame = g_AnimFrames["idledown"];
+	g_Character.dir = Point2f{ 0.f, 1.f };
 }
 
 void	FreeWorld() { // FreeAll instead ?
@@ -214,37 +222,83 @@ void	UpdateMapPos(float elapsedSec) {
 
 	pScene->center.x += g_Character.dir.x * g_Character.vx * elapsedSec;
 	pScene->center.y += g_Character.dir.y * g_Character.vy * elapsedSec;
-	pScene->src.left = pScene->center.x;
-	pScene->src.top = pScene->center.y;
+	pScene->src.left = pScene->center.x - screenWidth / 2;
+	pScene->src.top = pScene->center.y - screenWidth / 2;
+}
+
+bool IsBetweenTiles() {
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+
+	return (static_cast<int>(pScene->center.x - pScene->startOffset) % static_cast<int>(g_TileSize / 2)
+		|| static_cast<int>(pScene->center.y - pScene->startOffset) % static_cast<int>(g_TileSize / 2));
 }
 
 void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec) {
-	if (pStates[SDL_SCANCODE_RIGHT]) {
+	if (pStates[SDL_SCANCODE_RIGHT] && !IsBetweenTiles()) {
 		g_Character.vx = g_MoveSpeed;
 		g_Character.dir = Point2f{ 1.f, 0.f };
 	}
-	else if (pStates[SDL_SCANCODE_LEFT]) {
+	else if (pStates[SDL_SCANCODE_LEFT] && !IsBetweenTiles()) {
 		g_Character.vx = g_MoveSpeed;
 		g_Character.dir = Point2f{ -1.f, 0.f };
 	}
-	else if (pStates[SDL_SCANCODE_UP]) {
+	else if (pStates[SDL_SCANCODE_UP] && !IsBetweenTiles()) {
 		g_Character.vy = g_MoveSpeed;
 		g_Character.dir = Point2f{ 0.f, -1.f };
 	}
-	else if (pStates[SDL_SCANCODE_DOWN]) {
+	else if (pStates[SDL_SCANCODE_DOWN] && !IsBetweenTiles()) {
 		g_Character.vy = g_MoveSpeed;
 		g_Character.dir = Point2f{ 0.f, 1.f };
 	}
 	else {
-		g_Character.vx = 0.f;
-		g_Character.vy = 0.f;
+		if (!IsBetweenTiles()) {
+			g_Character.vx = 0.f;
+			g_Character.vy = 0.f;
+		}
 	}
 }
 
-void	UpdateCharacterFrame(float elapsedSec) {
+void	UpdateCharacterFrame(const Uint8* pStates, float elapsedSec) {
 
+	// Update when moving or not (should i only change when there is update ? here it updates continuously the walk when i move)
+	if (g_Character.vx || g_Character.vy) {
+		if (g_Character.vx /* maybe check vx is useless */ && g_Character.dir.x == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkright"];
+		}
+		else if (g_Character.vx && g_Character.dir.x == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkleft"];
+		}
+		else if (g_Character.vy && g_Character.dir.y == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkup"];
+		}
+		else if (g_Character.vy && g_Character.dir.y == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["walkdown"];
+		}
+	}
+	else {
+		if (g_Character.dir.x == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleright"];
+		}
+		else if (g_Character.dir.x == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleleft"];
+		}
+		else if (g_Character.dir.y == -1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idleup"];
+		}
+		else if (g_Character.dir.y == 1.f) {
+			g_Character.curAnimFrame = g_AnimFrames["idledown"];
+		}
+	}
+	g_Character.frameStartIndex = GetIndex(g_Character.curAnimFrame.row, g_Character.curAnimFrame.col, g_CharacterNrFrames);
+	g_Character.src.left = GetCol(g_Character.frameStartIndex + g_Character.frameIndex, g_CharacterNrFrames) * g_Character.frameDimensions.x;
+
+	const float frameRate{ 1.f / 4 };
+
+	if (g_FrameTime > frameRate) {
+		g_FrameTime = 0.f;
+		g_Character.frameIndex = (g_Character.frameIndex + 1) % g_Character.curAnimFrame.nrFrames;
+	}
 }
-
 
 void DrawMap1()
 {
