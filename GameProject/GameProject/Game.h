@@ -8,11 +8,9 @@ using namespace utils;
 std::string g_WindowTitle{ "Pokestyle Game Project - Rahimov, Javid & Rondia, Louise - 1DAE12" };
 
 // Change the window dimensions here
-float g_WindowWidth{ 800 };
-float g_WindowHeight{ 800 };
+float g_WindowWidth{ 768 };
+float g_WindowHeight{ 768 };
 #pragma endregion gameInformation
-
-
 
 #pragma region ownDeclarations
 // Declare your own global variables here
@@ -60,11 +58,15 @@ struct Character {
 // make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
 struct Scene {
 	Texture	texture{};
-	Point2f	center{};
-	float	zoom{};
-	Rectf	src{};
 	Rectf	dst{};
 	float	startOffset{};
+	float	screenWidth{};
+	float	screenHeight{};
+};
+
+struct Camera {
+	Point2f pos{};
+	float	zoom{};
 };
 
 struct World {
@@ -76,25 +78,29 @@ const float	g_TileSize{ 32.f };
 
 World		g_World{};
 Character	g_Character{};
-
+Camera		g_Camera{};
 
 std::map<std::string, AnimFrame> g_AnimFrames{};
 const int	g_CharacterNrFrames{ 12 }; // maybe should be nrCol and rows
-const float g_MoveSpeed{ 50.f };
+const float g_MoveSpeed{ 100.f };
 float		g_FrameTime{};
 
 
 void	InitWorld();
+void	InitCamera();
 void	InitCharacter();
 void	InitAnimFrames();
 void	DrawMap();
 void	DrawCharacter();
 void	UpdateMapPos(float elapsedSec);
+void	UpdateCameraPos(float elapsedSec);
 void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec);
 void	UpdateCharacterFrame(const Uint8* pStates, float elapsedSec);
 void	FreeWorld();
 
 bool	IsBetweenTiles();
+bool	IsPosInCenterX(float pos);
+bool	IsPosInCenterY(float pos);
 
 
 Texture g_Level1Texture{},

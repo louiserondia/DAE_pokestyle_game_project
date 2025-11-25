@@ -14,6 +14,7 @@ void Start()
 
 	// MAP & TILES PART INITIALIZATION
 
+	InitCamera();
 	InitWorld();
 	InitAnimFrames();
 	InitCharacter();
@@ -69,6 +70,7 @@ void Update(float elapsedSec)
 	UpdateCharacterDirSpeed(pStates, elapsedSec);
 	UpdateCharacterFrame(pStates, elapsedSec);
 	UpdateMapPos(elapsedSec);
+	UpdateCameraPos(elapsedSec);
 
 	g_FrameTime += elapsedSec;
 
@@ -166,20 +168,24 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 // MAP & TILES PART FUNCTIONS
 
+void	InitCamera() {
+	g_Camera.zoom = 2.f;
+}
+
 void	InitWorld() {
 	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
 		std::cout << "Couldn't load map texture at Resources/map_three_island.png";
 	Scene* pScene{ &g_World.scenes[0] };
-	pScene->zoom = 1.f;
 
 	const float width{ pScene->texture.width },
 		height{ pScene->texture.height },
-		screenWidth{ pScene->texture.width / pScene->zoom };
+		screenWidth{ pScene->texture.width * g_Camera.zoom },
+		screenHeight{ pScene->texture.height * g_Camera.zoom };
 
+	pScene->screenWidth = screenWidth;
+	pScene->screenHeight = screenHeight;
 	pScene->startOffset = g_TileSize / 4;
-	pScene->center = Point2f{ 4 * g_TileSize + pScene->startOffset, 4 * g_TileSize + pScene->startOffset };
-	pScene->src = Rectf{ pScene->center.x - screenWidth / 2, pScene->center.y - screenWidth / 2, screenWidth, screenWidth };
-	pScene->dst = Rectf{ 0.f, 0.f, g_WindowWidth, g_WindowHeight };
+	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
 }
 
 void	InitAnimFrames() {
@@ -197,7 +203,12 @@ void	InitCharacter() {
 	if (!TextureFromFile("Resources/character.png", g_Character.texture))
 		std::cout << "Couldn't load character texture at Resources/character.png";
 
-	g_Character.dst = Rectf{ g_WindowWidth / 2 - g_TileSize / 2, g_WindowWidth / 2 - g_TileSize / 2,  g_TileSize , g_TileSize * 1.5f };
+	g_Character.dst = Rectf{
+		8 * g_TileSize,
+		8 * g_TileSize,
+		g_TileSize * (g_Camera.zoom / 2),
+		g_TileSize * 1.5f * (g_Camera.zoom / 2)
+	};
 	g_Character.curAnimFrame = g_AnimFrames["idledown"];
 	g_Character.dir = Point2f{ 0.f, 1.f };
 }
@@ -208,29 +219,72 @@ void	FreeWorld() { // FreeAll instead ?
 }
 
 void	DrawMap() {
-	const Scene curScene{ g_World.scenes[g_World.currentSceneIndex] };
-	DrawTexture(curScene.texture, curScene.dst, curScene.src);
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	DrawTexture(pScene->texture, pScene->dst);
 }
 
 void	DrawCharacter() {
-	DrawTexture(g_Character.texture, g_Character.dst, g_Character.src);
+	const Rectf rect{
+		g_Character.dst.left - g_Camera.pos.x,
+		g_Character.dst.top - g_Camera.pos.y,
+		g_Character.dst.width ,
+		g_Character.dst.height
+	};
+	DrawTexture(g_Character.texture, rect, g_Character.src);
+}
+
+bool	IsPosInCenterX(float pos) {
+	const float centerX = g_WindowWidth / 2.f;
+	const float epsilon = 10.f;
+
+	return std::abs(pos - centerX) < epsilon;
+}
+
+bool	IsPosInCenterY(float pos) {
+	float pos1{ pos - 5.f };
+	const float centerY = g_WindowHeight / 2.f;
+	const float epsilon = g_TileSize;
+
+	return std::abs(pos - centerY) < epsilon;
+}
+
+void UpdateCameraPos(float elapsedSec) {
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const float screenWidth{ pScene->texture.width * g_Camera.zoom },
+		screenHeight{ pScene->texture.height * g_Camera.zoom };
+	const float dX{ g_Character.dir.x * g_Character.vx * elapsedSec },
+		dY{ g_Character.dir.y * g_Character.vy * elapsedSec };
+
+	g_Character.dst.left += dX;
+	g_Character.dst.top += dY;
+
+	if (IsPosInCenterX(g_Character.dst.left - g_Camera.pos.x - dX)
+		&& g_Camera.pos.x + dX >= 0.f
+		&& g_Camera.pos.x + dX <= screenWidth - g_WindowWidth)
+	{
+		g_Camera.pos.x += dX;
+	}
+	if (IsPosInCenterY(g_Character.dst.top - g_Camera.pos.y - dY)
+		&& g_Camera.pos.y + dY >= 0.f
+		&& g_Camera.pos.y + dY <= screenHeight - g_WindowHeight)
+	{
+		g_Camera.pos.y += dY;
+	}
+
 }
 
 void	UpdateMapPos(float elapsedSec) {
-	const float screenWidth{ g_World.scenes[0].texture.width / g_World.scenes[0].zoom };
 	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
-	pScene->center.x += g_Character.dir.x * g_Character.vx * elapsedSec;
-	pScene->center.y += g_Character.dir.y * g_Character.vy * elapsedSec;
-	pScene->src.left = pScene->center.x - screenWidth / 2;
-	pScene->src.top = pScene->center.y - screenWidth / 2;
+	pScene->dst.left = -g_Camera.pos.x;
+	pScene->dst.top = -g_Camera.pos.y;
 }
 
 bool IsBetweenTiles() {
 	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
-	return (static_cast<int>(pScene->center.x - pScene->startOffset) % static_cast<int>(g_TileSize / 2)
-		|| static_cast<int>(pScene->center.y - pScene->startOffset) % static_cast<int>(g_TileSize / 2));
+	return (static_cast<int>(g_Character.dst.left) % static_cast<int>(g_TileSize)
+		|| static_cast<int>(g_Character.dst.top) % static_cast<int>(g_TileSize));
 }
 
 void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec) {
