@@ -13,20 +13,20 @@ void InitBattle() {
 
 	//PlaySound(TEXT("Resources/Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC); // changed to local path hope its still working
 
-	utils::TextureFromFile("Resources/Background.png", g_BackgroundTexture);
-	utils::TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
-	utils::TextureFromFile("Resources/Green2.png", g_GreenTexture);
-	utils::TextureFromFile("Resources/Godmoonguss.png", g_GodmoongussTexture);
-	utils::TextureFromFile("Resources/Attack.png", g_AttackTexture);
-	utils::TextureFromFile("Resources/LaxAttack.png", g_LaxAttackTexture);
-	utils::TextureFromFile("Resources/GodmoongussAttack.png", g_GodmoongussAttackTexture);
-	utils::TextureFromFile("Resources/Wait.png", g_WaitTexture);
-	utils::TextureFromFile("Resources/Item.png", g_ItemTexture);
-	utils::TextureFromFile("Resources/Switch.png", g_SwitchTexture);
-	utils::TextureFromFile("Resources/Run.png", g_RunTexture);
-	utils::TextureFromFile("Resources/ItemsDone.png", g_ItemDoneTexture);
-	utils::TextureFromFile("Resources/NotFirstTurn.png", g_NotFirstTurnTexture);
-	utils::TextureFromFile("Resources/Faint.png", g_FaintTexture);
+	TextureFromFile("Resources/Background.png", g_BackgroundTexture);
+	TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
+	TextureFromFile("Resources/Green2.png", g_GreenTexture);
+	TextureFromFile("Resources/Godmoonguss.png", g_GodmoongussTexture);
+	TextureFromFile("Resources/Attack.png", g_AttackTexture);
+	TextureFromFile("Resources/LaxAttack.png", g_LaxAttackTexture);
+	TextureFromFile("Resources/GodmoongussAttack.png", g_GodmoongussAttackTexture);
+	TextureFromFile("Resources/Wait.png", g_WaitTexture);
+	TextureFromFile("Resources/Item.png", g_ItemTexture);
+	TextureFromFile("Resources/Switch.png", g_SwitchTexture);
+	TextureFromFile("Resources/Run.png", g_RunTexture);
+	TextureFromFile("Resources/ItemsDone.png", g_ItemDoneTexture);
+	TextureFromFile("Resources/NotFirstTurn.png", g_NotFirstTurnTexture);
+	TextureFromFile("Resources/Faint.png", g_FaintTexture);
 
 	std::cout << "press every other button before fight \n" << "Music and sprites by Jasper Bouchet" << std::endl;
 }
@@ -39,14 +39,13 @@ void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
 	const float mouseX{ float(e.x) };
 	const float mouseY{ float(e.y) };
 
-	if (!(g_Attack or g_Switch or g_Item or g_Run))
+	if (!(g_Attack || g_Switch || g_Item || g_Run))
 	{
 		if (mouseX >= g_Rects.fightButton.left && mouseX <= (g_Rects.fightButton.left + g_Rects.fightButton.width) &&
 			mouseY >= g_Rects.fightButton.top && mouseY <= (g_Rects.fightButton.top + g_Rects.fightButton.height))
 		{
 			g_Attack = true;
 			std::cout << "it works" << std::endl;
-
 		}
 		else if (mouseX >= g_Rects.pokemonButton.left && mouseX <= (g_Rects.pokemonButton.left + g_Rects.pokemonButton.width) &&
 			mouseY >= g_Rects.pokemonButton.top && mouseY <= (g_Rects.pokemonButton.top + g_Rects.pokemonButton.height))
@@ -74,10 +73,10 @@ void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
 void DrawBattle()
 {
 	const Rectf
-		destinationBackground
+	destinationBackground
 	{
-		1.f,
-		1.f,
+		0.f,
+		0.f,
 		g_WindowWidth,
 		g_WindowHeight,
 	},
@@ -85,71 +84,71 @@ void DrawBattle()
 	{
 		g_LaxManX,
 		g_LaxManY,
-		g_WindowWidth* 0.35125f,
+		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
 	destinationGodmoonguss
 	{
 		g_GodmoongussX,
 		g_GodmoongussY,
-		g_WindowWidth* 0.35125f,
+		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
 	destinationAttack
 	{
 		attackSpriteSize.x,
 		attackSpriteSize.y,
-		g_WindowWidth* 0.1f,
+		g_WindowWidth * 0.1f,
 		g_WindowHeight * 0.1f,
 	},
 	destinationTextBlock
 	{
 		textBlockSpriteSize.x,
 		textBlockSpriteSize.y,
-		g_WindowWidth* 0.987f,
+		g_WindowWidth * 0.987f,
 		g_WindowHeight * 0.3197f,
 	};
 
-	utils::DrawTexture(g_BackgroundTexture, destinationBackground);
-	utils::DrawTexture(g_LaxManTexture, destinationLaxMan);
-	utils::DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
-	utils::DrawTexture(g_AttackTexture, destinationAttack);
+	DrawTexture(g_BackgroundTexture, destinationBackground);
+	DrawTexture(g_LaxManTexture, destinationLaxMan);
+	DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
+	DrawTexture(g_AttackTexture, destinationAttack);
 
 	if (g_GMoongussAttackTextureIsOn == true)
 	{
-		utils::DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
+		DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
 	}
 	if (g_LaxAttackTextureIsOn == true)
 	{
-		utils::DrawTexture(g_LaxAttackTexture, destinationTextBlock);
+		DrawTexture(g_LaxAttackTexture, destinationTextBlock);
 	}
 	if (g_WaitTextBlock == true)
 	{
-		utils::DrawTexture(g_WaitTexture, destinationTextBlock);
+		DrawTexture(g_WaitTexture, destinationTextBlock);
 	}
 	if (g_ItemTextureIsOn == true)
 	{
-		utils::DrawTexture(g_ItemTexture, destinationTextBlock);
+		DrawTexture(g_ItemTexture, destinationTextBlock);
 	}
 	if (g_SwitchTextureIsOn == true)
 	{
-		utils::DrawTexture(g_SwitchTexture, destinationTextBlock);
+		DrawTexture(g_SwitchTexture, destinationTextBlock);
 	}
 	if (g_RunTextureIsOn == true)
 	{
-		utils::DrawTexture(g_RunTexture, destinationTextBlock);
+		DrawTexture(g_RunTexture, destinationTextBlock);
 	}
 	if (g_ItemDoneTextureIsOn == true)
 	{
-		utils::DrawTexture(g_ItemDoneTexture, destinationTextBlock);
+		DrawTexture(g_ItemDoneTexture, destinationTextBlock);
 	}
 	if (g_NotFirstTurnTextureIsOn == true)
 	{
-		utils::DrawTexture(g_NotFirstTurnTexture, destinationTextBlock);
+		DrawTexture(g_NotFirstTurnTexture, destinationTextBlock);
 	}
 	if (g_FaintTextureIsOn == true)
 	{
-		utils::DrawTexture(g_FaintTexture, destinationTextBlock);
+		DrawTexture(g_FaintTexture, destinationTextBlock);
 	}
 	SetColor(0.27f, 0.27f, 0.27f);
 	FillRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, HPBarEnemyPokemon.hPBarWidth, g_Rects.HpBarEnemy.height);
@@ -158,7 +157,7 @@ void DrawBattle()
 	SetColor(0.f, 0.f, 0.f);
 	DrawRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, g_Rects.HpBarEnemy.width, g_Rects.HpBarEnemy.height);
 	DrawRect(g_Rects.HpBarAlly.left, g_Rects.HpBarAlly.top, g_Rects.HpBarAlly.width, g_Rects.HpBarAlly.height, 2.f);
-	utils::DrawTexture(g_GreenTexture, destinationBackground);
+	DrawTexture(g_GreenTexture, destinationBackground);
 	// sometimes you use utils and sometimes not, but you don't need to use it 
 	// unless you have another function with the same name and it's ambiguous
 }
@@ -170,15 +169,15 @@ void	UpdateBattle(float elapsedSec) {
 	{
 		Attack(elapsedSec);
 	}
-	if (g_Item == true)
+	if (g_Item)
 	{
 		Item(elapsedSec);
 	}
-	if (g_Switch == true)
+	if (g_Switch)
 	{
 		Switch(elapsedSec);
 	}
-	if (g_Run == true)
+	if (g_Run)
 	{
 		RunAway(elapsedSec);
 	}
@@ -196,11 +195,9 @@ void Attack(float elapsedSec)
 		LaxForward(elapsedSec);
 		g_LaxAttackTextureIsOn = true;
 		break;
-
 	case AttackPhase::phase_lax_backward:
 		LaxBackward(elapsedSec);
 		break;
-
 	case AttackPhase::phase_attack:
 		AttackEffect(elapsedSec, g_GodmoongussX, g_GodmoongussY);
 		break;
@@ -230,7 +227,6 @@ void Attack(float elapsedSec)
 	case AttackPhase::phase_laxcounter_backward:
 		LaxBackward(elapsedSec);
 		break;
-
 	case AttackPhase::phase_laxcounter_forward:
 		LaxForward(elapsedSec);
 		break;
@@ -389,7 +385,7 @@ void LaxBackward(float elapsedSec)
 		savedPosition = g_LaxManX;
 	}
 
-	float target = savedPosition - g_MovementLength;
+	float target{ savedPosition - g_MovementLength };
 
 	if (g_LaxManX > target) {
 		g_LaxManX -= g_SpeedLax * elapsedSec;
@@ -469,7 +465,7 @@ void GMoongussBackward(float elapsedSec)
 		savedPosition = g_GodmoongussX;
 	}
 
-	float target = savedPosition - g_MovementLength;
+	float target{ savedPosition - g_MovementLength };
 
 	if (g_GodmoongussX > target) {
 		g_GodmoongussX -= g_SpeedGmoonguss * elapsedSec;

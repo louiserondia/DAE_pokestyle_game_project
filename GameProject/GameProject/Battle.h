@@ -39,9 +39,9 @@ enum class ItemPhase
 
 struct HPBar {
 	float
-		hPBarHitAmmount,
-		hPBarTarget,
-		hPBarWidth = (g_WindowWidth * 0.3125f); // init with {}
+		hPBarHitAmmount{},
+		hPBarTarget{},
+		hPBarWidth{g_WindowWidth * 0.3125f };
 };
 
 struct Pokemon
@@ -66,20 +66,20 @@ g_PhaseWaitCounter{ 0.f },
 g_MovementLength{ 55.f }; // aren't some of these supposed to be const ? if yes write in -- CONST VAR -- above
 
 bool
-g_Attack{ false },
-g_Item{ false },
-g_Run{ false },
-g_Switch{ false },
-g_notFirstTurn{ false },
-g_LaxAttackTextureIsOn{ false },
-g_WaitTextBlock{ false },
-g_GMoongussAttackTextureIsOn{ false }, // this could be in the struct
-g_ItemTextureIsOn{ false },
-g_SwitchTextureIsOn{ false },
-g_RunTextureIsOn{ false },
-g_ItemDoneTextureIsOn{ false },
-g_NotFirstTurnTextureIsOn{ false },
-g_FaintTextureIsOn{ false };
+g_Attack{},
+g_Item{},
+g_Run{},
+g_Switch{},
+g_notFirstTurn{},
+g_LaxAttackTextureIsOn{},
+g_WaitTextBlock{},
+g_GMoongussAttackTextureIsOn{}, // this could be in the struct
+g_ItemTextureIsOn{},
+g_SwitchTextureIsOn{},
+g_RunTextureIsOn{},
+g_ItemDoneTextureIsOn{},
+g_NotFirstTurnTextureIsOn{},
+g_FaintTextureIsOn{};
 
 
 utils::Texture
@@ -101,7 +101,7 @@ g_FaintTexture{}; // you need a function to init and one to delete them
 // normally you don't need these source variables because the struct Texture has width ad height when you load an image in it (texture.width)
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f	textBlockSpriteSize{ g_WindowWidth * 0.0062548866f, g_WindowHeight * 0.674196351f };
-Point2f g_BackgroundPosition{ 1.f,1.f };
+Point2f g_BackgroundPosition{ 0.f,0.f };
 
 
 // and * 0.0062548866f -> also you can define it's position directly on the screen but you could also define it compared to another thing
