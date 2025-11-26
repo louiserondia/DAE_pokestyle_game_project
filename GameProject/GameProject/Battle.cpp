@@ -41,26 +41,26 @@ void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
 
 	if (!(g_Attack || g_Switch || g_Item || g_Run))
 	{
-		if (mouseX >= g_Rects.fightButton.left && mouseX <= (g_Rects.fightButton.left + g_Rects.fightButton.width) &&
-			mouseY >= g_Rects.fightButton.top && mouseY <= (g_Rects.fightButton.top + g_Rects.fightButton.height))
+		if (mouseX >= fightButton.left && mouseX <= (fightButton.left + fightButton.width) &&
+			mouseY >= fightButton.top && mouseY <= (fightButton.top + fightButton.height))
 		{
 			g_Attack = true;
 			std::cout << "it works" << std::endl;
 		}
-		else if (mouseX >= g_Rects.pokemonButton.left && mouseX <= (g_Rects.pokemonButton.left + g_Rects.pokemonButton.width) &&
-			mouseY >= g_Rects.pokemonButton.top && mouseY <= (g_Rects.pokemonButton.top + g_Rects.pokemonButton.height))
+		else if (mouseX >= pokemonButton.left && mouseX <= (pokemonButton.left + pokemonButton.width) &&
+			mouseY >= pokemonButton.top && mouseY <= (pokemonButton.top + pokemonButton.height))
 		{
 			g_Switch = true;
 			std::cout << "it works too" << std::endl;
 		}
-		else if (mouseX >= g_Rects.itemButton.left && mouseX <= (g_Rects.itemButton.left + g_Rects.itemButton.width) &&
-			mouseY >= g_Rects.itemButton.top && mouseY <= (g_Rects.itemButton.top + g_Rects.itemButton.height))
+		else if (mouseX >= itemButton.left && mouseX <= (itemButton.left + itemButton.width) &&
+			mouseY >= itemButton.top && mouseY <= (itemButton.top + itemButton.height))
 		{
 			g_Item = true;
 			std::cout << "it works aswell" << std::endl;
 		}
-		else if (mouseX >= g_Rects.runButton.left && mouseX <= (g_Rects.runButton.left + g_Rects.runButton.width) &&
-			mouseY >= g_Rects.runButton.top && mouseY <= (g_Rects.runButton.top + g_Rects.runButton.height))
+		else if (mouseX >= runButton.left && mouseX <= (runButton.left + runButton.width) &&
+			mouseY >= runButton.top && mouseY <= (runButton.top + runButton.height))
 		{
 			g_Run = true;
 			std::cout << "it works also" << std::endl;
@@ -82,15 +82,15 @@ void DrawBattle()
 	},
 	destinationLaxMan
 	{
-		g_LaxManX,
-		g_LaxManY,
+		AllyPokemon.xPos,
+		AllyPokemon.yPos,
 		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
 	destinationGodmoonguss
 	{
-		g_GodmoongussX,
-		g_GodmoongussY,
+		EnemyPokemon.xPos,
+		EnemyPokemon.yPos,
 		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
@@ -114,11 +114,11 @@ void DrawBattle()
 	DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
 	DrawTexture(g_AttackTexture, destinationAttack);
 
-	if (g_GMoongussAttackTextureIsOn == true)
+	if (EnemyPokemon.attackTextureIsOn == true)
 	{
 		DrawTexture(g_GodmoongussAttackTexture, destinationTextBlock);
 	}
-	if (g_LaxAttackTextureIsOn == true)
+	if (AllyPokemon.attackTextureIsOn == true)
 	{
 		DrawTexture(g_LaxAttackTexture, destinationTextBlock);
 	}
@@ -151,15 +151,14 @@ void DrawBattle()
 		DrawTexture(g_FaintTexture, destinationTextBlock);
 	}
 	SetColor(0.27f, 0.27f, 0.27f);
-	FillRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, HPBarEnemyPokemon.hPBarWidth, g_Rects.HpBarEnemy.height);
-	FillRect(g_Rects.HpBarAlly.left, g_Rects.HpBarAlly.top, HPBarAllyPokemon.hPBarWidth, g_Rects.HpBarAlly.height);
+	float hello{ HpBarEnemy.left + HPBarEnemyPokemon.hPBarWidth };
+	FillRect(HpBarEnemy.left, HpBarEnemy.top, HPBarEnemyPokemon.hPBarWidth, HpBarEnemy.height);
+	FillRect(HpBarAlly.left, HpBarAlly.top, HPBarAllyPokemon.hPBarWidth, HpBarAlly.height);
 
 	SetColor(0.f, 0.f, 0.f);
-	DrawRect(g_Rects.HpBarEnemy.left, g_Rects.HpBarEnemy.top, g_Rects.HpBarEnemy.width, g_Rects.HpBarEnemy.height);
-	DrawRect(g_Rects.HpBarAlly.left, g_Rects.HpBarAlly.top, g_Rects.HpBarAlly.width, g_Rects.HpBarAlly.height, 2.f);
+	DrawRect(HpBarEnemy.left, HpBarEnemy.top, HpBarEnemy.width, HpBarEnemy.height);
+	DrawRect(HpBarAlly.left, HpBarAlly.top, HpBarAlly.width, HpBarAlly.height, 2.f);
 	DrawTexture(g_GreenTexture, destinationBackground);
-	// sometimes you use utils and sometimes not, but you don't need to use it 
-	// unless you have another function with the same name and it's ambiguous
 }
 
 //		UPDATE
@@ -182,115 +181,108 @@ void	UpdateBattle(float elapsedSec) {
 		RunAway(elapsedSec);
 	}
 }
-
-
 void Attack(float elapsedSec)
 {
-	float speedHPBar{ 1.f };
-	static float PhaseFaintCounter{ 0.f };
-
-	switch (Attackphase)
+	switch (AttackSequence)
 	{
-	case AttackPhase::phase_lax_forward:
-		LaxForward(elapsedSec);
-		g_LaxAttackTextureIsOn = true;
+	case Phases::phase_allypokemon_forward:
+		MoveForward(elapsedSec, AllyPokemon.xPos);
+		AllyPokemon.attackTextureIsOn = true;
 		break;
-	case AttackPhase::phase_lax_backward:
-		LaxBackward(elapsedSec);
+	case Phases::phase_allypokemon_backward:
+		MoveBackward(elapsedSec, AllyPokemon.xPos);
 		break;
-	case AttackPhase::phase_attack:
-		AttackEffect(elapsedSec, g_GodmoongussX, g_GodmoongussY);
+	case Phases::phase_attack:
+		AttackEffect(elapsedSec, EnemyPokemon.xPos, EnemyPokemon.yPos);
 		break;
-	case AttackPhase::phase_gmoonguss_forward:
-		GMoongussForward(elapsedSec);
+	case Phases::phase_enemypokemon_forward:
+		MoveForward(elapsedSec, EnemyPokemon.xPos);
 		break;
-	case AttackPhase::phase_gmoonguss_backward:
-		GMoongussBackward(elapsedSec);
+	case Phases::phase_enemypokemon_backward:
+		MoveBackward(elapsedSec, EnemyPokemon.xPos);
 		break;
-	case AttackPhase::phase_hpbar1_down:
-		HPBar1Down(elapsedSec);
+	case Phases::phase_hpbarenemy_down:
+		HPBarMath();
+		HPBarEnemyDown(elapsedSec);
 		break;
-	case AttackPhase::phase_wait:
-		g_LaxAttackTextureIsOn = false;
+	case Phases::phase_wait:
+		AllyPokemon.attackTextureIsOn = false;
 		Wait(elapsedSec);
 		break;
-	case AttackPhase::phase_gmoongusscounter_backward:
-		GMoongussBackward(elapsedSec);
-		g_GMoongussAttackTextureIsOn = true;
+	case Phases::phase_enemypokemoncounter_backward:
+		MoveBackward(elapsedSec, EnemyPokemon.xPos);
+		EnemyPokemon.attackTextureIsOn = true;
 		break;
-	case AttackPhase::phase_gmoongusscounter_forward:
-		GMoongussForward(elapsedSec);
+	case Phases::phase_enemypokemoncounter_forward:
+		MoveForward(elapsedSec, EnemyPokemon.xPos);
 		break;
-	case AttackPhase::phase_attackcounter:
-		AttackEffect(elapsedSec, g_LaxManX, g_LaxManY);
+	case Phases::phase_attackcounter:
+		AttackEffect(elapsedSec, AllyPokemon.xPos, AllyPokemon.yPos);
 		break;
-	case AttackPhase::phase_laxcounter_backward:
-		LaxBackward(elapsedSec);
+	case Phases::phase_allypokemoncounter_backward:
+		MoveBackward(elapsedSec, AllyPokemon.xPos);
 		break;
-	case AttackPhase::phase_laxcounter_forward:
-		LaxForward(elapsedSec);
+	case Phases::phase_allypokemoncounter_forward:
+		MoveForward(elapsedSec, AllyPokemon.xPos);
 		break;
-	case AttackPhase::phase_hpbar2_down:
-		HPBar2Down(elapsedSec);
+	case Phases::phase_hpbarally_down:
+		HPBarMath();
+		HPBarAllyDown(elapsedSec);
 		break;
-	case AttackPhase::phase_done:
-		g_GMoongussAttackTextureIsOn = false;
+	case Phases::phase_done:
+		EnemyPokemon.attackTextureIsOn = false;
 		if (g_Attack)
 		{
-			Attackphase = AttackPhase::phase_lax_forward;
+			AttackSequence = Phases::phase_allypokemon_forward;
 			g_Attack = false;
 			g_notFirstTurn = true;
 		}
 		break;
 	}
 }
-
 void Item(float elapsedSec)
 {
-	static bool onlyOnce{ false }; // maybe try to get rid of these
-	static float phaseWaitCounter{ 0.f };
-	static float phaseDoneCounter{ 0.f };
-	static float phaseFaintCounter{ 0.f };
-	float speedHPBar{ 1.f };
 	if (g_notFirstTurn == true)
 	{
-		if (onlyOnce == false)
+		if (g_ItemOnlyOnce == false)
 		{
-			switch (Itemphase)
+			switch (ItemSequence)
 			{
-			case ItemPhase::phase_hpbar2_up:
-				HPBar2Up(elapsedSec);
+			case Phases::phase_hpbarally_up:
+				HPBarMath();
+				HPBarAllyUp(elapsedSec);
 				g_ItemTextureIsOn = true;
 				break;
-			case ItemPhase::phase_itemwait:
+			case Phases::phase_wait:
 				g_ItemTextureIsOn = false;
 				Wait(elapsedSec);
 				break;
-			case ItemPhase::phase_itemgmoongusscounter_backward:
-				GMoongussBackward(elapsedSec);
-				g_GMoongussAttackTextureIsOn = true;
+			case Phases::phase_enemypokemoncounter_backward:
+				MoveBackward(elapsedSec, EnemyPokemon.xPos);
+				EnemyPokemon.attackTextureIsOn = true;
 				break;
-			case ItemPhase::phase_itemgmoongusscounter_forward:
-				GMoongussForward(elapsedSec);
+			case Phases::phase_enemypokemoncounter_forward:
+				MoveForward(elapsedSec, EnemyPokemon.xPos);
 				break;
-			case ItemPhase::phase_itemattackcounter:
-				AttackEffect(elapsedSec, g_LaxManX, g_LaxManY);
+			case Phases::phase_attackcounter:
+				AttackEffect(elapsedSec, AllyPokemon.xPos, AllyPokemon.yPos);
 				break;
-			case ItemPhase::phase_itemlaxcounter_backward:
-				LaxBackward(elapsedSec);
+			case Phases::phase_allypokemoncounter_backward:
+				MoveBackward(elapsedSec, AllyPokemon.xPos);
 				break;
-			case ItemPhase::phase_itemlaxcounter_forward:
-				LaxForward(elapsedSec);
+			case Phases::phase_allypokemoncounter_forward:
+				MoveForward(elapsedSec, AllyPokemon.xPos);
 				break;
-			case ItemPhase::phase_itemhpbar2_down:
-				HPBar2Down(elapsedSec);
+			case Phases::phase_hpbarally_down:
+				HPBarMath();
+				HPBarAllyDown(elapsedSec);
 				break;
-			case ItemPhase::phase_itemdone:
-				g_GMoongussAttackTextureIsOn = false;
+			case Phases::phase_done:
+				EnemyPokemon.attackTextureIsOn = false;
 				if (g_Item)
 				{
 					g_Item = false;
-					onlyOnce = true;
+					g_ItemOnlyOnce = true;
 					if (HPBarAllyPokemon.hPBarWidth <= 0.f)
 					{
 						g_FaintTextureIsOn = true;
@@ -302,11 +294,11 @@ void Item(float elapsedSec)
 		else
 		{
 			g_ItemDoneTextureIsOn = true;
-			phaseDoneCounter += 1.f;
-			if (phaseDoneCounter >= 180)
+			g_PhaseDoneCounter += 1.f;
+			if (g_PhaseDoneCounter >= 180)
 			{
 				g_ItemDoneTextureIsOn = false;
-				phaseDoneCounter = 0;
+				g_PhaseDoneCounter = 0;
 				g_Item = false;
 
 			}
@@ -315,21 +307,20 @@ void Item(float elapsedSec)
 	else
 	{
 		g_NotFirstTurnTextureIsOn = true;
-		phaseDoneCounter += 1.f;
-		if (phaseDoneCounter >= 180)
+		g_PhaseDoneCounter += 1.f;
+		if (g_PhaseDoneCounter >= 180)
 		{
-			phaseDoneCounter = 0;
+			g_PhaseDoneCounter = 0;
 			g_NotFirstTurnTextureIsOn = false;
 			g_Item = false;
 
 		}
 	}
 }
-
 void Switch(float elapsedSec)
 {
 	const float SwitchIncrementation{ 50.f };
-	static float g_PhaseWaitCounter{ 0.f };
+
 	g_SwitchTextureIsOn = true;
 	g_PhaseWaitCounter += SwitchIncrementation * elapsedSec;
 	if (g_PhaseWaitCounter >= 100)
@@ -339,11 +330,9 @@ void Switch(float elapsedSec)
 		g_Switch = false;
 	}
 }
-
 void RunAway(float elapsedSec)
 {
 	const float RunIncrementation{ 50.f };
-	static float g_PhaseWaitCounter{ 0.f };
 	g_RunTextureIsOn = true;
 	g_PhaseWaitCounter += RunIncrementation * elapsedSec;
 	if (g_PhaseWaitCounter >= 100)
@@ -353,53 +342,6 @@ void RunAway(float elapsedSec)
 		g_Run = false;
 	}
 }
-
-void LaxForward(float elapsedSec)
-{
-	static float savedPosition = -1;
-
-	if (savedPosition < 0) {
-		savedPosition = g_LaxManX;
-	}
-
-	float target = savedPosition + g_MovementLength;
-
-	if (g_LaxManX < target) {
-		g_LaxManX += g_SpeedLax * elapsedSec;
-		if (g_LaxManX > target) {
-			g_LaxManX = target;
-			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_lax_forward || Attackphase == AttackPhase::phase_laxcounter_forward)
-				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-			else if (Itemphase == ItemPhase::phase_itemlaxcounter_forward)
-				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
-		}
-	}
-}
-
-void LaxBackward(float elapsedSec)
-{
-	static float savedPosition = -1;
-
-	if (savedPosition < 0) {
-		savedPosition = g_LaxManX;
-	}
-
-	float target{ savedPosition - g_MovementLength };
-
-	if (g_LaxManX > target) {
-		g_LaxManX -= g_SpeedLax * elapsedSec;
-		if (g_LaxManX < target) {
-			g_LaxManX = target;
-			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_lax_backward || Attackphase == AttackPhase::phase_laxcounter_backward)
-				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-			else if (Itemphase == ItemPhase::phase_itemlaxcounter_backward)
-				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
-		}
-	}
-}
-
 void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
 {
 	float attackIncrimintation{ 60.f };
@@ -423,75 +365,14 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 	else
 	{
 		g_SpeedAttack = 0.f;
-		attackSpriteSize.x = (g_WindowWidth* -0.99375f);
+		attackSpriteSize.x = (g_WindowWidth * -0.99375f);
 		attackSpriteSize.y = (g_WindowHeight * -0.025f);
-		if (Attackphase == AttackPhase::phase_attack || Attackphase == AttackPhase::phase_attackcounter)
-			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-		else if (Itemphase == ItemPhase::phase_itemattackcounter)
-			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		if (AttackSequence == Phases::phase_attack || AttackSequence == Phases::phase_attackcounter)
+			AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+		else if (ItemSequence == Phases::phase_attackcounter)
+			ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 	}
 }
-
-void GMoongussForward(float elapsedSec)
-{
-	static float savedPosition = -1;
-
-	if (savedPosition < 0) {
-		savedPosition = g_GodmoongussX;
-	}
-
-	float target = savedPosition + g_MovementLength;
-
-	if (g_GodmoongussX < target) {
-		g_GodmoongussX += g_SpeedGmoonguss * elapsedSec;
-		if (g_GodmoongussX > target) {
-			g_GodmoongussX = target;
-			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_forward || Attackphase == AttackPhase::phase_gmoonguss_forward)
-				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_forward)
-				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
-		}
-	}
-
-}
-
-void GMoongussBackward(float elapsedSec)
-{
-
-	static float savedPosition = -1;
-
-	if (savedPosition < 0) {
-		savedPosition = g_GodmoongussX;
-	}
-
-	float target{ savedPosition - g_MovementLength };
-
-	if (g_GodmoongussX > target) {
-		g_GodmoongussX -= g_SpeedGmoonguss * elapsedSec;
-		if (g_GodmoongussX < target) {
-			g_GodmoongussX = target;
-			savedPosition = -1;
-			if (Attackphase == AttackPhase::phase_gmoongusscounter_backward || Attackphase == AttackPhase::phase_gmoonguss_backward)
-				Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-			else if (Itemphase == ItemPhase::phase_itemgmoongusscounter_backward)
-				Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
-		}
-	}
-}
-
-void HPBar1Down(float elapsedSec)
-{
-
-	HPBarEnemyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
-	if (HPBarEnemyPokemon.hPBarWidth <= HPBarEnemyPokemon.hPBarTarget)
-	{
-		HPBarEnemyPokemon.hPBarWidth = HPBarEnemyPokemon.hPBarTarget;
-		HPBarEnemyPokemon.hPBarTarget = HPBarEnemyPokemon.hPBarTarget - (HPBarEnemyPokemon.hPBarHitAmmount);
-		Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-	}
-}
-
 void Wait(float elapsedSec)
 {
 	g_WaitTextBlock = true;
@@ -501,37 +382,114 @@ void Wait(float elapsedSec)
 	if (g_PhaseWaitCounter >= 100)
 	{
 		g_PhaseWaitCounter = 0;
-		if (Attackphase == AttackPhase::phase_wait)
-			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-		else if (Itemphase == ItemPhase::phase_itemwait)
-			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		if (AttackSequence == Phases::phase_wait)
+			AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+		else if (ItemSequence == Phases::phase_wait)
+			ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 		g_WaitTextBlock = false;
 	}
 }
 
-void HPBar2Down(float elapsedSec)
+void MoveForward(float elapsedSec, float& xPos)
 {
-	HPBarAllyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
-	if (HPBarAllyPokemon.hPBarWidth <= HPBarAllyPokemon.hPBarTarget)
-	{
-		HPBarAllyPokemon.hPBarWidth = HPBarAllyPokemon.hPBarTarget;
-		HPBarAllyPokemon.hPBarTarget = HPBarAllyPokemon.hPBarTarget - (HPBarAllyPokemon.hPBarHitAmmount);
-		if (Attackphase == AttackPhase::phase_hpbar2_down)
-			Attackphase = static_cast<AttackPhase>(static_cast<int>(Attackphase) + 1);
-		else if (Itemphase == ItemPhase::phase_itemhpbar2_down)
-			Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+	if (g_SavedPosition < 0) {
+		g_SavedPosition = xPos;
+	}
+
+	float target = g_SavedPosition + g_MovementLength;
+
+	if (xPos < target) {
+		xPos += g_AttackSpeed * elapsedSec;
+		if (xPos > target) {
+			xPos = target;
+			g_SavedPosition = -1;
+			if (AttackSequence == Phases::phase_enemypokemoncounter_forward ||
+				AttackSequence == Phases::phase_enemypokemon_forward ||
+				AttackSequence == Phases::phase_allypokemoncounter_forward ||
+				AttackSequence == Phases::phase_allypokemon_forward)
+				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+			else if (ItemSequence == Phases::phase_enemypokemoncounter_forward ||
+				ItemSequence == Phases::phase_allypokemoncounter_forward)
+				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+		}
 	}
 }
+void MoveBackward(float elapsedSec, float& xPos)
+{
+	if (g_SavedPosition < 0) {
+		g_SavedPosition = xPos;
+	}
 
+	float target = g_SavedPosition - g_MovementLength;
+
+	if (xPos > target) {
+		xPos -= g_AttackSpeed * elapsedSec;
+		if (xPos < target) {
+			xPos = target;
+			g_SavedPosition = -1;
+			if (AttackSequence == Phases::phase_enemypokemoncounter_backward ||
+				AttackSequence == Phases::phase_enemypokemon_backward ||
+				AttackSequence == Phases::phase_allypokemoncounter_backward ||
+				AttackSequence == Phases::phase_allypokemon_backward)
+				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+			else if (ItemSequence == Phases::phase_enemypokemoncounter_backward ||
+				ItemSequence == Phases::phase_allypokemoncounter_backward)
+				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+		}
+	}
+}
 // theres a function hp1up, then hp2down, 
 // it could maybe be only one function and you pass the number of damage/heal to it ?
-void HPBar2Up(float elapsedSec)
+void HPBarAllyUp(float elapsedSec)
 {
 	HPBarAllyPokemon.hPBarWidth += g_SpeedHPBar * elapsedSec;
-	if (HPBarAllyPokemon.hPBarWidth >= g_Rects.HpBarAlly.width)
+	static float target{ ((HPBarAllyPokemon.hpBarCurrent / 100.f) * HpBarAlly.width) };
+	if (HPBarAllyPokemon.hPBarWidth >= target)
 	{
-		HPBarAllyPokemon.hPBarWidth = g_Rects.HpBarAlly.width;
-		HPBarAllyPokemon.hPBarTarget = g_Rects.HpBarAlly.width - (HPBarAllyPokemon.hPBarHitAmmount);
-		Itemphase = static_cast<ItemPhase>(static_cast<int>(Itemphase) + 1);
+		HPBarAllyPokemon.hPBarWidth = target;
+		ItemSequence = Phases::phase_wait;
+	}
+}
+void HPBarAllyDown(float elapsedSec)
+{
+	HPBarAllyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
+	static float target{ ((HPBarAllyPokemon.hpBarCurrent / 100.f) * HpBarAlly.width) };
+	if (HPBarAllyPokemon.hPBarWidth <= target)
+	{
+		HPBarAllyPokemon.hPBarWidth = target;
+		if (AttackSequence == Phases::phase_hpbarally_down)
+			AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+		else if (ItemSequence == Phases::phase_hpbarally_down)
+			ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+	}
+}
+void HPBarEnemyDown(float elapsedSec)
+{
+
+	HPBarEnemyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
+	static float target{ ((HPBarEnemyPokemon.hpBarCurrent / 100.f) * HpBarEnemy.width) };
+	if (HPBarEnemyPokemon.hPBarWidth <= target)
+	{
+		HPBarEnemyPokemon.hPBarWidth = target;
+		AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+	}
+}
+void HPBarMath()
+{
+	if (AttackSequence == Phases::phase_hpbarenemy_down)
+	{
+		HPBarEnemyPokemon.hpBarCurrent -= HPBarEnemyPokemon.hpBarHitAmmountMath;
+	}
+	else if (AttackSequence == Phases::phase_hpbarally_down)
+	{
+		HPBarAllyPokemon.hpBarCurrent -= HPBarAllyPokemon.hpBarHitAmmountMath;
+	}
+	else if (ItemSequence == Phases::phase_hpbarally_up)
+	{
+		HPBarAllyPokemon.hpBarCurrent += (100 - HPBarAllyPokemon.hpBarCurrent);
+	}
+	else if (ItemSequence == Phases::phase_hpbarally_down)
+	{
+		HPBarAllyPokemon.hpBarCurrent -= HPBarAllyPokemon.hpBarHitAmmountMath;
 	}
 }
