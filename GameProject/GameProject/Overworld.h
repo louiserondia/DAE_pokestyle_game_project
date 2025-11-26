@@ -50,14 +50,14 @@ struct Character {
 struct Scene {
 	Texture	texture{};
 	Rectf	dst{};
-	float	startOffset{};
+	Point2f	startOffset{};
 	float	screenWidth{};
 	float	screenHeight{};
 };
 
 struct Camera {
 	Point2f pos{};
-	float	zoom{};
+	float	zoom{ 2.f };
 };
 
 struct World {
@@ -89,6 +89,7 @@ void	InitScenes();
 void	InitCamera();
 void	InitCharacter();
 void	InitAnimFrames();
+void	InitCollisionMap();
 
 //		END
 

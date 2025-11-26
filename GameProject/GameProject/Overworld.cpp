@@ -2,6 +2,7 @@
 #include "Core.h"
 #include "Overworld.h"
 #include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <mmsystem.h>
 
@@ -11,14 +12,11 @@
 //		INITIALIZATIONS
 
 void	InitOverworld() {
-	InitCamera();
 	InitScenes();
+	InitCamera();
 	InitAnimFrames();
 	InitCharacter();
-}
-
-void	InitCamera() {
-	g_Camera.zoom = 2.f;
+	InitCollisionMap();
 }
 
 void	InitScenes() {
@@ -33,8 +31,19 @@ void	InitScenes() {
 
 	pScene->screenWidth = screenWidth;
 	pScene->screenHeight = screenHeight;
-	pScene->startOffset = g_TileSize / 4;
+	pScene->startOffset.x = std::max(0.f, (g_WindowWidth - pScene->screenWidth) / 2);
+	pScene->startOffset.y = std::max(0.f, (g_WindowHeight - pScene->screenHeight) / 2);
+
+	//std::cout << "start offset y : " << pScene->startOffset.y;
 	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
+}
+
+void	InitCamera() {
+	Scene* pScene{ &g_World.scenes[0] };
+
+	g_Camera.pos.x = -pScene->startOffset.x;
+	g_Camera.pos.y = -pScene->startOffset.y;
+	g_Camera.zoom = 2.f;
 }
 
 void	InitAnimFrames() {
@@ -60,6 +69,13 @@ void	InitCharacter() {
 	};
 	g_Character.curAnimFrame = g_AnimFrames["idledown"];
 	g_Character.dir = Point2f{ 0.f, 1.f };
+}
+
+void	InitCollisionMap() {
+	std::ifstream	file("Resources/map_three_island.txt");
+	if (!file) {
+
+	}
 }
 
 //		END
@@ -126,7 +142,6 @@ void UpdateCameraPos(float elapsedSec) {
 	{
 		g_Camera.pos.y += dY;
 	}
-
 }
 
 void	UpdateMapPos(float elapsedSec) {

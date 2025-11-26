@@ -8,8 +8,8 @@ using namespace utils;
 std::string g_WindowTitle{ "Pokestyle Game Project - Rahimov, Javid & Rondia, Louise - 1DAE12" };
 
 // Change the window dimensions here
-float g_WindowWidth{ 768 };
-float g_WindowHeight{ 768 };
+float g_WindowWidth{ 1200 };
+float g_WindowHeight{ 800 };
 #pragma endregion gameInformation
 
 #pragma region ownDeclarations
