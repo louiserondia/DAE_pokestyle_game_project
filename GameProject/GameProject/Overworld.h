@@ -10,7 +10,6 @@ using namespace utils;
 //		--- CONST VARIABLES ---
 
 const int	g_NrScenes{ 1 };
-const float	g_TileSize{ 32.f };
 const int	g_CharacterNrFrames{ 12 }; // maybe should be nrCol and rows
 const float g_MoveSpeed{ 100.f };
 
@@ -33,12 +32,24 @@ struct AnimFrame {
 	int nrFrames{};
 };
 
+
+// quand on press une key, elle est ajoutée comme next key
+// si target et curTile sont == (ça inclut aussi le cas où y a pas de curKey), curKey = next key
+// quand on lance la curKey, on ajoute 1 à targetTile dans la direction
+// ensuite fonction en boucle déplace position vers target (avancement stocké dans une variable)
+// quand l'avancement est fini, tile = target 
+// si tile == target et curKey != null -> avancer encore 
+
 struct Character {
+	int			curTile{};
+	int			targetTile{};
+	float		offsetTile{};
+	bool		isMoving{};
+
 	Rectf		dst{};
 	Rectf		src{ 0.f, 0.f, 16.f, 24.f };
 	Point2f		dir{};
-	float		vx{};
-	float		vy{};
+
 	AnimFrame	curAnimFrame;
 	Point2f		frameDimensions{ 16.f, 24.f };
 	int			frameStartIndex{};
@@ -57,7 +68,7 @@ struct Scene {
 
 struct Camera {
 	Point2f pos{};
-	float	zoom{ 2.f };
+	float	zoom{ 4.f };
 };
 
 struct World {
@@ -68,17 +79,20 @@ struct World {
 
 //		--- VARIABLES ---
 
-const float g_WW{ 768.f };
-const float g_WH{ 768.f };
-
 World		g_World{};
 Character	g_Character{};
 Camera		g_Camera{};
 
+int			g_NrCols{};
+int			g_NrRows{};
+
 std::map<std::string, AnimFrame> g_AnimFrames{};
 
 float		g_FrameTime{};
+float		g_TileSize{ 8.f };
 
+SDL_Keycode g_CurKey{};
+SDL_Keycode g_NextKey{};
 
 //		--- FUNCTIONS ---
 
@@ -101,17 +115,27 @@ void	DrawOverworld();
 void	DrawMap();
 void	DrawCharacter();
 
+//		INPUT HANDLING
+
+void	HandleKeyDownOverworld(SDL_Keycode key);
+void	UpdateCurKey();
+
 //		UPDATE
 
 void	UpdateOverworld(float elapsedSec);
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
-void	UpdateCharacterDirSpeed(const Uint8* pStates, float elapsedSec);
-void	UpdateCharacterFrame(const Uint8* pStates, float elapsedSec);
+void	UpdateCharacterPos(float elapsedSec);
+void	UpdateCharacterFrame(float elapsedSec);
 
 //		UTILS
 
-bool	IsBetweenTiles();
+int		TileFromPos(float x, float y);
+int		TileFromPos(const Point2f& pos);
+Point2f	PosFromTile(int index);
+Point2f	PosFromTile(int row, int col);
+int		GetTargetTile(int curTile, SDL_Keycode key);
+Point2f	GetDirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
 
