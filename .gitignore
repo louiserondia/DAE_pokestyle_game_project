@@ -12,4 +12,4 @@ release
 x86
 .DS_Store
 .vscode
-*_temp_folder
+# *_temp_folder
