@@ -112,7 +112,8 @@ void	FreeOverworld() {
 
 void	DrawOverworld() {
 	DrawMap();
-	DrawAllTiles();
+	//DrawTiles();
+	//DrawCollisions();
 	DrawCharacter();
 }
 
@@ -144,26 +145,28 @@ void	HandleKeyDownOverworld(SDL_Keycode key) {
 			g_Character.dir = Point2f{ 0.f, -1.f };
 		else if (!g_Character.isMoving && key == SDLK_DOWN && g_Character.dir.y != 1.f)
 			g_Character.dir = Point2f{ 0.f, 1.f };
-
 		else if (g_CurKey != key)
 			g_NextKey = key;
+		UpdateAnimFrameState();
 	}
 }
 
 void	UpdateCurKey() {
 
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+	const int targetTile{ GetTargetTile(g_Character.curTile, g_NextKey) };
 
 	if (!pStates[SDL_GetScancodeFromKey(g_CurKey)])
 		g_CurKey = 0;
 
-	if (g_Character.curTile == g_Character.targetTile && g_NextKey) {
+	if (g_Character.curTile == g_Character.targetTile && g_NextKey && IsWalkable(targetTile)) {
 		g_CurKey = g_NextKey;
 		g_NextKey = 0;
 		g_Character.dir = GetDirFromKey(g_CurKey);
-		g_Character.targetTile = GetTargetTile(g_Character.curTile, g_CurKey);
+		g_Character.targetTile = targetTile;
 		g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
 		g_Character.isMoving = true;
+		UpdateAnimFrameState();
 	}
 }
 
@@ -173,7 +176,7 @@ void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
 	UpdateCharacterPos(elapsedSec);
-	UpdateCharacterFrame(elapsedSec);
+	UpdateCharacterFrameInTime(elapsedSec);
 	UpdateMapPos(elapsedSec);
 	UpdateCameraPos(elapsedSec);
 	UpdateCurKey();
@@ -197,10 +200,13 @@ void UpdateCharacterPos(float elapsedSec) {
 		g_Character.dst.top = g_Character.targetPos.y;
 		g_Progression = 0.f;
 		g_Character.curTile = g_Character.targetTile;
-		if (!g_CurKey)
+
+		const int targetTile{ GetTargetTile(g_Character.curTile, g_CurKey) };
+
+		if (!g_CurKey || !IsWalkable(targetTile))
 			g_Character.isMoving = false;
 		else {
-			g_Character.targetTile = GetTargetTile(g_Character.curTile, g_CurKey);
+			g_Character.targetTile = targetTile;
 			g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
 		}
 	}
@@ -231,11 +237,7 @@ void	UpdateMapPos(float elapsedSec) {
 	pScene->dst.top = -g_Camera.pos.y;
 }
 
-void	UpdateCharacterFrame(float elapsedSec) {
-
-	//	maybe i can call the update startindex when i udpate is moving instead of all the time
-	// and update frame for animation all the time
-
+void	UpdateAnimFrameState() {
 	if (g_Character.dir.x == 1.f)
 		g_Character.curAnimFrame = g_AnimFrames["walkright"];
 	else if (g_Character.dir.x == -1.f)
@@ -244,7 +246,9 @@ void	UpdateCharacterFrame(float elapsedSec) {
 		g_Character.curAnimFrame = g_AnimFrames["walkup"];
 	else if (g_Character.dir.y == 1.f)
 		g_Character.curAnimFrame = g_AnimFrames["walkdown"];
+}
 
+void	UpdateCharacterFrameInTime(float elapsedSec) {
 	g_Character.frameStartIndex = g_Character.curAnimFrame.col;
 	g_Character.src.left = (g_Character.frameStartIndex + g_Character.frameIndex) * g_Character.frameDimensions.x;
 
@@ -332,26 +336,46 @@ bool	IsPosInCenterY(float pos) {
 	return std::abs(pos - centerY) < epsilon;
 }
 
-void	DrawAllTiles() {
-	bool startsBlack{};
+void	DrawTiles() {
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
 	for (int row{}; row < g_NrRows; ++row) {
-		startsBlack = (row & 1 ? 0 : 1);
-		if (row * g_TileSize > g_WindowHeight)
-			continue;
 		for (int col{}; col < g_NrCols; ++col) {
-			if (col * g_TileSize > g_WindowWidth)
-				continue;
 			SetColor(g_White);
-			DrawRect(col * g_TileSize, row * g_TileSize,
-				col * g_TileSize + g_TileSize, row * g_TileSize + g_TileSize, 3.f);
+			DrawRect(
+				pScene->dst.left + col * g_TileSize,
+				pScene->dst.top + row * g_TileSize,
+				g_TileSize,
+				g_TileSize,
+				3.f
+			);
+		}
+	}
+}
 
+void	DrawCollisions() {
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+
+	for (int row{}; row < g_NrRows; ++row) {
+		for (int col{}; col < g_NrCols; ++col) {
+
+			SetColor(!IsWalkable(GetIndex(row, col, g_NrCols)) ? g_Red : g_White);
+			FillRect(
+				pScene->dst.left + col * g_TileSize,
+				pScene->dst.top + row * g_TileSize,
+				g_TileSize,
+				g_TileSize
+			);
 		}
 	}
 }
 
 void PrintTileIndex(float x, float y) {
 	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x + g_Camera.pos.x, y + g_Camera.pos.y) << std::endl;
+}
+
+bool IsWalkable(int index) {
+	return !g_CollisionMap[index];
 }
 
 #pragma endregion ownDeclarations

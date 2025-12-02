@@ -14,6 +14,7 @@ const float g_MoveSpeed{ 200.f };
 
 const Color4f g_White(.9f, .9f, .9f, .5f);
 const Color4f g_Black(.2f, .2f, .2f, .5f);
+const Color4f g_Red(1.f, .0f, .0f, .5f);
 
 //		--- ENUM & STRUCTS ---
 
@@ -113,6 +114,8 @@ void	FreeOverworld();
 void	DrawOverworld();
 void	DrawMap();
 void	DrawCharacter();
+void	DrawTiles();
+void	DrawCollisions();
 
 //		INPUT HANDLING
 
@@ -125,7 +128,8 @@ void	UpdateOverworld(float elapsedSec);
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
 void	UpdateCharacterPos(float elapsedSec);
-void	UpdateCharacterFrame(float elapsedSec);
+void	UpdateAnimFrameState();
+void	UpdateCharacterFrameInTime(float elapsedSec);
 
 //		UTILS
 
@@ -140,8 +144,8 @@ Point2f	GetTargetPos(Point2f rect, SDL_Keycode key);
 Point2f	GetDirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
-void	DrawAllTiles();
 void	PrintTileIndex(float x, float y);
+bool	IsWalkable(int index);
 
 
 #pragma endregion ownDeclarations
