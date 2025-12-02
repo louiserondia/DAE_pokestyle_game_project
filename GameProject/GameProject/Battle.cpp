@@ -45,6 +45,8 @@ void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
 			mouseY >= fightButton.top && mouseY <= (fightButton.top + fightButton.height))
 		{
 			g_Attack = true;
+			Damage(HPBarEnemyPokemon);
+			Damage(HPBarAllyPokemon);
 			std::cout << "it works" << std::endl;
 		}
 		else if (mouseX >= pokemonButton.left && mouseX <= (pokemonButton.left + pokemonButton.width) &&
@@ -57,6 +59,7 @@ void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
 			mouseY >= itemButton.top && mouseY <= (itemButton.top + itemButton.height))
 		{
 			g_Item = true;
+			Heal(HPBarAllyPokemon);
 			std::cout << "it works aswell" << std::endl;
 		}
 		else if (mouseX >= runButton.left && mouseX <= (runButton.left + runButton.width) &&
@@ -82,15 +85,15 @@ void DrawBattle()
 	},
 	destinationLaxMan
 	{
-		AllyPokemon.xPos,
-		AllyPokemon.yPos,
+		AllyPokemon.position.x,
+		AllyPokemon.position.y,
 		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
 	destinationGodmoonguss
 	{
-		EnemyPokemon.xPos,
-		EnemyPokemon.yPos,
+		EnemyPokemon.position.x,
+		EnemyPokemon.position.y,
 		g_WindowWidth * 0.35125f,
 		g_WindowHeight * 0.39f,
 	},
@@ -185,55 +188,41 @@ void Attack(float elapsedSec)
 {
 	switch (AttackSequence)
 	{
-	case Phases::phase_allypokemon_forward:
-		MoveForward(elapsedSec, AllyPokemon.xPos);
+	case Phases::phase_allypokemon_move:
+		Move(elapsedSec, AllyPokemon,1);
 		AllyPokemon.attackTextureIsOn = true;
 		break;
-	case Phases::phase_allypokemon_backward:
-		MoveBackward(elapsedSec, AllyPokemon.xPos);
-		break;
 	case Phases::phase_attack:
-		AttackEffect(elapsedSec, EnemyPokemon.xPos, EnemyPokemon.yPos);
+		AttackEffect(elapsedSec, EnemyPokemon.position.x, EnemyPokemon.position.y);
 		break;
-	case Phases::phase_enemypokemon_forward:
-		MoveForward(elapsedSec, EnemyPokemon.xPos);
-		break;
-	case Phases::phase_enemypokemon_backward:
-		MoveBackward(elapsedSec, EnemyPokemon.xPos);
+	case Phases::phase_enemypokemon_move:
+		Move(elapsedSec, EnemyPokemon,1);
 		break;
 	case Phases::phase_hpbarenemy_down:
-		HPBarMath();
 		HPBarEnemyDown(elapsedSec);
 		break;
 	case Phases::phase_wait:
 		AllyPokemon.attackTextureIsOn = false;
 		Wait(elapsedSec);
 		break;
-	case Phases::phase_enemypokemoncounter_backward:
-		MoveBackward(elapsedSec, EnemyPokemon.xPos);
+	case Phases::phase_enemypokemoncounter_move:
+		Move(elapsedSec, EnemyPokemon,-1);
 		EnemyPokemon.attackTextureIsOn = true;
 		break;
-	case Phases::phase_enemypokemoncounter_forward:
-		MoveForward(elapsedSec, EnemyPokemon.xPos);
-		break;
 	case Phases::phase_attackcounter:
-		AttackEffect(elapsedSec, AllyPokemon.xPos, AllyPokemon.yPos);
+		AttackEffect(elapsedSec, AllyPokemon.position.x, AllyPokemon.position.y);
 		break;
-	case Phases::phase_allypokemoncounter_backward:
-		MoveBackward(elapsedSec, AllyPokemon.xPos);
-		break;
-	case Phases::phase_allypokemoncounter_forward:
-		MoveForward(elapsedSec, AllyPokemon.xPos);
+	case Phases::phase_allypokemoncounter_move:
+		Move(elapsedSec, AllyPokemon,-1);
 		break;
 	case Phases::phase_hpbarally_down:
-		HPBarMath();
 		HPBarAllyDown(elapsedSec);
 		break;
 	case Phases::phase_done:
 		EnemyPokemon.attackTextureIsOn = false;
 		if (g_Attack)
 		{
-			AttackSequence = Phases::phase_allypokemon_forward;
+			AttackSequence = Phases::phase_allypokemon_move;
 			g_Attack = false;
 			g_notFirstTurn = true;
 		}
@@ -249,7 +238,7 @@ void Item(float elapsedSec)
 			switch (ItemSequence)
 			{
 			case Phases::phase_hpbarally_up:
-				HPBarMath();
+	
 				HPBarAllyUp(elapsedSec);
 				g_ItemTextureIsOn = true;
 				break;
@@ -257,24 +246,17 @@ void Item(float elapsedSec)
 				g_ItemTextureIsOn = false;
 				Wait(elapsedSec);
 				break;
-			case Phases::phase_enemypokemoncounter_backward:
-				MoveBackward(elapsedSec, EnemyPokemon.xPos);
+			case Phases::phase_enemypokemoncounter_move:
+				Move(elapsedSec, EnemyPokemon,-1);
 				EnemyPokemon.attackTextureIsOn = true;
 				break;
-			case Phases::phase_enemypokemoncounter_forward:
-				MoveForward(elapsedSec, EnemyPokemon.xPos);
-				break;
 			case Phases::phase_attackcounter:
-				AttackEffect(elapsedSec, AllyPokemon.xPos, AllyPokemon.yPos);
+				AttackEffect(elapsedSec, AllyPokemon.position.x, AllyPokemon.position.y);
 				break;
-			case Phases::phase_allypokemoncounter_backward:
-				MoveBackward(elapsedSec, AllyPokemon.xPos);
-				break;
-			case Phases::phase_allypokemoncounter_forward:
-				MoveForward(elapsedSec, AllyPokemon.xPos);
+			case Phases::phase_allypokemoncounter_move:
+				Move(elapsedSec, AllyPokemon,-1);
 				break;
 			case Phases::phase_hpbarally_down:
-				HPBarMath();
 				HPBarAllyDown(elapsedSec);
 				break;
 			case Phases::phase_done:
@@ -390,60 +372,58 @@ void Wait(float elapsedSec)
 	}
 }
 
-void MoveForward(float elapsedSec, float& xPos)
+void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 {
-	if (g_SavedPosition < 0) {
-		g_SavedPosition = xPos;
+	if (g_SavedPosition < 0)
+	{
+		g_SavedPosition = pokemon.position.x;
+		g_MovementAnimAlpha = 0;
 	}
-
-	float target = g_SavedPosition + g_MovementLength;
-
-	if (xPos < target) {
-		xPos += g_AttackSpeed * elapsedSec;
-		if (xPos > target) {
-			xPos = target;
-			g_SavedPosition = -1;
-			if (AttackSequence == Phases::phase_enemypokemoncounter_forward ||
-				AttackSequence == Phases::phase_enemypokemon_forward ||
-				AttackSequence == Phases::phase_allypokemoncounter_forward ||
-				AttackSequence == Phases::phase_allypokemon_forward)
-				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
-			else if (ItemSequence == Phases::phase_enemypokemoncounter_forward ||
-				ItemSequence == Phases::phase_allypokemoncounter_forward)
-				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+	if (g_MovementAnimAlpha >= 1)
+	{
+		if (AttackSequence == Phases::phase_enemypokemoncounter_move ||
+			AttackSequence == Phases::phase_enemypokemon_move ||
+			AttackSequence == Phases::phase_allypokemoncounter_move ||
+			AttackSequence == Phases::phase_allypokemon_move)
+		{
+			AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
 		}
-	}
-}
-void MoveBackward(float elapsedSec, float& xPos)
-{
-	if (g_SavedPosition < 0) {
-		g_SavedPosition = xPos;
-	}
-
-	float target = g_SavedPosition - g_MovementLength;
-
-	if (xPos > target) {
-		xPos -= g_AttackSpeed * elapsedSec;
-		if (xPos < target) {
-			xPos = target;
-			g_SavedPosition = -1;
-			if (AttackSequence == Phases::phase_enemypokemoncounter_backward ||
-				AttackSequence == Phases::phase_enemypokemon_backward ||
-				AttackSequence == Phases::phase_allypokemoncounter_backward ||
-				AttackSequence == Phases::phase_allypokemon_backward)
-				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
-			else if (ItemSequence == Phases::phase_enemypokemoncounter_backward ||
-				ItemSequence == Phases::phase_allypokemoncounter_backward)
-				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+		else if (ItemSequence == Phases::phase_enemypokemoncounter_move ||
+			ItemSequence == Phases::phase_allypokemoncounter_move
+			)
+		{
+			ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 		}
+		pokemon.position.x = g_SavedPosition;
+		g_MovementAnimAlpha = 0;
+		g_SavedPosition = -1;
+
+		return;
 	}
+
+	g_MovementAnimAlpha += elapsedSec* g_AnimationTime;
+	bool isMovingBackwards{ g_MovementAnimAlpha > 0.5 };
+
+	float target = g_SavedPosition + (g_MovementLength * dir);
+
+	float alpha = g_MovementAnimAlpha * 2;
+	if (isMovingBackwards)
+	{
+		alpha = 1.f - (g_MovementAnimAlpha - 0.5f)*2;
+	}
+
+	float currentX = utils::Lerp(g_SavedPosition, target, alpha);
+	pokemon.position.x = currentX;
 }
+
+
 // theres a function hp1up, then hp2down, 
 // it could maybe be only one function and you pass the number of damage/heal to it ?
 void HPBarAllyUp(float elapsedSec)
 {
 	HPBarAllyPokemon.hPBarWidth += g_SpeedHPBar * elapsedSec;
-	static float target{ ((HPBarAllyPokemon.hpBarCurrent / 100.f) * HpBarAlly.width) };
+	float target{ ((HPBarAllyPokemon.hpBarCurrent / HPBarEnemyPokemon.hpBarTotal) * HpBarAlly.width) };
+	std::cout << "HP bar: " << HPBarEnemyPokemon.hPBarWidth << " | Target: " << target << std::endl;
 	if (HPBarAllyPokemon.hPBarWidth >= target)
 	{
 		HPBarAllyPokemon.hPBarWidth = target;
@@ -453,7 +433,8 @@ void HPBarAllyUp(float elapsedSec)
 void HPBarAllyDown(float elapsedSec)
 {
 	HPBarAllyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
-	static float target{ ((HPBarAllyPokemon.hpBarCurrent / 100.f) * HpBarAlly.width) };
+	float target{ ((HPBarAllyPokemon.hpBarCurrent / HPBarEnemyPokemon.hpBarTotal) * HpBarAlly.width) };
+	std::cout << "HP bar: " << HPBarEnemyPokemon.hPBarWidth << " | Target: " << target << std::endl;
 	if (HPBarAllyPokemon.hPBarWidth <= target)
 	{
 		HPBarAllyPokemon.hPBarWidth = target;
@@ -465,31 +446,33 @@ void HPBarAllyDown(float elapsedSec)
 }
 void HPBarEnemyDown(float elapsedSec)
 {
-
+	float target{ ((HPBarEnemyPokemon.hpBarCurrent / HPBarEnemyPokemon.hpBarTotal) * HpBarEnemy.width) };
 	HPBarEnemyPokemon.hPBarWidth -= g_SpeedHPBar * elapsedSec;
-	static float target{ ((HPBarEnemyPokemon.hpBarCurrent / 100.f) * HpBarEnemy.width) };
 	if (HPBarEnemyPokemon.hPBarWidth <= target)
 	{
 		HPBarEnemyPokemon.hPBarWidth = target;
 		AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
 	}
 }
-void HPBarMath()
+
+void Damage(HPBar& hpBarForDamage)
 {
-	if (AttackSequence == Phases::phase_hpbarenemy_down)
+	bool isDamage{ true };
+	std::cout << "HP bar: " << HPBarEnemyPokemon.hPBarWidth << " | Target: " << HPBarEnemyPokemon.hpBarCurrent << std::endl;
+		HPBarMath(hpBarForDamage.hpBarHitAmmount,hpBarForDamage, isDamage);
+}
+void Heal(HPBar& hpBarForHealing)
+{
+	bool isDamage{ false };
+	HPBarMath(hpBarForHealing.hpBarHitAmmount, hpBarForHealing, isDamage);
+}
+void HPBarMath( float amountChange, HPBar& hpBar, bool isDamage)
+{
+	if(isDamage)
+	hpBar.hpBarCurrent -= amountChange;
+	else
 	{
-		HPBarEnemyPokemon.hpBarCurrent -= HPBarEnemyPokemon.hpBarHitAmmountMath;
-	}
-	else if (AttackSequence == Phases::phase_hpbarally_down)
-	{
-		HPBarAllyPokemon.hpBarCurrent -= HPBarAllyPokemon.hpBarHitAmmountMath;
-	}
-	else if (ItemSequence == Phases::phase_hpbarally_up)
-	{
-		HPBarAllyPokemon.hpBarCurrent += (100 - HPBarAllyPokemon.hpBarCurrent);
-	}
-	else if (ItemSequence == Phases::phase_hpbarally_down)
-	{
-		HPBarAllyPokemon.hpBarCurrent -= HPBarAllyPokemon.hpBarHitAmmountMath;
+		hpBar.hpBarCurrent += (100 - hpBar.hpBarCurrent);
+		isDamage = true;
 	}
 }
