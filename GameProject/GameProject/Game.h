@@ -15,7 +15,7 @@ float g_WindowHeight{ 800 };
 #pragma region ownDeclarations
 // Declare your own global variables here
 
-bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
+bool	g_IsBattleOn{1};		// press B to switch from battle to map view and mechanics
 
 // Declare your own functions here
 
