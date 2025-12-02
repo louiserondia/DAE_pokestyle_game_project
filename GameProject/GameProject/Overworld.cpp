@@ -158,7 +158,6 @@ void UpdateCharacterPos(float elapsedSec) {
 	const int newTile{ GetIndex(g_Character.dst.top / g_TileSize, g_Character.dst.left / g_TileSize, g_NrCols) };
 
 	if (g_Character.isMoving && newTile != g_Character.targetTile) {
-		//g_Character.offsetTile += elapsedSec * g_MoveSpeed;
 		g_Character.dst.left += g_Character.dir.x * g_MoveSpeed * elapsedSec;
 		g_Character.dst.top += g_Character.dir.y * g_MoveSpeed * elapsedSec;
 	}
@@ -166,7 +165,6 @@ void UpdateCharacterPos(float elapsedSec) {
 		if (!g_CurKey)
 			g_Character.isMoving = false;
 		g_Character.curTile = g_Character.targetTile;
-		//g_Character.offsetTile = 0.f;
 	}
 }
 
@@ -233,7 +231,7 @@ void	UpdateCharacterFrame(float elapsedSec) {
 	g_Character.frameStartIndex = GetIndex(g_Character.curAnimFrame.row, g_Character.curAnimFrame.col, g_CharacterNrFrames);
 	g_Character.src.left = GetCol(g_Character.frameStartIndex + g_Character.frameIndex, g_CharacterNrFrames) * g_Character.frameDimensions.x;
 
-	const float frameRate{ 1.f / 4 };
+	const float frameRate{ 1.f / 8 };
 
 	if (g_FrameTime > frameRate) {
 		g_FrameTime = 0.f;
