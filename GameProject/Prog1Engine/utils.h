@@ -75,6 +75,7 @@ namespace utils
 	int GetCol(int index, int numCols);
 	int GetRow(int index, int numCols);
 	int GetIndex(int rowIdx, int colIdx, int nrCols);
+	void Print2DArray(const int* array, int size, int nrCols);
 
 #pragma endregion 2DArrayFunctionality
 

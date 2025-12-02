@@ -2,7 +2,6 @@
 #include <utils.h>
 #include <iostream>
 #include <map>
-
 using namespace utils;
 
 #pragma region ownDeclarations
@@ -46,6 +45,7 @@ struct AnimFrame {
 struct Character {
 	int			curTile{};
 	int			targetTile{};
+	Point2f		targetPos{};
 	float		offsetTile{};
 	bool		isMoving{};
 
@@ -94,8 +94,14 @@ std::map<std::string, AnimFrame> g_AnimFrames{};
 float		g_FrameTime{};
 float		g_TileSize{ 16.f };
 
+int*		g_CollisionMap{};
+float		g_CollisionMapSize{};
+
 SDL_Keycode g_CurKey{};
 SDL_Keycode g_NextKey{};
+
+float		g_Progression{};
+float		g_MoveDist{};
 
 //		--- FUNCTIONS ---
 
@@ -139,6 +145,8 @@ int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
 Point2f	PosFromTile(int row, int col);
 int		GetTargetTile(int curTile, SDL_Keycode key);
+Point2f	GetTargetPos(Rectf rect, SDL_Keycode key);
+Point2f	GetTargetPos(Point2f rect, SDL_Keycode key);
 Point2f	GetDirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);

@@ -13,6 +13,7 @@
 
 void	InitOverworld() {
 	g_TileSize *= g_Camera.zoom;
+	g_MoveDist = g_TileSize;
 	InitScenes();
 	InitAnimFrames();
 	InitCharacter();
@@ -36,8 +37,8 @@ void	InitScenes() {
 	pScene->startOffset.y = std::max(0.f, (g_WindowHeight - pScene->screenHeight) / 2);
 
 	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
-	g_NrCols = screenWidth / g_TileSize;
-	g_NrRows = screenHeight / g_TileSize;
+	g_NrCols = static_cast<int>(screenWidth) / g_TileSize;
+	g_NrRows = static_cast<int>(screenHeight) / g_TileSize;
 }
 
 void	InitAnimFrames() {
@@ -70,7 +71,7 @@ void	InitCharacter() {
 void	InitCamera() {
 	Scene* pScene{ &g_World.scenes[0] };
 
-	Point2f	posCharacterMid{ g_Character.dst.left - g_WindowWidth / 2, g_Character.dst.top - g_WindowHeight / 2 };
+	Point2f	posCharacterMid{ g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2, g_Character.dst.top - g_WindowHeight / 2 };
 
 	if (posCharacterMid.x < 0) posCharacterMid.x = 0;
 	else if (posCharacterMid.x + g_WindowWidth > pScene->dst.width) posCharacterMid.x = pScene->dst.width - g_WindowWidth;
@@ -81,10 +82,23 @@ void	InitCamera() {
 }
 
 void	InitCollisionMap() {
-	std::ifstream	file("Resources/map_three_island.txt");
-	if (!file) {
+	g_CollisionMapSize = static_cast<float>(g_NrCols * g_NrRows);
+	g_CollisionMap = new int[g_CollisionMapSize];
 
+	std::ifstream	file("../Resources/map_three_island.txt");
+	if (!file) {
+		std::cout << "Error loading Resources / map_three_island.txt\n";
 	}
+
+	int index{};
+	char ch{};
+	while (file.get(ch) && index < static_cast<int>(g_CollisionMapSize)) {
+		if (ch == '0' || ch == '1') {
+			g_CollisionMap[index] = ch - '0';
+			++index;
+		}
+	}
+	//Print2DArray(g_CollisionMap, g_CollisionMapSize, g_NrCols);
 }
 
 //		END
@@ -92,6 +106,7 @@ void	InitCollisionMap() {
 void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
 	DeleteTexture(g_Character.texture);
+	delete[] g_CollisionMap;
 }
 
 //		DRAW
@@ -138,10 +153,7 @@ void	UpdateCurKey() {
 		g_NextKey = 0;
 		g_Character.dir = GetDirFromKey(g_CurKey);
 		g_Character.targetTile = GetTargetTile(g_Character.curTile, g_CurKey);
-		g_Character.isMoving = true;
-	}
-	else if (g_Character.curTile == g_Character.targetTile && g_CurKey) {
-		g_Character.targetTile = GetTargetTile(g_Character.curTile, g_CurKey);
+		g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
 		g_Character.isMoving = true;
 	}
 }
@@ -161,18 +173,27 @@ void	UpdateOverworld(float elapsedSec) {
 }
 
 void UpdateCharacterPos(float elapsedSec) {
-	const Point2f bottomLeftCharacter{ GetBottomLeftInRect(g_Character.dst) };
-	// /!\ get index to have row send y first and vice-versa
-	const int newTile{ GetIndex(bottomLeftCharacter.y / g_TileSize, bottomLeftCharacter.x / g_TileSize, g_NrCols) };
+	if (!g_Character.isMoving)
+		return;
+	const float dx{ g_Character.dir.x * g_MoveSpeed * elapsedSec },
+		dy{ g_Character.dir.y * g_MoveSpeed * elapsedSec };
 
-	if (g_Character.isMoving && newTile != g_Character.targetTile) {
-		g_Character.dst.left += g_Character.dir.x * g_MoveSpeed * elapsedSec;
-		g_Character.dst.top += g_Character.dir.y * g_MoveSpeed * elapsedSec;
+	if (g_Progression + abs(dx + dy) < g_MoveDist) {
+		g_Progression += abs(dx + dy);
+		g_Character.dst.left += dx;
+		g_Character.dst.top += dy;
 	}
-	else if (g_Character.isMoving) {
+	else {
+		g_Character.dst.left = g_Character.targetPos.x;
+		g_Character.dst.top = g_Character.targetPos.y;
+		g_Progression = 0.f;
+		g_Character.curTile = g_Character.targetTile;
 		if (!g_CurKey)
 			g_Character.isMoving = false;
-		g_Character.curTile = g_Character.targetTile;
+		else {
+			g_Character.targetTile = GetTargetTile(g_Character.curTile, g_CurKey);
+			g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
+		}
 	}
 }
 
@@ -181,25 +202,16 @@ void UpdateCameraPos(float elapsedSec) {
 		return;
 
 	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	const float
-		screenWidth{ pScene->texture.width * g_Camera.zoom },
-		screenHeight{ pScene->texture.height * g_Camera.zoom };
-	const float
-		dX{ g_Character.dir.x * g_MoveSpeed * elapsedSec },
-		dY{ g_Character.dir.y * g_MoveSpeed * elapsedSec };
 
-
-	if (IsPosInCenterX(g_Character.dst.left - g_Camera.pos.x - dX)
-		&& g_Camera.pos.x + dX >= 0.f
-		&& g_Camera.pos.x + dX <= screenWidth - g_WindowWidth)
+	if (g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2 >= 0.f
+		&& g_Character.dst.left + (g_Character.dst.width / 2) + g_WindowWidth / 2 <= pScene->screenWidth)
 	{
-		g_Camera.pos.x += dX;
+		g_Camera.pos.x = g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2;
 	}
-	if (IsPosInCenterY(g_Character.dst.top - g_Camera.pos.y - dY)
-		&& g_Camera.pos.y + dY >= 0.f
-		&& g_Camera.pos.y + dY <= screenHeight - g_WindowHeight)
+	if (g_Character.dst.top - g_WindowHeight / 2 >= 0.f
+		&& g_Character.dst.top + g_WindowHeight / 2 <= pScene->screenHeight)
 	{
-		g_Camera.pos.y += dY;
+		g_Camera.pos.y = g_Character.dst.top - g_WindowHeight / 2;
 	}
 }
 
@@ -262,11 +274,11 @@ int	TileFromPos(const Point2f& pos) {
 }
 
 Point2f	PosFromTile(int index) {
-	return PosFromTile(GetCol(index, g_NrCols), GetRow(index, g_NrCols));
+	return PosFromTile(GetRow(index, g_NrCols), GetCol(index, g_NrCols));
 }
 
 Point2f	PosFromTile(int row, int col) {
-	return Point2f{ row * g_TileSize, col * g_TileSize };
+	return Point2f{ col * g_TileSize, row * g_TileSize };
 }
 
 Point2f	GetDirFromKey(SDL_Keycode key) {
@@ -283,12 +295,27 @@ Point2f	GetDirFromKey(SDL_Keycode key) {
 int		GetTargetTile(int curTile, SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return curTile - 1;
-	if (key == SDLK_RIGHT)
+	else if (key == SDLK_RIGHT)
 		return curTile + 1;
-	if (key == SDLK_UP)
+	else if (key == SDLK_UP)
 		return curTile - g_NrCols;
 	else
 		return curTile + g_NrCols;
+}
+
+Point2f		GetTargetPos(Rectf rect, SDL_Keycode key) {
+	return GetTargetPos(Point2f{ rect.left, rect.top }, key);
+}
+
+Point2f		GetTargetPos(Point2f pos, SDL_Keycode key) {
+	if (key == SDLK_LEFT)
+		return Point2f{ pos.x - g_MoveDist, pos.y };
+	else if (key == SDLK_RIGHT)
+		return Point2f{ pos.x + g_MoveDist, pos.y };
+	else if (key == SDLK_UP)
+		return Point2f{ pos.x, pos.y - g_MoveDist };
+	else
+		return Point2f{ pos.x, pos.y + g_MoveDist };
 }
 
 bool	IsPosInCenterX(float pos) {
@@ -308,7 +335,6 @@ bool	IsPosInCenterY(float pos) {
 void	DrawAllTiles() {
 	bool startsBlack{};
 
-	// why does it get less transparent as we reach bottom right ?
 	for (int row{}; row < g_NrRows; ++row) {
 		startsBlack = (row & 1 ? 0 : 1);
 		if (row * g_TileSize > g_WindowHeight)
@@ -317,10 +343,6 @@ void	DrawAllTiles() {
 			if (col * g_TileSize > g_WindowWidth)
 				continue;
 			SetColor(g_White);
-			/*if (startsBlack)
-				SetColor(col & 1 ? g_White : g_Black);
-			else
-				SetColor(col & 1 ? g_Black : g_White);*/
 			DrawRect(col * g_TileSize, row * g_TileSize,
 				col * g_TileSize + g_TileSize, row * g_TileSize + g_TileSize, 3.f);
 
@@ -329,7 +351,7 @@ void	DrawAllTiles() {
 }
 
 void PrintTileIndex(float x, float y) {
-	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x, y) << std::endl;
+	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x + g_Camera.pos.x, y + g_Camera.pos.y) << std::endl;
 }
 
 #pragma endregion ownDeclarations
