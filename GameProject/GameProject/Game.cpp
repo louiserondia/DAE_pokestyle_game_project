@@ -6,6 +6,7 @@
 void	InitOverworld();
 void	DrawOverworld();
 void	FreeOverworld();
+void	HandleKeyDownOverworld(SDL_Keycode key);
 void	UpdateOverworld(float elapsedSec);
 void	InitBattle();
 void	DrawBattle();
@@ -50,6 +51,7 @@ void OnKeyDownEvent(SDL_Keycode key)
 {
 	if (key == SDLK_b)
 		g_IsBattleOn = !g_IsBattleOn;
+	HandleKeyDownOverworld(key);
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
