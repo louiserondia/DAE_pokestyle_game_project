@@ -554,6 +554,33 @@ namespace utils
 		
 		return start + step;
 	}
+	Color4f NormalizeColor(float red, float green, float blue, float alpha)
+	{
+		if (red <= 255 && red >= 0)
+		{
+			red /= 255;
+		}
+		else if (green <= 255 && green >= 0)
+		{
+			green /= 255;
+		}
+		else if (blue <= 255 && blue >= 0)
+		{
+			blue /= 255;
+		}
+		else if (alpha <= 255 && alpha >= 0)
+		{
+			alpha /= 255;
+		}
+		Color4f convertedColor
+		{
+			red,
+			green,
+			blue,
+			alpha
+		};
+		return convertedColor;
+	}
 
 #pragma endregion MathFunctionality
 }

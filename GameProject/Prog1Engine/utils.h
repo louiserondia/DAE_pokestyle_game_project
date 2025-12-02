@@ -85,7 +85,7 @@ namespace utils
 #pragma region MathFunctionality
 
 	float Lerp(const float start, const float end, const float alpha);
-
+	Color4f NormalizeColor(float red, float green, float blue, float alpha =255.f);
 #pragma endregion MathFunctionality
 
 }
