@@ -9,7 +9,7 @@ using namespace utils;
 //		--- CONST VARIABLES ---
 
 const int	g_NrScenes{ 1 };
-const int	g_CharacterNrFrames{ 12 }; // maybe should be nrCol and rows
+const int	g_CharacterNrCols{ 16 }; // maybe should be nrCol and rows
 const float g_MoveSpeed{ 200.f };
 
 const Color4f g_White(.9f, .9f, .9f, .5f);
@@ -17,16 +17,6 @@ const Color4f g_Black(.2f, .2f, .2f, .5f);
 
 //		--- ENUM & STRUCTS ---
 
-enum class CharacterAnimState {
-	IdleDown,
-	IdleUp,
-	IdleLeft,
-	IdleRight,
-	WalkDown,
-	WalkUp,
-	WalkLeft,
-	WalkRight,
-};
 
 struct AnimFrame {
 	int row{};

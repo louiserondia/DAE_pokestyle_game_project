@@ -42,14 +42,10 @@ void	InitScenes() {
 }
 
 void	InitAnimFrames() {
-	g_AnimFrames["idledown"] = AnimFrame{ 0, 0, 1 };
-	g_AnimFrames["idleup"] = AnimFrame{ 0, 3, 1 };
-	g_AnimFrames["idleleft"] = AnimFrame{ 0, 6, 1 };
-	g_AnimFrames["idleright"] = AnimFrame{ 0, 9, 1 };
-	g_AnimFrames["walkdown"] = AnimFrame{ 0, 1, 2 };
-	g_AnimFrames["walkup"] = AnimFrame{ 0, 4, 2 };
-	g_AnimFrames["walkleft"] = AnimFrame{ 0, 7, 2 };
-	g_AnimFrames["walkright"] = AnimFrame{ 0, 10, 2 };
+	g_AnimFrames["walkdown"] = AnimFrame{ 0, 0, 4 };
+	g_AnimFrames["walkup"] = AnimFrame{ 0, 4, 4 };
+	g_AnimFrames["walkleft"] = AnimFrame{ 0, 8, 4 };
+	g_AnimFrames["walkright"] = AnimFrame{ 0, 12, 4 };
 }
 
 void	InitCharacter() {
@@ -64,7 +60,10 @@ void	InitCharacter() {
 		g_TileSize * 1.5f
 	};
 	g_Character.targetTile = g_Character.curTile;
-	g_Character.curAnimFrame = g_AnimFrames["idledown"];
+	g_Character.curAnimFrame = g_AnimFrames["walkdown"];
+	g_Character.frameStartIndex = g_Character.curAnimFrame.col;
+	g_Character.frameIndex = 1;
+	g_Character.src.left = (g_Character.frameStartIndex + g_Character.frameIndex) * g_Character.frameDimensions.x;
 	g_Character.dir = Point2f{ 0.f, 1.f };
 }
 
@@ -136,7 +135,17 @@ void	DrawCharacter() {
 
 void	HandleKeyDownOverworld(SDL_Keycode key) {
 	if (key == SDLK_LEFT || key == SDLK_RIGHT || key == SDLK_UP || key == SDLK_DOWN) {
-		if (g_CurKey != key)
+
+		if (!g_Character.isMoving && key == SDLK_LEFT && g_Character.dir.x != -1.f)
+			g_Character.dir = Point2f{ -1.f, 0.f };
+		else if (!g_Character.isMoving && key == SDLK_RIGHT && g_Character.dir.x != 1.f)
+			g_Character.dir = Point2f{ 1.f, 0.f };
+		else if (!g_Character.isMoving && key == SDLK_UP && g_Character.dir.y != -1.f)
+			g_Character.dir = Point2f{ 0.f, -1.f };
+		else if (!g_Character.isMoving && key == SDLK_DOWN && g_Character.dir.y != 1.f)
+			g_Character.dir = Point2f{ 0.f, 1.f };
+
+		else if (g_CurKey != key)
 			g_NextKey = key;
 	}
 }
@@ -227,35 +236,26 @@ void	UpdateCharacterFrame(float elapsedSec) {
 	//	maybe i can call the update startindex when i udpate is moving instead of all the time
 	// and update frame for animation all the time
 
-	if (g_Character.isMoving) {
-		if (g_Character.dir.x == 1.f)
-			g_Character.curAnimFrame = g_AnimFrames["walkright"];
-		else if (g_Character.dir.x == -1.f)
-			g_Character.curAnimFrame = g_AnimFrames["walkleft"];
-		else if (g_Character.dir.y == -1.f)
-			g_Character.curAnimFrame = g_AnimFrames["walkup"];
-		else if (g_Character.dir.y == 1.f)
-			g_Character.curAnimFrame = g_AnimFrames["walkdown"];
-	}
-	else {
-		if (g_Character.dir.x == 1.f)
-			g_Character.curAnimFrame = g_AnimFrames["idleright"];
-		else if (g_Character.dir.x == -1.f)
-			g_Character.curAnimFrame = g_AnimFrames["idleleft"];
-		else if (g_Character.dir.y == -1.f)
-			g_Character.curAnimFrame = g_AnimFrames["idleup"];
-		else if (g_Character.dir.y == 1.f)
-			g_Character.curAnimFrame = g_AnimFrames["idledown"];
-	}
+	if (g_Character.dir.x == 1.f)
+		g_Character.curAnimFrame = g_AnimFrames["walkright"];
+	else if (g_Character.dir.x == -1.f)
+		g_Character.curAnimFrame = g_AnimFrames["walkleft"];
+	else if (g_Character.dir.y == -1.f)
+		g_Character.curAnimFrame = g_AnimFrames["walkup"];
+	else if (g_Character.dir.y == 1.f)
+		g_Character.curAnimFrame = g_AnimFrames["walkdown"];
 
-	g_Character.frameStartIndex = GetIndex(g_Character.curAnimFrame.row, g_Character.curAnimFrame.col, g_CharacterNrFrames);
-	g_Character.src.left = GetCol(g_Character.frameStartIndex + g_Character.frameIndex, g_CharacterNrFrames) * g_Character.frameDimensions.x;
+	g_Character.frameStartIndex = g_Character.curAnimFrame.col;
+	g_Character.src.left = (g_Character.frameStartIndex + g_Character.frameIndex) * g_Character.frameDimensions.x;
 
-	const float frameRate{ 1.f / 6 };
+	const float frameRate{ 1.f / 8 };
 
 	if (g_FrameTime > frameRate) {
 		g_FrameTime = 0.f;
-		g_Character.frameIndex = (g_Character.frameIndex + 1) % g_Character.curAnimFrame.nrFrames;
+		if (g_Character.isMoving)
+			g_Character.frameIndex = (g_Character.frameIndex + 1) % g_Character.curAnimFrame.nrFrames;
+		else
+			g_Character.frameIndex = 1;
 	}
 }
 
