@@ -11,7 +11,10 @@ using namespace utils;
 
 const int	g_NrScenes{ 1 };
 const int	g_CharacterNrFrames{ 12 }; // maybe should be nrCol and rows
-const float g_MoveSpeed{ 100.f };
+const float g_MoveSpeed{ 200.f };
+
+const Color4f g_White(.9f, .9f, .9f, .5f);
+const Color4f g_Black(.2f, .2f, .2f, .5f);
 
 //		--- ENUM & STRUCTS ---
 
@@ -89,7 +92,7 @@ int			g_NrRows{};
 std::map<std::string, AnimFrame> g_AnimFrames{};
 
 float		g_FrameTime{};
-float		g_TileSize{ 8.f };
+float		g_TileSize{ 16.f };
 
 SDL_Keycode g_CurKey{};
 SDL_Keycode g_NextKey{};
@@ -130,6 +133,7 @@ void	UpdateCharacterFrame(float elapsedSec);
 
 //		UTILS
 
+Point2f	GetBottomLeftInRect(const Rectf& rect);
 int		TileFromPos(float x, float y);
 int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
@@ -138,7 +142,8 @@ int		GetTargetTile(int curTile, SDL_Keycode key);
 Point2f	GetDirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
-
+void	DrawAllTiles();
+void	PrintTileIndex(float x, float y);
 
 
 #pragma endregion ownDeclarations

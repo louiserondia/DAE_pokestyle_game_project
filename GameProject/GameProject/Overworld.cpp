@@ -14,9 +14,9 @@
 void	InitOverworld() {
 	g_TileSize *= g_Camera.zoom;
 	InitScenes();
-	InitCamera();
 	InitAnimFrames();
 	InitCharacter();
+	InitCamera();
 	InitCollisionMap();
 }
 
@@ -35,17 +35,9 @@ void	InitScenes() {
 	pScene->startOffset.x = std::max(0.f, (g_WindowWidth - pScene->screenWidth) / 2);
 	pScene->startOffset.y = std::max(0.f, (g_WindowHeight - pScene->screenHeight) / 2);
 
-	//std::cout << "start offset y : " << pScene->startOffset.y;
 	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
-	g_NrCols = pScene->texture.width / g_TileSize;
-	g_NrRows = pScene->texture.height / g_TileSize;
-}
-
-void	InitCamera() {
-	Scene* pScene{ &g_World.scenes[0] };
-
-	g_Camera.pos.x = -pScene->startOffset.x;
-	g_Camera.pos.y = -pScene->startOffset.y;
+	g_NrCols = screenWidth / g_TileSize;
+	g_NrRows = screenHeight / g_TileSize;
 }
 
 void	InitAnimFrames() {
@@ -63,16 +55,29 @@ void	InitCharacter() {
 	if (!TextureFromFile("Resources/character.png", g_Character.texture))
 		std::cout << "Couldn't load character texture at Resources/character.png";
 
+	g_Character.curTile = 200;
 	g_Character.dst = Rectf{
-		8 * g_TileSize,
-		8 * g_TileSize,
-		g_TileSize * 2,
-		g_TileSize * 3
+		GetCol(g_Character.curTile, g_NrCols) * g_TileSize,
+		GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2,
+		g_TileSize,
+		g_TileSize * 1.5f
 	};
-	g_Character.curTile = TileFromPos(g_Character.dst.left, g_Character.dst.top);
 	g_Character.targetTile = g_Character.curTile;
 	g_Character.curAnimFrame = g_AnimFrames["idledown"];
 	g_Character.dir = Point2f{ 0.f, 1.f };
+}
+
+void	InitCamera() {
+	Scene* pScene{ &g_World.scenes[0] };
+
+	Point2f	posCharacterMid{ g_Character.dst.left - g_WindowWidth / 2, g_Character.dst.top - g_WindowHeight / 2 };
+
+	if (posCharacterMid.x < 0) posCharacterMid.x = 0;
+	else if (posCharacterMid.x + g_WindowWidth > pScene->dst.width) posCharacterMid.x = pScene->dst.width - g_WindowWidth;
+	if (posCharacterMid.y < 0) posCharacterMid.y = 0;
+	else if (posCharacterMid.y + g_WindowHeight > pScene->dst.height) posCharacterMid.x = pScene->dst.height - g_WindowHeight;
+
+	g_Camera.pos = posCharacterMid;
 }
 
 void	InitCollisionMap() {
@@ -84,7 +89,7 @@ void	InitCollisionMap() {
 
 //		END
 
-void	FreeOverworld() { // FreeAll instead ?
+void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
 	DeleteTexture(g_Character.texture);
 }
@@ -93,6 +98,7 @@ void	FreeOverworld() { // FreeAll instead ?
 
 void	DrawOverworld() {
 	DrawMap();
+	DrawAllTiles();
 	DrawCharacter();
 }
 
@@ -155,7 +161,9 @@ void	UpdateOverworld(float elapsedSec) {
 }
 
 void UpdateCharacterPos(float elapsedSec) {
-	const int newTile{ GetIndex(g_Character.dst.top / g_TileSize, g_Character.dst.left / g_TileSize, g_NrCols) };
+	const Point2f bottomLeftCharacter{ GetBottomLeftInRect(g_Character.dst) };
+	// /!\ get index to have row send y first and vice-versa
+	const int newTile{ GetIndex(bottomLeftCharacter.y / g_TileSize, bottomLeftCharacter.x / g_TileSize, g_NrCols) };
 
 	if (g_Character.isMoving && newTile != g_Character.targetTile) {
 		g_Character.dst.left += g_Character.dir.x * g_MoveSpeed * elapsedSec;
@@ -231,7 +239,7 @@ void	UpdateCharacterFrame(float elapsedSec) {
 	g_Character.frameStartIndex = GetIndex(g_Character.curAnimFrame.row, g_Character.curAnimFrame.col, g_CharacterNrFrames);
 	g_Character.src.left = GetCol(g_Character.frameStartIndex + g_Character.frameIndex, g_CharacterNrFrames) * g_Character.frameDimensions.x;
 
-	const float frameRate{ 1.f / 8 };
+	const float frameRate{ 1.f / 6 };
 
 	if (g_FrameTime > frameRate) {
 		g_FrameTime = 0.f;
@@ -241,12 +249,16 @@ void	UpdateCharacterFrame(float elapsedSec) {
 
 //		UTILS
 
+Point2f	GetBottomLeftInRect(const Rectf& rect) {
+	return Point2f{ rect.left, rect.top + rect.height };
+}
+
 int	TileFromPos(float x, float y) {
-	return GetIndex(static_cast<int>(x / g_TileSize), static_cast<int>(y / g_TileSize), g_NrCols);
+	return GetIndex(static_cast<int>(y / g_TileSize), static_cast<int>(x / g_TileSize), g_NrCols);
 }
 
 int	TileFromPos(const Point2f& pos) {
-	return GetIndex(static_cast<int>(pos.x / g_TileSize), static_cast<int>(pos.y / g_TileSize), g_NrCols);
+	return GetIndex(static_cast<int>(pos.y / g_TileSize), static_cast<int>(pos.x / g_TileSize), g_NrCols);
 }
 
 Point2f	PosFromTile(int index) {
@@ -291,6 +303,33 @@ bool	IsPosInCenterY(float pos) {
 	const float epsilon = g_TileSize;
 
 	return std::abs(pos - centerY) < epsilon;
+}
+
+void	DrawAllTiles() {
+	bool startsBlack{};
+
+	// why does it get less transparent as we reach bottom right ?
+	for (int row{}; row < g_NrRows; ++row) {
+		startsBlack = (row & 1 ? 0 : 1);
+		if (row * g_TileSize > g_WindowHeight)
+			continue;
+		for (int col{}; col < g_NrCols; ++col) {
+			if (col * g_TileSize > g_WindowWidth)
+				continue;
+			SetColor(g_White);
+			/*if (startsBlack)
+				SetColor(col & 1 ? g_White : g_Black);
+			else
+				SetColor(col & 1 ? g_Black : g_White);*/
+			DrawRect(col * g_TileSize, row * g_TileSize,
+				col * g_TileSize + g_TileSize, row * g_TileSize + g_TileSize, 3.f);
+
+		}
+	}
+}
+
+void PrintTileIndex(float x, float y) {
+	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x, y) << std::endl;
 }
 
 #pragma endregion ownDeclarations
