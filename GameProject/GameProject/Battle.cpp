@@ -11,7 +11,7 @@
 
 void InitBattle() {
 
-	//PlaySound(TEXT("Resources/Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC); // changed to local path hope its still working
+	PlaySound(TEXT("Resources/Godmoongus8Bit2.wav"), NULL, SND_FILENAME | SND_ASYNC); // changed to local path hope its still working
 
 	TextureFromFile("Resources/Background.png", g_BackgroundTexture);
 	TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);

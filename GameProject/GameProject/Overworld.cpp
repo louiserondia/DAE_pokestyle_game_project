@@ -19,13 +19,25 @@ void	InitOverworld() {
 	InitCharacter();
 	InitCamera();
 	InitCollisionMap();
+	InitAudioFiles();
 }
 
 void	InitScenes() {
 	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
-		std::cout << "Couldn't load map texture at Resources/map_three_island.png";
-	Scene* pScene{ &g_World.scenes[0] };
+		ErrorLoadMsg("Resources/map_three_island.png", "map 0");
+	if (!TextureFromFile("Resources/map_three_island_houses.png", g_World.scenes[0].fgTexture))
+		ErrorLoadMsg("Resources/map_three_island_houses.png", "fg map 0");
 
+	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[1].texture))
+		ErrorLoadMsg("Resources/map_three_island.png", "map 1");
+	if (!TextureFromFile("Resources/map_three_island_houses.png", g_World.scenes[1].fgTexture))
+		ErrorLoadMsg("Resources/map_three_island_houses.png", "fg map 1");
+
+	Scene* pScene{ &g_World.scenes[0] };
+	InitScene(pScene);
+}
+
+void	InitScene(Scene* pScene) {
 	const float width{ pScene->texture.width },
 		height{ pScene->texture.height },
 		screenWidth{ pScene->texture.width * g_Camera.zoom },
@@ -37,8 +49,8 @@ void	InitScenes() {
 	pScene->startOffset.y = std::max(0.f, (g_WindowHeight - pScene->screenHeight) / 2);
 
 	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
-	g_NrCols = static_cast<int>(screenWidth) / g_TileSize;
-	g_NrRows = static_cast<int>(screenHeight) / g_TileSize;
+	g_NrCols = static_cast<int>(screenWidth / g_TileSize);
+	g_NrRows = static_cast<int>(screenHeight / g_TileSize);
 }
 
 void	InitAnimFrames() {
@@ -82,7 +94,7 @@ void	InitCamera() {
 
 void	InitCollisionMap() {
 	g_CollisionMapSize = static_cast<float>(g_NrCols * g_NrRows);
-	g_CollisionMap = new int[g_CollisionMapSize];
+	g_CollisionMap = new int[static_cast<size_t>(g_CollisionMapSize)];
 
 	std::ifstream	file("../Resources/map_three_island.txt");
 	if (!file) {
@@ -100,12 +112,18 @@ void	InitCollisionMap() {
 	//Print2DArray(g_CollisionMap, g_CollisionMapSize, g_NrCols);
 }
 
+void InitAudioFiles() {
+	LoadSoundEffect(g_CollisionSound, "../Resources/collision.wav");
+}
+
 //		END
 
 void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
+	DeleteTexture(g_World.scenes[0].fgTexture);
 	DeleteTexture(g_Character.texture);
 	delete[] g_CollisionMap;
+	Mix_FreeChunk(g_CollisionSound);
 }
 
 //		DRAW
@@ -115,11 +133,20 @@ void	DrawOverworld() {
 	//DrawTiles();
 	//DrawCollisions();
 	DrawCharacter();
+	DrawFgMap();
+	DrawLoadingScreen();
+	//SetColor(0.f, 0.f, 0.f, cosf(g_Time* g_Pi));
+	//FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
 void	DrawMap() {
 	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 	DrawTexture(pScene->texture, pScene->dst);
+}
+
+void	DrawFgMap() {
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	DrawTexture(pScene->fgTexture, pScene->dst);
 }
 
 void	DrawCharacter() {
@@ -131,6 +158,15 @@ void	DrawCharacter() {
 	};
 	DrawTexture(g_Character.texture, rect, g_Character.src);
 }
+
+void DrawLoadingScreen() {
+	if (g_LoadingScreenCooldown > 1.f)
+		return;
+
+	SetColor(0.f, 0.f, 0.f, cosf(g_LoadingScreenCooldown * g_Pi));
+	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
+}
+
 
 //		INPUT HANDLING
 
@@ -148,13 +184,13 @@ void	HandleKeyDownOverworld(SDL_Keycode key) {
 		else if (g_CurKey != key)
 			g_NextKey = key;
 		UpdateAnimFrameState();
+		CheckSoundEffect(key);
 	}
 }
 
 void	UpdateCurKey() {
-
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-	const int targetTile{ GetTargetTile(g_Character.curTile, g_NextKey) };
+	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_NextKey) };
 
 	if (!pStates[SDL_GetScancodeFromKey(g_CurKey)])
 		g_CurKey = 0;
@@ -162,9 +198,9 @@ void	UpdateCurKey() {
 	if (g_Character.curTile == g_Character.targetTile && g_NextKey && IsWalkable(targetTile)) {
 		g_CurKey = g_NextKey;
 		g_NextKey = 0;
-		g_Character.dir = GetDirFromKey(g_CurKey);
+		g_Character.dir = DirFromKey(g_CurKey);
 		g_Character.targetTile = targetTile;
-		g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
+		g_Character.targetPos = TargetPosFromKey(g_Character.dst, g_CurKey);
 		g_Character.isMoving = true;
 		UpdateAnimFrameState();
 	}
@@ -180,8 +216,12 @@ void	UpdateOverworld(float elapsedSec) {
 	UpdateMapPos(elapsedSec);
 	UpdateCameraPos(elapsedSec);
 	UpdateCurKey();
+	UpdateScene();
 
 	g_FrameTime += elapsedSec;
+	g_Time += elapsedSec;
+	g_SoundEffectCooldown += elapsedSec;
+	g_LoadingScreenCooldown += elapsedSec;
 }
 
 void UpdateCharacterPos(float elapsedSec) {
@@ -201,13 +241,14 @@ void UpdateCharacterPos(float elapsedSec) {
 		g_Progression = 0.f;
 		g_Character.curTile = g_Character.targetTile;
 
-		const int targetTile{ GetTargetTile(g_Character.curTile, g_CurKey) };
+		const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
 
-		if (!g_CurKey || !IsWalkable(targetTile))
+		if (!g_CurKey || !IsWalkable(targetTile)) {
 			g_Character.isMoving = false;
+		}
 		else {
 			g_Character.targetTile = targetTile;
-			g_Character.targetPos = GetTargetPos(g_Character.dst, g_CurKey);
+			g_Character.targetPos = TargetPosFromKey(g_Character.dst, g_CurKey);
 		}
 	}
 }
@@ -263,6 +304,36 @@ void	UpdateCharacterFrameInTime(float elapsedSec) {
 	}
 }
 
+void	CheckSoundEffect(SDL_Keycode key) {
+	const float cooldown{ .6f };
+	const int targetTile{ TargetTileFromDir(g_Character.curTile, g_Character.dir) };
+
+	if (!IsWalkable(targetTile) && g_SoundEffectCooldown > cooldown) {
+		PlaySoundEffect(g_CollisionSound);
+		g_SoundEffectCooldown = 0.f;
+	}
+}
+
+void UpdateScene() {
+	if (!IsGoingOutsideMap())
+		return;
+
+	g_LoadingScreenCooldown = 0.f;
+	g_Character.isMoving = false;
+
+	g_World.currentSceneIndex = (g_World.currentSceneIndex + 1) % g_NrScenes;
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+
+	InitScene(pScene);
+
+	g_Character.curTile = 200;
+	g_Character.dst.left = GetCol(g_Character.curTile, g_NrCols) * g_TileSize;
+	g_Character.dst.top = GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2;
+	g_Character.targetTile = g_Character.curTile;
+
+	InitCamera();
+}
+
 //		UTILS
 
 Point2f	GetBottomLeftInRect(const Rectf& rect) {
@@ -285,7 +356,7 @@ Point2f	PosFromTile(int row, int col) {
 	return Point2f{ col * g_TileSize, row * g_TileSize };
 }
 
-Point2f	GetDirFromKey(SDL_Keycode key) {
+Point2f	DirFromKey(SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return Point2f{ -1.f, 0.f };
 	if (key == SDLK_RIGHT)
@@ -296,7 +367,7 @@ Point2f	GetDirFromKey(SDL_Keycode key) {
 		return Point2f{ 0.f, 1.f };
 }
 
-int		GetTargetTile(int curTile, SDL_Keycode key) {
+int		TargetTileFromKey(int curTile, SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return curTile - 1;
 	else if (key == SDLK_RIGHT)
@@ -307,11 +378,22 @@ int		GetTargetTile(int curTile, SDL_Keycode key) {
 		return curTile + g_NrCols;
 }
 
-Point2f		GetTargetPos(Rectf rect, SDL_Keycode key) {
-	return GetTargetPos(Point2f{ rect.left, rect.top }, key);
+int		TargetTileFromDir(int curTile, Point2f dir) {
+	if (dir.x == -1.f)
+		return curTile - 1;
+	else if (dir.x == 1.f)
+		return curTile + 1;
+	else if (dir.y == -1.f)
+		return curTile - g_NrCols;
+	else
+		return curTile + g_NrCols;
 }
 
-Point2f		GetTargetPos(Point2f pos, SDL_Keycode key) {
+Point2f		TargetPosFromKey(Rectf rect, SDL_Keycode key) {
+	return TargetPosFromKey(Point2f{ rect.left, rect.top }, key);
+}
+
+Point2f		TargetPosFromKey(Point2f pos, SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return Point2f{ pos.x - g_MoveDist, pos.y };
 	else if (key == SDLK_RIGHT)
@@ -374,8 +456,23 @@ void PrintTileIndex(float x, float y) {
 	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x + g_Camera.pos.x, y + g_Camera.pos.y) << std::endl;
 }
 
+void ErrorLoadMsg(const std::string& path, const std::string& name) {
+	std::cout << "Couldn't load " << name << " at " << path << std::endl;
+}
+
 bool IsWalkable(int index) {
 	return !g_CollisionMap[index];
+}
+// make start of walk animation when collision (changes leg each time)
+
+bool IsGoingOutsideMap() {
+	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_NextKey) };
+
+	return
+		GetRow(targetTile, g_NrCols) <= 0
+		|| GetRow(targetTile, g_NrCols) >= g_NrRows
+		|| GetCol(targetTile, g_NrCols) <= 0
+		|| GetCol(targetTile, g_NrCols) >= g_NrCols;
 }
 
 #pragma endregion ownDeclarations

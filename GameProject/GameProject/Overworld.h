@@ -2,13 +2,14 @@
 #include <utils.h>
 #include <iostream>
 #include <map>
+#include "Audio.h"
 using namespace utils;
 
 #pragma region ownDeclarations
 
 //		--- CONST VARIABLES ---
 
-const int	g_NrScenes{ 1 };
+const int	g_NrScenes{ 2 };
 const int	g_CharacterNrCols{ 16 }; // maybe should be nrCol and rows
 const float g_MoveSpeed{ 200.f };
 
@@ -54,6 +55,7 @@ struct Character {
 // make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
 struct Scene {
 	Texture	texture{};
+	Texture	fgTexture{};
 	Rectf	dst{};
 	Point2f	startOffset{};
 	float	screenWidth{};
@@ -94,16 +96,24 @@ SDL_Keycode g_NextKey{};
 float		g_Progression{};
 float		g_MoveDist{};
 
+Mix_Chunk* g_CollisionSound{};
+float		g_SoundEffectCooldown{};
+
+float		g_LoadingScreenCooldown{};
+float		g_Time{};
+
 //		--- FUNCTIONS ---
 
 //		INIT
 
 void	InitOverworld();
 void	InitScenes();
+void	InitScene(Scene* pScene);
 void	InitCamera();
 void	InitCharacter();
 void	InitAnimFrames();
 void	InitCollisionMap();
+void	InitAudioFiles();
 
 //		END
 
@@ -113,9 +123,11 @@ void	FreeOverworld();
 
 void	DrawOverworld();
 void	DrawMap();
+void	DrawFgMap();
 void	DrawCharacter();
 void	DrawTiles();
 void	DrawCollisions();
+void	DrawLoadingScreen();
 
 //		INPUT HANDLING
 
@@ -130,6 +142,8 @@ void	UpdateCameraPos(float elapsedSec);
 void	UpdateCharacterPos(float elapsedSec);
 void	UpdateAnimFrameState();
 void	UpdateCharacterFrameInTime(float elapsedSec);
+void	CheckSoundEffect(SDL_Keycode key);
+void	UpdateScene();
 
 //		UTILS
 
@@ -138,14 +152,17 @@ int		TileFromPos(float x, float y);
 int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
 Point2f	PosFromTile(int row, int col);
-int		GetTargetTile(int curTile, SDL_Keycode key);
-Point2f	GetTargetPos(Rectf rect, SDL_Keycode key);
-Point2f	GetTargetPos(Point2f rect, SDL_Keycode key);
-Point2f	GetDirFromKey(SDL_Keycode key);
+int		TargetTileFromKey(int curTile, SDL_Keycode key);
+int		TargetTileFromDir(int curTile, Point2f dir);
+Point2f	TargetPosFromKey(Rectf rect, SDL_Keycode key);
+Point2f	TargetPosFromKey(Point2f rect, SDL_Keycode key);
+Point2f	DirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
 void	PrintTileIndex(float x, float y);
+void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
 bool	IsWalkable(int index);
+bool	IsGoingOutsideMap();
 
 
 #pragma endregion ownDeclarations
