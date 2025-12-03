@@ -6,7 +6,8 @@ using namespace utils;
 const float
 g_SpeedHPBar{ 50.f },
 g_MovementLength{ 55.f },
-g_AttackSpeed{ 200.f };
+g_AttackSpeed{ 200.f },
+g_HeightOfTextBlock{ g_WindowHeight * 0.3f };
 //		--- ENUM & STRUCTS ---
 
 enum class Phases
@@ -31,7 +32,7 @@ struct HPBar {
 		hpBarHitAmmount{},
 		hpBarCurrent{ 100.f },
 		hpBarTotal{ 100.f },
-		hPBarWidth{ g_WindowWidth * 0.3125f };
+		hPBarWidth{ g_WindowWidth * 0.23f };
 };
 
 struct PokemonInBattle
@@ -49,16 +50,16 @@ AllyPokemon
 {
 	Point2f
 	{
-	g_WindowWidth * 0.0625f,
-	g_WindowHeight * 0.255f
+	g_WindowWidth /10,
+	g_WindowHeight - (g_HeightOfTextBlock * 2)
 	}
 },
 EnemyPokemon
 {
 	Point2f
 	{
-	g_WindowWidth * 0.59375f,
-	g_WindowHeight * 0.025f
+	(g_WindowWidth / 2) + 50,
+	g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
 	}
 };
 HPBar HPBarAllyPokemon{
@@ -66,6 +67,9 @@ HPBar HPBarAllyPokemon{
 };
 HPBar HPBarEnemyPokemon{
 	10.f,
+	100.f,
+	100.f,
+	g_WindowWidth * 0.231f
 };
 Rectf fightButton{
 		g_WindowWidth * 0.494125f,
@@ -97,16 +101,16 @@ runButton
 HpBarEnemy
 {
 	g_WindowWidth * 0.1875f,
-	g_WindowHeight * 0.14f,
-	HPBarEnemyPokemon.hPBarWidth,
-	g_WindowHeight * 0.0217125f,
+	g_WindowHeight * 0.106f,
+	HPBarAllyPokemon.hPBarWidth,
+	g_WindowHeight * 0.0175f,
 },
 HpBarAlly
 {
-	g_WindowWidth * 0.58625f,
-	g_WindowHeight * 0.57625f,
+	g_WindowWidth - (g_WindowWidth * 0.269f),
+	g_WindowHeight - (g_HeightOfTextBlock * 1.43f),
 	HPBarAllyPokemon.hPBarWidth,
-	g_WindowHeight * 0.0217125f,
+	g_WindowHeight * 0.0175f,
 };
 float
 g_SpeedAttack{ 0.f },
@@ -136,7 +140,7 @@ g_ItemOnlyOnce{};
 utils::Texture
 g_BackgroundTexture{},
 g_LaxManTexture{},
-g_GreenTexture{},
+g_InfoAllyPokemonTexture{},
 g_GodmoongussTexture{},
 g_AttackTexture{},
 g_GodmoongussAttackTexture{},
@@ -147,7 +151,9 @@ g_SwitchTexture{},
 g_RunTexture{},
 g_ItemDoneTexture{},
 g_NotFirstTurnTexture{},
-g_FaintTexture{};
+g_FaintTexture{},
+g_FightingOptionsTexture{},
+g_InfoEnemyPokemonTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f	textBlockSpriteSize{ g_WindowWidth * 0.0062548866f, g_WindowHeight * 0.674196351f };
