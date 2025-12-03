@@ -75,9 +75,24 @@ namespace utils
 	int GetCol(int index, int numCols);
 	int GetRow(int index, int numCols);
 	int GetIndex(int rowIdx, int colIdx, int nrCols);
+	void Print2DArray(const int* array, int size, int nrCols);
 
 #pragma endregion 2DArrayFunctionality
+
 #pragma region CollisionFunctionality
+
+	float	GetDistance(const Point2f& p1, const Point2f& p2);
+	float	GetDistance(float x1, float y1, float x2, float y2);
+	float	GetDistance(float p1, float p2);
+	bool	IsPointInCircle(const Point2f& point, const Circlef& circle);
+	bool	IsPointInCircle(float x, float y, const Circlef& circle);
+	bool	IsPointInCircle(const Point2f& point, const Point2f& center, float radius);
+	bool	IsPointInCircle(float x, float y, float centerX, float centerY, float radius);
+	bool	IsPointInRect(const Point2f& point, const Rectf& rect);
+	bool	IsPointInRect(float x, float y, const Rectf& rect);
+	bool	IsPointInRect(float x, float y, float left, float top, float width, float height);
+	bool	IsOverlapping(const Circlef& c1, const Circlef& c2);
+	bool	IsOverlapping(const Rectf& r1, const Rectf& r2);
 
 #pragma endregion CollisionFunctionality
 

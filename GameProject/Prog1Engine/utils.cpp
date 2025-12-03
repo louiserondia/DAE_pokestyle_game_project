@@ -453,8 +453,8 @@ namespace utils
 			// Use complete texture
 			textLeft = 0.0f;
 			textRight = 1.0f;
-			textTop = 0.0f;				
-			textBottom = 1.0f;			
+			textTop = 0.0f;
+			textBottom = 1.0f;
 
 			defaultDstHeight = texture.height;
 			defaultDstWidth = texture.width;
@@ -521,12 +521,14 @@ namespace utils
 		col = index % numCols;
 		return col;
 	}
+
 	int GetRow(int index, int numCols)
 	{
 		int row{};
 		row = index / numCols;
 		return row;
 	}
+
 	int GetIndex(int rowIdx, int colIdx, int nrCols)
 	{
 		int index{};
@@ -534,9 +536,102 @@ namespace utils
 		return index;
 	}
 
+	void Print2DArray(const int* array, int size, int nrCols) {
+		for (int index{}; index <= nrCols; ++index) {
+			std::cout << "--";
+		}
+		std::cout << "\n";
+
+		for (int index{}; index < size; ++index) {
+			if (!(index % nrCols))
+				std::cout << "| ";
+			std::cout << array[index] << " ";
+			if (!((index + 1) % nrCols))
+				std::cout << "|\n";
+		}
+		
+		for (int index{}; index <= nrCols; ++index) {
+			std::cout << "--";
+		}
+		std::cout << "\n";
+	}
+
 #pragma endregion 2DArrayFunctionality
 
 #pragma region CollisionFunctionality
+
+	float	GetDistance(const Point2f& p1, const Point2f& p2) {
+		const float
+			dX{ fabsf(p2.x - p1.x) },
+			dY{ fabsf(p2.y - p1.y) };
+
+		return sqrt(dX * dX + dY * dY);
+	}
+
+	float	GetDistance(float x1, float y1, float x2, float y2) {
+		const float
+			dX{ fabsf(x2 - x1) },
+			dY{ fabsf(y2 - y1) };
+
+		return sqrt(dX * dX + dY * dY);
+	}
+
+	float	GetDistance(float p1, float p2) {
+		return fabsf(p2 - p1);
+	}
+
+	bool	IsPointInCircle(const Point2f& point, const Circlef& circle) {
+		return IsPointInCircle(point.x, point.y, circle.center.x, circle.center.y, circle.radius);
+	}
+
+	bool	IsPointInCircle(float x, float y, const Circlef& circle) {
+		return IsPointInCircle(x, y, circle.center.x, circle.center.y, circle.radius);
+	}
+
+	bool	IsPointInCircle(const Point2f& point, const Point2f& center, float radius) {
+		return IsPointInCircle(point.x, point.y, center.x, center.y, radius);
+	}
+
+	bool	IsPointInCircle(float x, float y, float centerX, float centerY, float radius) {
+		const float dist{ GetDistance(x, y, centerX, centerY) };
+
+		return (dist <= radius);
+	}
+
+
+	bool	IsPointInRect(const Point2f& point, const Rectf& rect) {
+		return IsPointInRect(point.x, point.y, rect.left, rect.top, rect.width, rect.height);
+	}
+
+	bool	IsPointInRect(float x, float y, const Rectf& rect) {
+		return IsPointInRect(x, y, rect.left, rect.top, rect.width, rect.height);
+	}
+
+	bool	IsPointInRect(float x, float y, float left, float top, float width, float height) {
+		const float dX{ x - left }, dY{ y - top };
+
+		if (dX < 0 || dY < 0)
+			return false;
+		if (dX > width || dY > height)
+			return false;
+		return true;
+	}
+
+	bool	IsOverlapping(const Circlef& c1, const Circlef& c2) {
+		const float dist{ GetDistance(c1.center, c2.center) };
+		return dist <= c1.radius + c2.radius;
+	}
+
+	bool	IsOverlapping(const Rectf& r1, const Rectf& r2) {
+		bool isOverlapping{ true };
+
+		if (r1.left > r2.left + r2.width || r2.left > r1.left + r1.width)
+			isOverlapping = false;
+		if (r1.top > r2.top + r2.height || r2.top > r1.top + r1.height)
+			isOverlapping = false;
+
+		return isOverlapping;
+	}
 
 
 #pragma endregion CollisionFunctionality
@@ -548,10 +643,10 @@ namespace utils
 		float norm_alpha = alpha;
 		norm_alpha = std::fmin(norm_alpha, 1);
 		norm_alpha = std::fmax(norm_alpha, 0);
-	
+
 		float range = end - start;
 		float step = range * norm_alpha;
-		
+
 		return start + step;
 	}
 	Color4f NormalizeColor(float red, float green, float blue, float alpha)

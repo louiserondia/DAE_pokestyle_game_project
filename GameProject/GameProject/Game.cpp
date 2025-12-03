@@ -12,12 +12,14 @@ void	InitBattle();
 void	DrawBattle();
 void	UpdateBattle(float elapsedSec);
 void	HandleMouseUpBattle(const SDL_MouseButtonEvent& e);
+void	PrintTileIndex(float x, float y);
 
 //Basic game functions
 
 #pragma region gameFunctions											
 void Start()
 {
+	InitAudio();
 	InitOverworld();
 	InitBattle();
 }
@@ -42,6 +44,7 @@ void End()
 {
 	FreeOverworld();
 	// we need to delete all the textures here !!
+	EndAudio();
 }
 #pragma endregion gameFunctions
 
@@ -64,6 +67,7 @@ void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
 
 void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 {
+	PrintTileIndex(e.x, e.y);
 }
 
 void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
