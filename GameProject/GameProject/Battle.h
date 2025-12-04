@@ -7,7 +7,11 @@ const float
 g_SpeedHPBar{ 50.f },
 g_MovementLength{ 55.f },
 g_AttackSpeed{ 200.f },
-g_HeightOfTextBlock{ g_WindowHeight * 0.3f };
+g_HeightOfTextBlock{ g_WindowHeight * 0.3f },
+g_HalfWidth{ g_WindowWidth / 2.f };
+
+const int
+g_AmmountOfMoves{ 6 };
 //		--- ENUM & STRUCTS ---
 
 enum class Phases
@@ -27,14 +31,31 @@ enum class Phases
 
 
 
-struct HPBar {
+struct Moves
+{
 	float
-		hpBarHitAmmount{},
-		hpBarCurrent{ 100.f },
-		hpBarTotal{ 100.f },
-		hPBarWidth{ g_WindowWidth * 0.23f };
+		damage{};
 };
+struct Pokemon
+{
+	float hp{100.f};
+	Moves arrMoves[g_AmmountOfMoves]{};
+};
+struct HPBar
+{
+	Point2f position
+	{
+		0.f,
+		0.f,
+	};
+	float
+		width{ g_WindowWidth * 0.23f }, //full width of the bar
+		height{ g_WindowHeight * 0.0175f }, //full height of the bar
+		total{ 100.f },
+		actual{ total },
+		animHP{ actual };
 
+};
 struct PokemonInBattle
 {
 	Point2f
@@ -58,18 +79,32 @@ EnemyPokemon
 {
 	Point2f
 	{
-	(g_WindowWidth / 2) + 50,
+	(g_WindowWidth / 2) + 50.f,
 	g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
 	}
 };
-HPBar HPBarAllyPokemon{
-	20.f,
+HPBar HPBarAllyPokemon
+{
+	Point2f
+	{
+		g_WindowWidth - (g_WindowWidth * 0.269f),
+		g_WindowHeight - (g_HeightOfTextBlock * 1.43f),
+	}
+},
+HPBarEnemyPokemon{
+	Point2f
+	{
+		g_WindowWidth * 0.1875f,
+		g_WindowHeight * 0.106f,
+	}
 };
-HPBar HPBarEnemyPokemon{
-	10.f,
-	100.f,
-	100.f,
-	g_WindowWidth * 0.231f
+Moves Tackle
+{
+	10.f
+};
+Moves StrongTackle
+{
+	20.f
 };
 Rectf fightButton{
 		g_WindowWidth * 0.494125f,
@@ -97,20 +132,6 @@ runButton
 	itemButton.top,
 	g_WindowWidth * 0.15625f,
 	itemButton.height,
-},
-HpBarEnemy
-{
-	g_WindowWidth * 0.1875f,
-	g_WindowHeight * 0.106f,
-	HPBarAllyPokemon.hPBarWidth,
-	g_WindowHeight * 0.0175f,
-},
-HpBarAlly
-{
-	g_WindowWidth - (g_WindowWidth * 0.269f),
-	g_WindowHeight - (g_HeightOfTextBlock * 1.43f),
-	HPBarAllyPokemon.hPBarWidth,
-	g_WindowHeight * 0.0175f,
 };
 float
 g_SpeedAttack{ 0.f },
@@ -199,13 +220,11 @@ void	Switch(float elapsedSec);
 void	RunAway(float elapsedSec);
 void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
-void	HPBarEnemyDown(float elapsedSec);
 void	Wait(float elapsedSec);
-void	HPBarAllyDown(float elapsedSec);
 void	HPBarAllyUp(float elapsedSec);
-void	Damage(HPBar& hpBar);
+void	Damage(HPBar& hpBarForDamage, Moves& move);
 void	Heal(HPBar& hpBar);
-void	HPBarMath( float amountChange, HPBar& hpBar, bool isDamage = true);
+void	HPBarMath( HPBar& hpBar, float elapsedTime);
 
 //		UTILS
 
