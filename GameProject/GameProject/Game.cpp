@@ -6,6 +6,7 @@
 void	InitOverworld();
 void	DrawOverworld();
 void	FreeOverworld();
+void	FreeBattle();
 void	HandleKeyDownOverworld(SDL_Keycode key);
 void	UpdateOverworld(float elapsedSec);
 void	InitBattle();
@@ -44,6 +45,7 @@ void Update(float elapsedSec)
 void End()
 {
 	FreeOverworld();
+	FreeBattle();
 	// we need to delete all the textures here !!
 	EndAudio();
 }

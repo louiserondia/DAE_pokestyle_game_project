@@ -4,7 +4,7 @@ using namespace utils;
 
 //		--- CONST VARIABLES ---
 const float
-g_SpeedHPBar{ 50.f },
+g_SpeedHPBar{ 25.f },
 g_MovementLength{ 55.f },
 g_AttackSpeed{ 200.f },
 g_HeightOfTextBlock{ g_WindowHeight * 0.3f },
@@ -153,9 +153,11 @@ g_ItemTextureIsOn{},
 g_SwitchTextureIsOn{},
 g_RunTextureIsOn{},
 g_ItemDoneTextureIsOn{},
+g_FightingOptionsTextureIsOn{true},
 g_NotFirstTurnTextureIsOn{},
 g_FaintTextureIsOn{},
-g_ItemOnlyOnce{};
+g_ItemOnlyOnce{},
+g_IsHeal{};
 
 
 utils::Texture
@@ -164,15 +166,15 @@ g_LaxManTexture{},
 g_InfoAllyPokemonTexture{},
 g_GodmoongussTexture{},
 g_AttackTexture{},
-g_GodmoongussAttackTexture{},
-g_LaxAttackTexture{},
-g_WaitTexture{},
-g_ItemTexture{},
-g_SwitchTexture{},
-g_RunTexture{},
-g_ItemDoneTexture{},
-g_NotFirstTurnTexture{},
-g_FaintTexture{},
+g_GodmoongussAttackText{},
+g_LaxAttackText{},
+g_WaitText{},
+g_ItemText{},
+g_SwitchText{},
+g_RunText{},
+g_ItemDoneText{},
+g_NotFirstTurnText{},
+g_FaintText{},
 g_FightingOptionsTexture{},
 g_InfoEnemyPokemonTexture{};
 
@@ -221,7 +223,6 @@ void	RunAway(float elapsedSec);
 void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
 void	Wait(float elapsedSec);
-void	HPBarAllyUp(float elapsedSec);
 void	Damage(HPBar& hpBarForDamage, Moves& move);
 void	Heal(HPBar& hpBar);
 void	HPBarMath( HPBar& hpBar, float elapsedTime);
