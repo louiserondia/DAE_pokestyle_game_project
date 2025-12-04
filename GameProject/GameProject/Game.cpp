@@ -19,6 +19,7 @@ void	PrintTileIndex(float x, float y);
 #pragma region gameFunctions											
 void Start()
 {
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	InitAudio();
 	InitOverworld();
 	InitBattle();

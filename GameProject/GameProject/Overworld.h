@@ -9,9 +9,9 @@ using namespace utils;
 
 //		--- CONST VARIABLES ---
 
-const int	g_NrScenes{ 2 };
+const int	g_NrScenes{ 3 };
 const int	g_CharacterNrCols{ 16 }; // maybe should be nrCol and rows
-const float g_MoveSpeed{ 200.f };
+const float g_MoveSpeed{ 250.f };
 
 const Color4f g_White(.9f, .9f, .9f, .5f);
 const Color4f g_Black(.2f, .2f, .2f, .5f);
@@ -52,7 +52,15 @@ struct Character {
 	Texture		texture{};
 };
 
-// make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
+struct Door {
+	std::string	id{};
+	int			targetSceneId{};
+	std::string	targetEntryId{};
+};
+
+// each door has an id, a target scene and its entry point
+// each scene has an id and several entry points linked to their spawn location 
+
 struct Scene {
 	Texture	texture{};
 	Texture	fgTexture{};
@@ -60,6 +68,10 @@ struct Scene {
 	Point2f	startOffset{};
 	float	screenWidth{};
 	float	screenHeight{};
+	int		id{};
+	std::map<std::string, int> entryPoints{}; // key = name of entry point, value is target tile
+	Door	doors[5]; // max doors = 5 (variable ?)
+	int		nrDoors{};
 };
 
 struct Camera {
@@ -69,7 +81,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		currentSceneIndex{};
+	int		currentSceneIndex{}; // if i start in another scene it's out of bounds idk why
 };
 
 
@@ -87,8 +99,9 @@ std::map<std::string, AnimFrame> g_AnimFrames{};
 float		g_FrameTime{};
 float		g_TileSize{ 16.f };
 
-int*		g_CollisionMap{};
+int*		g_CollisionMaps[g_NrScenes]{};
 float		g_CollisionMapSize{};
+std::string	g_CollisionMapPaths[g_NrScenes]{};
 
 SDL_Keycode g_CurKey{};
 SDL_Keycode g_NextKey{};
@@ -112,6 +125,7 @@ void	InitScene(Scene* pScene);
 void	InitCamera();
 void	InitCharacter();
 void	InitAnimFrames();
+void	InitCollisionMapPaths();
 void	InitCollisionMap();
 void	InitAudioFiles();
 
@@ -162,7 +176,10 @@ bool	IsPosInCenterY(float pos);
 void	PrintTileIndex(float x, float y);
 void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
 bool	IsWalkable(int index);
+bool	IsTallGrass(int index);
 bool	IsGoingOutsideMap();
+Door	GetDoor();
+
 
 
 #pragma endregion ownDeclarations

@@ -18,6 +18,7 @@ void	InitOverworld() {
 	InitAnimFrames();
 	InitCharacter();
 	InitCamera();
+	InitCollisionMapPaths();
 	InitCollisionMap();
 	InitAudioFiles();
 }
@@ -25,15 +26,34 @@ void	InitOverworld() {
 void	InitScenes() {
 	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
 		ErrorLoadMsg("Resources/map_three_island.png", "map 0");
-	if (!TextureFromFile("Resources/map_three_island_houses.png", g_World.scenes[0].fgTexture))
-		ErrorLoadMsg("Resources/map_three_island_houses.png", "fg map 0");
+	if (!TextureFromFile("Resources/map_three_island_houses_2.png", g_World.scenes[0].fgTexture))
+		ErrorLoadMsg("Resources/map_three_island_houses_2.png", "fg map 0");
+	g_World.scenes[0].entryPoints["Spawn"] = 183;
+	g_World.scenes[0].entryPoints["East"] = 215;
+	g_World.scenes[0].nrDoors = 1;
+	g_World.scenes[0].doors[0] = Door{ "East", 1, "West" };
 
-	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[1].texture))
-		ErrorLoadMsg("Resources/map_three_island.png", "map 1");
-	if (!TextureFromFile("Resources/map_three_island_houses.png", g_World.scenes[1].fgTexture))
-		ErrorLoadMsg("Resources/map_three_island_houses.png", "fg map 1");
+	if (!TextureFromFile("Resources/bridge.png", g_World.scenes[1].texture))
+		ErrorLoadMsg("Resources/bridge.png", "map 1");
+	if (!TextureFromFile("Resources/bridge_fg.png", g_World.scenes[1].fgTexture))
+		ErrorLoadMsg("Resources/bridge_fg.png", "fg map 1");
+	g_World.scenes[1].entryPoints["West"] = 752;
+	g_World.scenes[1].entryPoints["NorthEast"] = 81;
+	g_World.scenes[1].nrDoors = 2;
+	g_World.scenes[1].doors[0] = Door{ "West", 0, "East" };
+	g_World.scenes[1].doors[1] = Door{ "NorthEast", 2, "South" };
 
-	Scene* pScene{ &g_World.scenes[0] };
+	if (!TextureFromFile("Resources/kindle.png", g_World.scenes[2].texture))
+		ErrorLoadMsg("Resources/kindle.png", "map 2");
+	if (!TextureFromFile("Resources/kindle_fg.png", g_World.scenes[2].fgTexture))
+		ErrorLoadMsg("Resources/kindle_fg.png", "fg map 2");
+	g_World.scenes[2].entryPoints["South"] = 2845;
+	g_World.scenes[2].entryPoints["North"] = 11;
+	g_World.scenes[2].nrDoors = 2;
+	g_World.scenes[2].doors[0] = Door{ "South", 1, "NorthEast" };
+	g_World.scenes[2].doors[1] = Door{ "North", 0, "East" };
+
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 	InitScene(pScene);
 }
 
@@ -63,8 +83,10 @@ void	InitAnimFrames() {
 void	InitCharacter() {
 	if (!TextureFromFile("Resources/character.png", g_Character.texture))
 		std::cout << "Couldn't load character texture at Resources/character.png";
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
-	g_Character.curTile = 200;
+	g_Character.curTile = pScene->entryPoints["Spawn"];
+	//g_Character.curTile = 81;
 	g_Character.dst = Rectf{
 		GetCol(g_Character.curTile, g_NrCols) * g_TileSize,
 		GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2,
@@ -80,7 +102,7 @@ void	InitCharacter() {
 }
 
 void	InitCamera() {
-	Scene* pScene{ &g_World.scenes[0] };
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
 	Point2f	posCharacterMid{ g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2, g_Character.dst.top - g_WindowHeight / 2 };
 
@@ -92,24 +114,30 @@ void	InitCamera() {
 	g_Camera.pos = posCharacterMid;
 }
 
-void	InitCollisionMap() {
-	g_CollisionMapSize = static_cast<float>(g_NrCols * g_NrRows);
-	g_CollisionMap = new int[static_cast<size_t>(g_CollisionMapSize)];
+void	InitCollisionMapPaths() {
+	g_CollisionMapPaths[0] = "../Resources/map_three_island_2.txt";
+	g_CollisionMapPaths[1] = "../Resources/bridge.txt";
+}
 
-	std::ifstream	file("../Resources/map_three_island.txt");
-	if (!file) {
-		std::cout << "Error loading Resources / map_three_island.txt\n";
-	}
+void	InitCollisionMap() {
+	const int sceneIndex{ g_World.currentSceneIndex };
+	std::string path{ g_CollisionMapPaths[sceneIndex] };
+	g_CollisionMapSize = static_cast<float>(g_NrCols * g_NrRows);
+	g_CollisionMaps[sceneIndex] = new int[static_cast<size_t>(g_CollisionMapSize)];
+
+	std::ifstream	file(path);
+	if (!file)
+		ErrorLoadMsg(path);
 
 	int index{};
 	char ch{};
 	while (file.get(ch) && index < static_cast<int>(g_CollisionMapSize)) {
-		if (ch == '0' || ch == '1') {
-			g_CollisionMap[index] = ch - '0';
+		if (ch == '0' || ch == '1' || ch == '2') {
+			g_CollisionMaps[sceneIndex][index] = ch - '0';
 			++index;
 		}
 	}
-	//Print2DArray(g_CollisionMap, g_CollisionMapSize, g_NrCols);
+	//Print2DArray(g_CollisionMaps[sceneIndex], g_CollisionMapSize, g_NrCols);
 }
 
 void InitAudioFiles() {
@@ -122,8 +150,11 @@ void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
 	DeleteTexture(g_World.scenes[0].fgTexture);
 	DeleteTexture(g_Character.texture);
-	delete[] g_CollisionMap;
 	Mix_FreeChunk(g_CollisionSound);
+
+	for (int index{}; index < g_NrScenes; ++index) {
+		delete[] g_CollisionMaps[index];
+	}
 }
 
 //		DRAW
@@ -135,8 +166,6 @@ void	DrawOverworld() {
 	DrawCharacter();
 	DrawFgMap();
 	DrawLoadingScreen();
-	//SetColor(0.f, 0.f, 0.f, cosf(g_Time* g_Pi));
-	//FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
 void	DrawMap() {
@@ -190,7 +219,11 @@ void	HandleKeyDownOverworld(SDL_Keycode key) {
 
 void	UpdateCurKey() {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_NextKey) };
+	int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
+	if (targetTile == -1)
+		targetTile = TargetTileFromKey(g_Character.curTile, g_NextKey);
+	if (targetTile == -1)
+		targetTile = g_Character.curTile;
 
 	if (!pStates[SDL_GetScancodeFromKey(g_CurKey)])
 		g_CurKey = 0;
@@ -314,6 +347,30 @@ void	CheckSoundEffect(SDL_Keycode key) {
 	}
 }
 
+Door GetDoor() {
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const int sceneIndex{ g_World.currentSceneIndex };
+	const int row{ GetRow(g_Character.curTile, g_NrCols) },
+		col{ GetCol(g_Character.curTile, g_NrCols) };
+
+	if (!sceneIndex) {
+		return pScene->doors[0]; // east
+	}
+	else if (sceneIndex == 1) {
+		//if (row == 0)
+			return pScene->doors[1]; // north east
+		//else
+			//return pScene->doors[0]; // west
+	}
+	else if (sceneIndex == 2) {
+		if (row == 0)
+			return pScene->doors[1]; // north 
+		else if (row == g_NrRows - 1)
+			return pScene->doors[0]; // south
+	}
+	return pScene->doors[0];
+}
+
 void UpdateScene() {
 	if (!IsGoingOutsideMap())
 		return;
@@ -321,17 +378,21 @@ void UpdateScene() {
 	g_LoadingScreenCooldown = 0.f;
 	g_Character.isMoving = false;
 
-	g_World.currentSceneIndex = (g_World.currentSceneIndex + 1) % g_NrScenes;
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Door door{ GetDoor() };
+
+	g_World.currentSceneIndex = door.targetSceneId;
+	std::cout << door.targetSceneId << std::endl;
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] }; // new scene
 
 	InitScene(pScene);
 
-	g_Character.curTile = 200;
+	g_Character.curTile = pScene->entryPoints[door.targetEntryId];
 	g_Character.dst.left = GetCol(g_Character.curTile, g_NrCols) * g_TileSize;
 	g_Character.dst.top = GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2;
 	g_Character.targetTile = g_Character.curTile;
 
 	InitCamera();
+	InitCollisionMap();
 }
 
 //		UTILS
@@ -374,8 +435,9 @@ int		TargetTileFromKey(int curTile, SDL_Keycode key) {
 		return curTile + 1;
 	else if (key == SDLK_UP)
 		return curTile - g_NrCols;
-	else
+	else if (key == SDLK_DOWN)
 		return curTile + g_NrCols;
+	return -1;
 }
 
 int		TargetTileFromDir(int curTile, Point2f dir) {
@@ -461,18 +523,24 @@ void ErrorLoadMsg(const std::string& path, const std::string& name) {
 }
 
 bool IsWalkable(int index) {
-	return !g_CollisionMap[index];
+	return !(g_CollisionMaps[g_World.currentSceneIndex][index] == 1);
 }
+
+bool IsTallGrass(int index) {
+	return g_CollisionMaps[g_World.currentSceneIndex][index] == 2;
+}
+
 // make start of walk animation when collision (changes leg each time)
 
 bool IsGoingOutsideMap() {
-	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_NextKey) };
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
-	return
-		GetRow(targetTile, g_NrCols) <= 0
-		|| GetRow(targetTile, g_NrCols) >= g_NrRows
-		|| GetCol(targetTile, g_NrCols) <= 0
-		|| GetCol(targetTile, g_NrCols) >= g_NrCols;
+	//check for 0
+
+	return g_Character.dst.left < 0
+		|| g_Character.dst.left > pScene->screenWidth - g_TileSize
+		|| g_Character.dst.top < 0
+		|| g_Character.dst.top > pScene->screenHeight - g_TileSize;
 }
 
 #pragma endregion ownDeclarations
