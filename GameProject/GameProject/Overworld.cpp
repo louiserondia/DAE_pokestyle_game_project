@@ -37,6 +37,7 @@ void	InitScenes() {
 		ErrorLoadMsg("Resources/bridge.png", "map 1");
 	if (!TextureFromFile("Resources/bridge_fg.png", g_World.scenes[1].fgTexture))
 		ErrorLoadMsg("Resources/bridge_fg.png", "fg map 1");
+	g_World.scenes[1].entryPoints["Spawn"] = 752;
 	g_World.scenes[1].entryPoints["West"] = 752;
 	g_World.scenes[1].entryPoints["NorthEast"] = 81;
 	g_World.scenes[1].nrDoors = 2;
@@ -47,8 +48,9 @@ void	InitScenes() {
 		ErrorLoadMsg("Resources/kindle.png", "map 2");
 	if (!TextureFromFile("Resources/kindle_fg.png", g_World.scenes[2].fgTexture))
 		ErrorLoadMsg("Resources/kindle_fg.png", "fg map 2");
-	g_World.scenes[2].entryPoints["South"] = 2845;
+	g_World.scenes[2].entryPoints["South"] = 2844;
 	g_World.scenes[2].entryPoints["North"] = 11;
+	g_World.scenes[2].entryPoints["Spawn"] = 2844;
 	g_World.scenes[2].nrDoors = 2;
 	g_World.scenes[2].doors[0] = Door{ "South", 1, "NorthEast" };
 	g_World.scenes[2].doors[1] = Door{ "North", 0, "East" };
@@ -86,7 +88,6 @@ void	InitCharacter() {
 	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
 
 	g_Character.curTile = pScene->entryPoints["Spawn"];
-	//g_Character.curTile = 81;
 	g_Character.dst = Rectf{
 		GetCol(g_Character.curTile, g_NrCols) * g_TileSize,
 		GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2,
@@ -109,14 +110,16 @@ void	InitCamera() {
 	if (posCharacterMid.x < 0) posCharacterMid.x = 0;
 	else if (posCharacterMid.x + g_WindowWidth > pScene->dst.width) posCharacterMid.x = pScene->dst.width - g_WindowWidth;
 	if (posCharacterMid.y < 0) posCharacterMid.y = 0;
-	else if (posCharacterMid.y + g_WindowHeight > pScene->dst.height) posCharacterMid.x = pScene->dst.height - g_WindowHeight;
+	else if (posCharacterMid.y + g_WindowHeight > pScene->dst.height) posCharacterMid.y = pScene->dst.height - g_WindowHeight;
 
 	g_Camera.pos = posCharacterMid;
+
 }
 
 void	InitCollisionMapPaths() {
 	g_CollisionMapPaths[0] = "../Resources/map_three_island_2.txt";
 	g_CollisionMapPaths[1] = "../Resources/bridge.txt";
+	g_CollisionMapPaths[2] = "../Resources/kindle.txt";
 }
 
 void	InitCollisionMap() {
@@ -244,6 +247,9 @@ void	UpdateCurKey() {
 void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
+	//std::cout << " x : " << g_Character.dst.left << std::endl;
+	//std::cout << " y : " << g_Character.dst.top << std::endl;
+
 	UpdateCharacterPos(elapsedSec);
 	UpdateCharacterFrameInTime(elapsedSec);
 	UpdateMapPos(elapsedSec);
@@ -357,10 +363,10 @@ Door GetDoor() {
 		return pScene->doors[0]; // east
 	}
 	else if (sceneIndex == 1) {
-		//if (row == 0)
+		if (row == 0)
 			return pScene->doors[1]; // north east
-		//else
-			//return pScene->doors[0]; // west
+		else
+			return pScene->doors[0]; // west
 	}
 	else if (sceneIndex == 2) {
 		if (row == 0)
@@ -376,12 +382,14 @@ void UpdateScene() {
 		return;
 
 	g_LoadingScreenCooldown = 0.f;
-	g_Character.isMoving = false;
+	g_Character.isMoving = false; 
+	// theres an issue here, going right is fine but left since hitbox is on the left, he still walks one tile
+	// for up and down it walks half a tile because detection is in the middle
+	//maybe check is updating then dont move or teleport back
 
 	const Door door{ GetDoor() };
 
 	g_World.currentSceneIndex = door.targetSceneId;
-	std::cout << door.targetSceneId << std::endl;
 	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] }; // new scene
 
 	InitScene(pScene);
@@ -462,8 +470,9 @@ Point2f		TargetPosFromKey(Point2f pos, SDL_Keycode key) {
 		return Point2f{ pos.x + g_MoveDist, pos.y };
 	else if (key == SDLK_UP)
 		return Point2f{ pos.x, pos.y - g_MoveDist };
-	else
+	else if (key == SDLK_DOWN)
 		return Point2f{ pos.x, pos.y + g_MoveDist };
+	return Point2f{ -1.f, -1.f };
 }
 
 bool	IsPosInCenterX(float pos) {
@@ -533,14 +542,19 @@ bool IsTallGrass(int index) {
 // make start of walk animation when collision (changes leg each time)
 
 bool IsGoingOutsideMap() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Point2f curPos{ g_Character.dst.left, g_Character.dst.top + g_TileSize };
 
-	//check for 0
+	Point2f targetPos{ TargetPosFromKey(curPos, g_CurKey) };
+	if (targetPos.x == -1.f)
+		targetPos = TargetPosFromKey(curPos, g_NextKey);
+	if (targetPos.x == -1.f)
+		targetPos = curPos;
 
-	return g_Character.dst.left < 0
-		|| g_Character.dst.left > pScene->screenWidth - g_TileSize
-		|| g_Character.dst.top < 0
-		|| g_Character.dst.top > pScene->screenHeight - g_TileSize;
+	return(targetPos.x < 0 && curPos.x <= 0.f)
+		|| (targetPos.x > pScene->screenWidth && curPos.x >= pScene->screenWidth)
+		|| (targetPos.y < 0 && curPos.y <= 0.f)
+		|| (targetPos.y > pScene->screenHeight && curPos.y >= pScene->screenHeight);
 }
 
 #pragma endregion ownDeclarations
