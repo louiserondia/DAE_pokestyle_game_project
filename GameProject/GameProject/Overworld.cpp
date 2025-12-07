@@ -6,6 +6,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 
+void TurnOnBattle();
 
 #pragma region ownDeclarations
 
@@ -264,40 +265,16 @@ SDL_Keycode	UpdateCurKey() {
 	return NULL;
 }
 
-void HandleWalk() {
-	if (!g_CurKey)
-		g_CurKey = UpdateCurKey();
-
-	if (g_CurKey) {
-		g_Character.dir = DirFromKey(g_CurKey);
-		g_Character.targetTile = TargetTileFromKey(g_Character.curTile, g_CurKey);
-		CheckSoundEffect(g_CurKey);
-
-		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey))) {
-			g_Character.targetTile = g_Character.curTile;
-			g_CurKey = UpdateCurKey();
-		}
-		else {
-			g_Character.targetPos = PosFromTile(g_Character.targetTile);
-			g_Character.isMoving = true;
-		}
-		// now walk is handled in UpdateCharacterPos
-	}
-	else
-		g_Character.isMoving = false;
-	UpdateAnimFrameState();
-}
-
 //		UPDATE
 
 void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
 	UpdateCharacterPos(elapsedSec);
+	HandleWalk();
 	UpdateCharacterFrameInTime(elapsedSec);
 	UpdateMapPos(elapsedSec);
 	UpdateCameraPos(elapsedSec);
-	HandleWalk();
 	UpdateScene();
 
 	g_FrameTime += elapsedSec;
@@ -329,7 +306,32 @@ void UpdateCharacterPos(float elapsedSec) {
 		g_CurKey = UpdateCurKey();
 		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey)))
 			g_Character.isMoving = false;
+		CheckBattleInGrass();
 	}
+}
+
+void HandleWalk() {
+	if (!g_CurKey)
+		g_CurKey = UpdateCurKey();
+
+	if (g_CurKey) {
+		g_Character.dir = DirFromKey(g_CurKey);
+		g_Character.targetTile = TargetTileFromKey(g_Character.curTile, g_CurKey);
+		CheckSoundEffect(g_CurKey);
+
+		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey))) {
+			g_Character.targetTile = g_Character.curTile;
+			g_CurKey = UpdateCurKey();
+		}
+		else {
+			g_Character.targetPos = PosFromTile(g_Character.targetTile);
+			g_Character.isMoving = true;
+		}
+		// now walk is handled in UpdateCharacterPos
+	}
+	else
+		g_Character.isMoving = false;
+	UpdateAnimFrameState();
 }
 
 void UpdateCameraPos(float elapsedSec) {
@@ -422,6 +424,25 @@ void UpdateScene() {
 
 	InitCamera();
 	InitCollisionMap();
+}
+
+void StopWalkingAndReset() {
+	g_CurKey = NULL;
+	g_NextKey = NULL;
+	g_Character.isMoving = false;
+	g_Character.targetTile = g_Character.curTile;
+	g_Character.targetPos = PosFromTile(g_Character.curTile); // those 3 lines could be a reset pos function
+}
+
+void CheckBattleInGrass() {
+	if (IsTallGrass(g_Character.curTile)) {
+		const int randNum{ rand() % 5 };
+
+		if (!randNum) {
+			StopWalkingAndReset();
+			TurnOnBattle();
+		}
+	}
 }
 
 //		UTILS

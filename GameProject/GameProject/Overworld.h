@@ -73,7 +73,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		currentSceneIndex{}; // to debug, set to the scene you want to start at
+	int		currentSceneIndex{1}; // to debug, set to the scene you want to start at
 };
 
 struct KeyPressed {
@@ -154,6 +154,7 @@ void	DrawLoadingScreen();
 void	HandleKeyDownOverworld(SDL_Keycode key);
 void	HandleKeyUpOverworld(SDL_Keycode key);
 void	OnKeyDownEventOnce(SDL_Keycode key);
+SDL_Keycode	UpdateCurKey();
 
 //		UPDATE
 
@@ -161,13 +162,13 @@ void	UpdateOverworld(float elapsedSec);
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
 void	UpdateCharacterPos(float elapsedSec);
+void	StopWalkingAndReset();
+void	HandleWalk();
 void	UpdateAnimFrameState();
 void	UpdateCharacterFrameInTime(float elapsedSec);
-void	CheckSoundEffect(SDL_Keycode key);
 void	UpdateScene();
-
-void	HandleWalk();
-SDL_Keycode	UpdateCurKey();
+void	CheckSoundEffect(SDL_Keycode key);
+void	CheckBattleInGrass();
 
 //		UTILS
 

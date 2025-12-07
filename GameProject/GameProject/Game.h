@@ -17,8 +17,18 @@ float g_WindowHeight{ 720 };
 // Declare your own global variables here
 
 bool	g_IsBattleOn{1};		// press B to switch from battle to map view and mechanics
+bool	g_IsOverworldOn{};		// press B to switch from battle to map view and mechanics
+bool	g_IsBattleTransitionOn{};
+
+float	g_GlobalTime{};
 
 // Declare your own functions here
+
+void DrawBattleTransitionAnimation();
+
+void TurnOnBattle();
+void TurnOffBattle();
+void UpdateBattleOverworldStati();
 
 
 #pragma endregion ownDeclarations
