@@ -7,7 +7,7 @@ bool InitAudio()
 	if (SDL_Init(SDL_INIT_AUDIO) < 0)
 		return false;
 
-	// 44.1 Khz, default format, 2 channels (stereo), 2048 bytes chunk
+	//  2 channels (stereo)
 	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
 		return false;
 

@@ -8,6 +8,7 @@ void	DrawOverworld();
 void	FreeOverworld();
 void	FreeBattle();
 void	HandleKeyDownOverworld(SDL_Keycode key);
+void	HandleKeyUpOverworld(SDL_Keycode key);
 void	UpdateOverworld(float elapsedSec);
 void	InitBattle();
 void	DrawBattle();
@@ -55,13 +56,16 @@ void End()
 #pragma region inputHandling											
 void OnKeyDownEvent(SDL_Keycode key)
 {
-	if (key == SDLK_b)
-		g_IsBattleOn = !g_IsBattleOn;
-	HandleKeyDownOverworld(key);
+	if (!g_IsBattleOn)
+		HandleKeyDownOverworld(key);
 }
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
+	if (key == SDLK_b)
+		g_IsBattleOn = !g_IsBattleOn;
+	if (!g_IsBattleOn)
+		HandleKeyUpOverworld(key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)

@@ -144,7 +144,8 @@ void	InitCollisionMap() {
 }
 
 void InitAudioFiles() {
-	LoadSoundEffect(g_CollisionSound, "../Resources/collision.wav");
+	LoadSoundEffect(g_Sounds.collision, "../Resources/collision.wav");
+	LoadSoundEffect(g_Sounds.grass, "../Resources/grass.wav");
 }
 
 //		END
@@ -153,7 +154,8 @@ void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
 	DeleteTexture(g_World.scenes[0].fgTexture);
 	DeleteTexture(g_Character.texture);
-	Mix_FreeChunk(g_CollisionSound);
+	Mix_FreeChunk(g_Sounds.collision);
+	Mix_FreeChunk(g_Sounds.grass);
 
 	for (int index{}; index < g_NrScenes; ++index) {
 		delete[] g_CollisionMaps[index];
@@ -199,12 +201,12 @@ void DrawLoadingScreen() {
 	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
-
 //		INPUT HANDLING
 
-void	HandleKeyDownOverworld(SDL_Keycode key) {
+void OnKeyDownEventOnce(SDL_Keycode key) {
 	if (key == SDLK_LEFT || key == SDLK_RIGHT || key == SDLK_UP || key == SDLK_DOWN) {
 
+		// Turn character when key pressed if not in the right direction
 		if (!g_Character.isMoving && key == SDLK_LEFT && g_Character.dir.x != -1.f)
 			g_Character.dir = Point2f{ -1.f, 0.f };
 		else if (!g_Character.isMoving && key == SDLK_RIGHT && g_Character.dir.x != 1.f)
@@ -213,33 +215,77 @@ void	HandleKeyDownOverworld(SDL_Keycode key) {
 			g_Character.dir = Point2f{ 0.f, -1.f };
 		else if (!g_Character.isMoving && key == SDLK_DOWN && g_Character.dir.y != 1.f)
 			g_Character.dir = Point2f{ 0.f, 1.f };
-		else if (g_CurKey != key)
-			g_NextKey = key;
-		UpdateAnimFrameState();
-		CheckSoundEffect(key);
+
+		// updates key pressed if not already pressed
+		else {
+			if (key == SDLK_LEFT && !g_KeyPressed.left) {
+				g_KeyPressed.left = true;
+				g_NextKey = key;
+			}
+			else if (key == SDLK_RIGHT && !g_KeyPressed.right) {
+				g_KeyPressed.right = true;
+				g_NextKey = key;
+			}
+			else if (key == SDLK_UP && !g_KeyPressed.up) {
+				g_KeyPressed.up = true;
+				g_NextKey = key;
+			}
+			else if (key == SDLK_DOWN && !g_KeyPressed.down) {
+				g_KeyPressed.down = true;
+				g_NextKey = key;
+			}
+
+			UpdateAnimFrameState();
+		}
 	}
 }
 
-void	UpdateCurKey() {
+void	HandleKeyDownOverworld(SDL_Keycode key) {
+	OnKeyDownEventOnce(key);
+}
+
+void	HandleKeyUpOverworld(SDL_Keycode key) {
+	if (key == SDLK_LEFT) g_KeyPressed.left = false;
+	else if (key == SDLK_RIGHT) g_KeyPressed.right = false;
+	else if (key == SDLK_UP) g_KeyPressed.up = false;
+	else if (key == SDLK_DOWN) g_KeyPressed.down = false;
+}
+
+SDL_Keycode	UpdateCurKey() {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
-	int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
-	if (targetTile == -1)
-		targetTile = TargetTileFromKey(g_Character.curTile, g_NextKey);
-	if (targetTile == -1)
-		targetTile = g_Character.curTile;
 
-	if (!pStates[SDL_GetScancodeFromKey(g_CurKey)])
-		g_CurKey = 0;
-
-	if (g_Character.curTile == g_Character.targetTile && g_NextKey && IsWalkable(targetTile)) {
-		g_CurKey = g_NextKey;
-		g_NextKey = 0;
-		g_Character.dir = DirFromKey(g_CurKey);
-		g_Character.targetTile = targetTile;
-		g_Character.targetPos = TargetPosFromKey(g_Character.dst, g_CurKey);
-		g_Character.isMoving = true;
-		UpdateAnimFrameState();
+	if (g_NextKey) {
+		SDL_Keycode temp{ g_NextKey };
+		g_NextKey = NULL;
+		return temp;
 	}
+	if (pStates[SDL_GetScancodeFromKey(g_CurKey)])
+		return g_CurKey;
+	return NULL;
+}
+
+void HandleWalk() {
+	if (!g_CurKey)
+		g_CurKey = UpdateCurKey();
+
+	if (g_CurKey) {
+		g_Character.dir = DirFromKey(g_CurKey);
+		g_Character.targetTile = TargetTileFromKey(g_Character.curTile, g_CurKey);
+		CheckSoundEffect(g_CurKey);
+
+		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey))) {
+			g_Character.targetTile = g_Character.curTile;
+			g_CurKey = UpdateCurKey();
+		}
+		else {
+			g_Character.targetPos = PosFromTile(g_Character.targetTile);
+			g_Character.isMoving = true;
+		}
+		// now walk is handled in UpdateCharacterPos
+	}
+	else
+		g_Character.isMoving = false;
+	UpdateAnimFrameState();
 }
 
 //		UPDATE
@@ -247,26 +293,26 @@ void	UpdateCurKey() {
 void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 
-	//std::cout << " x : " << g_Character.dst.left << std::endl;
-	//std::cout << " y : " << g_Character.dst.top << std::endl;
-
 	UpdateCharacterPos(elapsedSec);
 	UpdateCharacterFrameInTime(elapsedSec);
 	UpdateMapPos(elapsedSec);
 	UpdateCameraPos(elapsedSec);
-	UpdateCurKey();
+	HandleWalk();
 	UpdateScene();
 
 	g_FrameTime += elapsedSec;
 	g_Time += elapsedSec;
-	g_SoundEffectCooldown += elapsedSec;
+	g_Sounds.collisionCooldown += elapsedSec;
+	g_Sounds.grassCooldown += elapsedSec;
 	g_LoadingScreenCooldown += elapsedSec;
 }
 
 void UpdateCharacterPos(float elapsedSec) {
 	if (!g_Character.isMoving)
 		return;
-	const float dx{ g_Character.dir.x * g_MoveSpeed * elapsedSec },
+
+	const float
+		dx{ g_Character.dir.x * g_MoveSpeed * elapsedSec },
 		dy{ g_Character.dir.y * g_MoveSpeed * elapsedSec };
 
 	if (g_Progression + abs(dx + dy) < g_MoveDist) {
@@ -276,19 +322,13 @@ void UpdateCharacterPos(float elapsedSec) {
 	}
 	else {
 		g_Character.dst.left = g_Character.targetPos.x;
-		g_Character.dst.top = g_Character.targetPos.y;
+		g_Character.dst.top = g_Character.targetPos.y - g_TileSize / 2;
 		g_Progression = 0.f;
 		g_Character.curTile = g_Character.targetTile;
 
-		const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
-
-		if (!g_CurKey || !IsWalkable(targetTile)) {
+		g_CurKey = UpdateCurKey();
+		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey)))
 			g_Character.isMoving = false;
-		}
-		else {
-			g_Character.targetTile = targetTile;
-			g_Character.targetPos = TargetPosFromKey(g_Character.dst, g_CurKey);
-		}
 	}
 }
 
@@ -344,37 +384,20 @@ void	UpdateCharacterFrameInTime(float elapsedSec) {
 }
 
 void	CheckSoundEffect(SDL_Keycode key) {
-	const float cooldown{ .6f };
-	const int targetTile{ TargetTileFromDir(g_Character.curTile, g_Character.dir) };
+	const float collisionCooldown{ .6f };
+	const float grassCooldown{ .3f };
+	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
 
-	if (!IsWalkable(targetTile) && g_SoundEffectCooldown > cooldown) {
-		PlaySoundEffect(g_CollisionSound);
-		g_SoundEffectCooldown = 0.f;
+	if (!IsWalkable(targetTile) && g_Sounds.collisionCooldown > collisionCooldown) {
+		Mix_Volume(-1, 64);
+		PlaySoundEffect(g_Sounds.collision);
+		g_Sounds.collisionCooldown = 0.f;
 	}
-}
-
-Door GetDoor() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	const int sceneIndex{ g_World.currentSceneIndex };
-	const int row{ GetRow(g_Character.curTile, g_NrCols) },
-		col{ GetCol(g_Character.curTile, g_NrCols) };
-
-	if (!sceneIndex) {
-		return pScene->doors[0]; // east
+	else if (IsTallGrass(targetTile) && g_Sounds.grassCooldown > grassCooldown) {
+		Mix_Volume(-1, 10);
+		PlaySoundEffect(g_Sounds.grass);
+		g_Sounds.grassCooldown = 0.f;
 	}
-	else if (sceneIndex == 1) {
-		if (row == 0)
-			return pScene->doors[1]; // north east
-		else
-			return pScene->doors[0]; // west
-	}
-	else if (sceneIndex == 2) {
-		if (row == 0)
-			return pScene->doors[1]; // north 
-		else if (row == g_NrRows - 1)
-			return pScene->doors[0]; // south
-	}
-	return pScene->doors[0];
 }
 
 void UpdateScene() {
@@ -382,10 +405,7 @@ void UpdateScene() {
 		return;
 
 	g_LoadingScreenCooldown = 0.f;
-	g_Character.isMoving = false; 
-	// theres an issue here, going right is fine but left since hitbox is on the left, he still walks one tile
-	// for up and down it walks half a tile because detection is in the middle
-	//maybe check is updating then dont move or teleport back
+	g_Character.isMoving = false;
 
 	const Door door{ GetDoor() };
 
@@ -398,6 +418,7 @@ void UpdateScene() {
 	g_Character.dst.left = GetCol(g_Character.curTile, g_NrCols) * g_TileSize;
 	g_Character.dst.top = GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2;
 	g_Character.targetTile = g_Character.curTile;
+	g_Character.targetPos = Point2f{ g_Character.dst.left, g_Character.dst.top };
 
 	InitCamera();
 	InitCollisionMap();
@@ -432,31 +453,21 @@ Point2f	DirFromKey(SDL_Keycode key) {
 		return Point2f{ 1.f, 0.f };
 	if (key == SDLK_UP)
 		return Point2f{ 0.f, -1.f };
-	else
+	if (key == SDLK_DOWN)
 		return Point2f{ 0.f, 1.f };
+	return Point2f{ 0.f, 0.f };
 }
 
 int		TargetTileFromKey(int curTile, SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return curTile - 1;
-	else if (key == SDLK_RIGHT)
+	if (key == SDLK_RIGHT)
 		return curTile + 1;
-	else if (key == SDLK_UP)
+	if (key == SDLK_UP)
 		return curTile - g_NrCols;
-	else if (key == SDLK_DOWN)
+	if (key == SDLK_DOWN)
 		return curTile + g_NrCols;
-	return -1;
-}
-
-int		TargetTileFromDir(int curTile, Point2f dir) {
-	if (dir.x == -1.f)
-		return curTile - 1;
-	else if (dir.x == 1.f)
-		return curTile + 1;
-	else if (dir.y == -1.f)
-		return curTile - g_NrCols;
-	else
-		return curTile + g_NrCols;
+	return curTile;
 }
 
 Point2f		TargetPosFromKey(Rectf rect, SDL_Keycode key) {
@@ -472,7 +483,7 @@ Point2f		TargetPosFromKey(Point2f pos, SDL_Keycode key) {
 		return Point2f{ pos.x, pos.y - g_MoveDist };
 	else if (key == SDLK_DOWN)
 		return Point2f{ pos.x, pos.y + g_MoveDist };
-	return Point2f{ -1.f, -1.f };
+	return pos;
 }
 
 bool	IsPosInCenterX(float pos) {
@@ -539,22 +550,45 @@ bool IsTallGrass(int index) {
 	return g_CollisionMaps[g_World.currentSceneIndex][index] == 2;
 }
 
+Door GetDoor() {
+	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const int sceneIndex{ g_World.currentSceneIndex };
+	const int row{ GetRow(g_Character.curTile, g_NrCols) },
+		col{ GetCol(g_Character.curTile, g_NrCols) };
+
+	if (!sceneIndex) {
+		return pScene->doors[0]; // east
+	}
+	else if (sceneIndex == 1) {
+		if (row == 0)
+			return pScene->doors[1]; // north east
+		else
+			return pScene->doors[0]; // west
+	}
+	else if (sceneIndex == 2) {
+		if (row == 0)
+			return pScene->doors[1]; // north 
+		else if (row == g_NrRows - 1)
+			return pScene->doors[0]; // south
+	}
+	return pScene->doors[0];
+}
+
 // make start of walk animation when collision (changes leg each time)
 
 bool IsGoingOutsideMap() {
 	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	const Point2f curPos{ g_Character.dst.left, g_Character.dst.top + g_TileSize };
+	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
+	const Point2f targetPos{ PosFromTile(targetTile) };
 
-	Point2f targetPos{ TargetPosFromKey(curPos, g_CurKey) };
-	if (targetPos.x == -1.f)
-		targetPos = TargetPosFromKey(curPos, g_NextKey);
-	if (targetPos.x == -1.f)
-		targetPos = curPos;
+	const int
+		targetRow{ GetRow(targetTile, g_NrCols) },
+		targetCol{ GetCol(targetTile, g_NrCols) },
+		curRow{ GetRow(g_Character.curTile, g_NrCols) },
+		curCol{ GetCol(g_Character.curTile, g_NrCols) };
 
-	return(targetPos.x < 0 && curPos.x <= 0.f)
-		|| (targetPos.x > pScene->screenWidth && curPos.x >= pScene->screenWidth)
-		|| (targetPos.y < 0 && curPos.y <= 0.f)
-		|| (targetPos.y > pScene->screenHeight && curPos.y >= pScene->screenHeight);
+	return ((targetRow != curRow && g_CurKey != SDLK_UP && g_CurKey != SDLK_DOWN)
+		|| targetRow >= g_NrRows || targetRow < 0);
 }
 
 #pragma endregion ownDeclarations
