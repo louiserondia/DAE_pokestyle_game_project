@@ -68,7 +68,7 @@ void OnKeyUpEvent(SDL_Keycode key)
 	if (key == SDLK_b) {
 		if (g_IsBattleOn)
 			TurnOffBattle();
-		else 
+		else
 			TurnOnBattle();
 	}
 	if (g_IsOverworldOn)
@@ -98,12 +98,7 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 void	UpdateBattleOverworldStati() {
 	if (!g_IsBattleTransitionOn) return;
 
-	const int nrCols{ 10 };
-	const int squareSize{ static_cast<int>(g_WindowWidth / nrCols) };
-	const int nrRows{ static_cast<int>(std::ceil(g_WindowHeight / squareSize)) };
-	const int nSquares{ static_cast<int>(g_GlobalTime * 7500) / squareSize };
-
-	if (nSquares > nrCols * nrRows) {
+	if (g_IsDoneDrawing) {
 		g_IsBattleTransitionOn = false;
 		g_GlobalTime = 0.f;
 		if (g_IsBattleOn) {
@@ -117,18 +112,98 @@ void	UpdateBattleOverworldStati() {
 	}
 }
 
-void	DrawBattleTransitionAnimation() {
-	if (!g_IsBattleTransitionOn) return;
-
-	const int nrCols{ 10 };
+void	DrawAnimationCurtainCall() {
+	const int nrCols{ 12 };
 	const int squareSize{ static_cast<int>(g_WindowWidth / nrCols) };
 	const int nSquares{ static_cast<int>(g_GlobalTime * 7500) / squareSize };
+	const int nrRows{ static_cast<int>(g_WindowHeight / squareSize) };
 
 	for (int index{}; index < nSquares; ++index) {
-		const int row{ GetRow(index, nrCols) }, col{ GetCol(index, nrCols) };
+		const int row{ GetRow(index, nrCols) };
+		int col{ GetCol(index, nrCols) };
+		if (index & 1)
+			col = nrCols - col;
+
 		SetColor(0.f, 0.f, 0.f, 1.f);
 		FillRect(col * squareSize, row * squareSize, squareSize, squareSize);
 	}
+	if (nSquares > nrCols * nrRows)
+		g_IsDoneDrawing = true;
+}
+
+void	DrawAnimationHorStripesSpecial() {
+	const float height{ 10.f };
+	const float speed{ 1000.f };
+	const int nLines{ static_cast<int>(g_GlobalTime * speed / height) };
+	const int nRows{ static_cast<int>(g_WindowHeight / height) };
+
+	for (int index{}; index < nLines; ++index) {
+		float start{ g_GlobalTime * speed - index * 10 - g_WindowWidth };
+		if (index & 1)
+			start = g_WindowWidth - (g_GlobalTime * speed - index * 10);
+
+		SetColor(0.f, 0.f, 0.f, 1.f);
+		FillRect(start, index * height, g_WindowWidth, height);
+	}
+	if (nLines > nRows * 4)
+		g_IsDoneDrawing = true;
+}
+
+void	DrawAnimationHorStripes() {
+	const float height{ 10.f };
+	const float speed{ 1000.f };
+	const int nLines{ static_cast<int>(g_GlobalTime * speed / height) };
+	const int nRows{ static_cast<int>(g_WindowHeight / height) };
+
+	for (int index{}; index < nLines; ++index) {
+		float start{ index &1 ? g_WindowWidth : 0.f };
+		const float width{ g_GlobalTime * speed - index * 10 };
+
+		SetColor(0.f, 0.f, 0.f, 1.f);
+		FillRect(start, index * height, index & 1 ? -width : width, height);
+	}
+	if (nLines > nRows * 3)
+		g_IsDoneDrawing = true;
+}
+
+void	DrawAnimationDoubleSnake() {
+	const int nrCols{ 10 };
+	const int squareSize{ static_cast<int>(g_WindowWidth / nrCols) };
+	const int nSquares{ static_cast<int>(g_GlobalTime * 3500) / squareSize };
+	const int nrRows{ static_cast<int>(g_WindowHeight / squareSize) };
+
+	for (int index{}; index < nSquares; ++index) {
+		const int row{ GetRow(index, nrCols) };
+		const int invRow{ nrRows - row };
+		int col{ GetCol(index, nrCols) };
+		int invCol{ col };
+
+		if (row & 1)
+			col = nrCols - col - 1;
+		else
+			invCol = nrCols - invCol - 1;
+
+		SetColor(0.f, 0.f, 0.f, 1.f);
+		if (index > nSquares - 4) {
+			FillRect(col * squareSize, row * squareSize, squareSize / (5.f - (nSquares - index)), squareSize);
+			FillRect(invCol * squareSize, invRow * squareSize, squareSize / (5.f - (nSquares - index)), squareSize);
+		}
+		else {
+			FillRect(col * squareSize, row * squareSize, squareSize, squareSize);
+			FillRect(invCol * squareSize, invRow * squareSize, squareSize, squareSize);
+		}
+	}
+	if (nSquares > ((nrCols + 1) * (nrRows + 1)) / 2)
+		g_IsDoneDrawing = true;
+}
+
+void	DrawBattleTransitionAnimation() {
+	if (!g_IsBattleTransitionOn) return;
+
+	//DrawAnimationCurtainCall();
+	//DrawAnimationHorStripes();
+	//DrawAnimationHorStripesSpecial();
+	DrawAnimationDoubleSnake();
 }
 
 
@@ -136,10 +211,12 @@ void TurnOnBattle() {
 	g_GlobalTime = 0.f;
 	g_IsOverworldOn = false;
 	g_IsBattleTransitionOn = true;
+	g_IsDoneDrawing = false;
 }
 
 void TurnOffBattle() {
 	g_IsBattleTransitionOn = true;
+	g_IsDoneDrawing = false;
 	g_GlobalTime = 0.f;
 }
 

@@ -614,11 +614,11 @@ int		TargetTileFromKey(int curTile, SDL_Keycode key) {
 	return curTile;
 }
 
-Point2f		TargetPosFromKey(Rectf rect, SDL_Keycode key) {
+Point2f		TargetPosFromKey(const Rectf& rect, SDL_Keycode key) {
 	return TargetPosFromKey(Point2f{ rect.left, rect.top }, key);
 }
 
-Point2f		TargetPosFromKey(Point2f pos, SDL_Keycode key) {
+Point2f		TargetPosFromKey(const Point2f& pos, SDL_Keycode key) {
 	if (key == SDLK_LEFT)
 		return Point2f{ pos.x - g_MoveDist, pos.y };
 	else if (key == SDLK_RIGHT)
