@@ -9,9 +9,8 @@ using namespace utils;
 
 //		--- CONST VARIABLES ---
 
-const int	g_NrScenes{ 2 };
-const int	g_CharacterNrCols{ 16 }; // maybe should be nrCol and rows
-const float g_MoveSpeed{ 200.f };
+const int	g_NrScenes{ 3 };
+const float g_MoveSpeed{ 250.f };
 
 const Color4f g_White(.9f, .9f, .9f, .5f);
 const Color4f g_Black(.2f, .2f, .2f, .5f);
@@ -25,14 +24,6 @@ struct AnimFrame {
 	int col{};
 	int nrFrames{};
 };
-
-
-// quand on press une key, elle est ajoutée comme next key
-// si target et curTile sont == (ça inclut aussi le cas où y a pas de curKey), curKey = next key
-// quand on lance la curKey, on ajoute 1 à targetTile dans la direction
-// ensuite fonction en boucle déplace position vers target (avancement stocké dans une variable)
-// quand l'avancement est fini, tile = target 
-// si tile == target et curKey != null -> avancer encore 
 
 struct Character {
 	int			curTile{};
@@ -52,7 +43,16 @@ struct Character {
 	Texture		texture{};
 };
 
-// make function to check if not enough to the side of map, then character moves and not map (for shops, black borders)
+struct Door {
+	std::string	id{};
+	int			targetSceneId{};
+	std::string	targetEntryId{};
+};
+
+// each door has an id, a target scene and its entry point
+// each scene has an id and several entry points linked to their spawn location 
+// maybe give them each a name and call them from map, same for doors
+
 struct Scene {
 	Texture	texture{};
 	Texture	fgTexture{};
@@ -60,6 +60,10 @@ struct Scene {
 	Point2f	startOffset{};
 	float	screenWidth{};
 	float	screenHeight{};
+	int		id{};
+	std::map<std::string, int> entryPoints{}; // key = name of entry point, value is target tile
+	Door	doors[5]; // max doors = 5 (variable ?)
+	int		nrDoors{};
 };
 
 struct Camera {
@@ -69,15 +73,38 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		currentSceneIndex{};
+	int		currentSceneIndex{ 2 }; // to debug, set to the scene you want to start at
 };
 
+struct KeyPressed {
+	bool left{};
+	bool right{};
+	bool up{};
+	bool down{};
+};
+
+struct Sounds {
+	Mix_Chunk* collision{};
+	Mix_Chunk* grass{};
+	float		collisionCooldown{};
+	float		grassCooldown{};
+};
+
+struct AnimTextureFrames {
+	int	sea{};
+	int rock{};
+	int flower{};
+	const int seaMax{ 8 };
+	const int rockMax{ 8 };
+	const int flowerMax{ 5 };
+};
 
 //		--- VARIABLES ---
 
 World		g_World{};
 Character	g_Character{};
 Camera		g_Camera{};
+KeyPressed	g_KeyPressed{};
 
 int			g_NrCols{};
 int			g_NrRows{};
@@ -87,8 +114,16 @@ std::map<std::string, AnimFrame> g_AnimFrames{};
 float		g_FrameTime{};
 float		g_TileSize{ 16.f };
 
-int*		g_CollisionMap{};
+int*		g_CollisionMaps[g_NrScenes]{};
 float		g_CollisionMapSize{};
+std::string	g_CollisionMapPaths[g_NrScenes]{};
+
+char*				g_AnimTextureMaps[g_NrScenes]{};
+float				g_AnimTextureMapSize{};
+std::string			g_AnimTextureMapPaths[g_NrScenes]{};
+AnimTextureFrames	g_AnimTextureFrames{};
+Texture				g_AnimTiles{};
+Texture				g_WaterShadowTexture{};
 
 SDL_Keycode g_CurKey{};
 SDL_Keycode g_NextKey{};
@@ -96,10 +131,10 @@ SDL_Keycode g_NextKey{};
 float		g_Progression{};
 float		g_MoveDist{};
 
-Mix_Chunk* g_CollisionSound{};
-float		g_SoundEffectCooldown{};
+Sounds		g_Sounds{};
 
 float		g_LoadingScreenCooldown{};
+float		g_AnimTextureTime{};
 float		g_Time{};
 
 //		--- FUNCTIONS ---
@@ -112,7 +147,10 @@ void	InitScene(Scene* pScene);
 void	InitCamera();
 void	InitCharacter();
 void	InitAnimFrames();
+void	InitCollisionMapPaths();
 void	InitCollisionMap();
+void	InitAnimTextureMapPaths();
+void	InitAnimTextureMap();
 void	InitAudioFiles();
 
 //		END
@@ -122,6 +160,9 @@ void	FreeOverworld();
 //		DRAW
 
 void	DrawOverworld();
+void	DrawSea();
+void	DrawRocks();
+void	DrawFlowers();
 void	DrawMap();
 void	DrawFgMap();
 void	DrawCharacter();
@@ -132,7 +173,9 @@ void	DrawLoadingScreen();
 //		INPUT HANDLING
 
 void	HandleKeyDownOverworld(SDL_Keycode key);
-void	UpdateCurKey();
+void	HandleKeyUpOverworld(SDL_Keycode key);
+void	OnKeyDownEventOnce(SDL_Keycode key);
+SDL_Keycode	UpdateCurKey();
 
 //		UPDATE
 
@@ -140,10 +183,14 @@ void	UpdateOverworld(float elapsedSec);
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
 void	UpdateCharacterPos(float elapsedSec);
+void	StopWalkingAndReset();
+void	HandleWalk();
 void	UpdateAnimFrameState();
+void	UpdateAnimTextureFrames();
 void	UpdateCharacterFrameInTime(float elapsedSec);
-void	CheckSoundEffect(SDL_Keycode key);
 void	UpdateScene();
+void	CheckSoundEffect(SDL_Keycode key);
+void	CheckBattleInGrass();
 
 //		UTILS
 
@@ -153,16 +200,18 @@ int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
 Point2f	PosFromTile(int row, int col);
 int		TargetTileFromKey(int curTile, SDL_Keycode key);
-int		TargetTileFromDir(int curTile, Point2f dir);
-Point2f	TargetPosFromKey(Rectf rect, SDL_Keycode key);
-Point2f	TargetPosFromKey(Point2f rect, SDL_Keycode key);
+Point2f	TargetPosFromKey(const Rectf& rect, SDL_Keycode key);
+Point2f	TargetPosFromKey(const Point2f& rect, SDL_Keycode key);
 Point2f	DirFromKey(SDL_Keycode key);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
 void	PrintTileIndex(float x, float y);
 void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
 bool	IsWalkable(int index);
+bool	IsTallGrass(int index);
+Door	GetDoor();
 bool	IsGoingOutsideMap();
+
 
 
 #pragma endregion ownDeclarations
