@@ -20,6 +20,7 @@ void InitBattle() {
 	TextureFromFile("Resources/InfoEnemyPokemon.png", g_InfoEnemyPokemonTexture);
 	TextureFromFile("Resources/Godmoonguss.png", g_GodmoongussTexture);
 	TextureFromFile("Resources/Attack.png", g_AttackTexture);
+	TextureFromFile("Resources/ArrowforOptions.png", g_ArrowTexture);
 
 	TextureFromString("LaxMan Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_LaxAttackText);
 	TextureFromString("Godmunguss Retaliates with an attack on Laxman", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
@@ -35,106 +36,171 @@ void InitBattle() {
 }
 
 //		END
-
+void FreeBattle()
+{
+	DeleteTexture(g_BackgroundTexture);
+	DeleteTexture(g_LaxManTexture);
+	DeleteTexture(g_InfoAllyPokemonTexture);
+	DeleteTexture(g_GodmoongussTexture);
+	DeleteTexture(g_AttackTexture);
+	DeleteTexture(g_GodmoongussAttackText);
+	DeleteTexture(g_LaxAttackText);
+	DeleteTexture(g_WaitText);
+	DeleteTexture(g_ItemText);
+	DeleteTexture(g_SwitchText);
+	DeleteTexture(g_RunText);
+	DeleteTexture(g_ItemDoneText);
+	DeleteTexture(g_NotFirstTurnText);
+	DeleteTexture(g_FaintText);
+	DeleteTexture(g_FightingOptionsTexture);
+	DeleteTexture(g_InfoEnemyPokemonTexture);
+}
 //		INPUT HANDLING
-
-void HandleMouseUpBattle(const SDL_MouseButtonEvent& e) {
-	const float mouseX{ float(e.x) };
-	const float mouseY{ float(e.y) };
-
-	if (!(g_Attack || g_Switch || g_Item || g_Run))
+void HandleKeyUpBattle(SDL_Keycode key)
+{
+	if (key == SDLK_RIGHT)
 	{
-		if (mouseX >= fightButton.left && mouseX <= (fightButton.left + fightButton.width) &&
-			mouseY >= fightButton.top && mouseY <= (fightButton.top + fightButton.height))
+		if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::pokemon)
+		{
+			arrowSpritePosition.x += g_HalfWidth * 0.45f;
+			if (CurrentFightingOption == FightingOptions::fight)
+			{
+				CurrentFightingOption = FightingOptions::bag;
+			}
+			else if (CurrentFightingOption == FightingOptions::pokemon)
+			{
+				CurrentFightingOption = FightingOptions::run;
+			}
+		}
+	}
+	else if (key == SDLK_LEFT)
+	{
+		if (CurrentFightingOption == FightingOptions::run || CurrentFightingOption == FightingOptions::bag)
+		{
+			arrowSpritePosition.x -= g_HalfWidth * 0.45f;
+			if (CurrentFightingOption == FightingOptions::run)
+			{
+				CurrentFightingOption = FightingOptions::pokemon;
+			}
+			else if (CurrentFightingOption == FightingOptions::bag)
+			{
+				CurrentFightingOption = FightingOptions::fight;
+			}
+		}
+	}
+	else if (key == SDLK_DOWN)
+	{
+		if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::bag)
+		{
+			arrowSpritePosition.y += g_HeightOfTextBlock / 3.f;
+			if (CurrentFightingOption == FightingOptions::fight)
+			{
+				CurrentFightingOption = FightingOptions::pokemon;
+			}
+			else if (CurrentFightingOption == FightingOptions::bag)
+			{
+				CurrentFightingOption = FightingOptions::run;
+			}
+		}
+	}
+	else if (key == SDLK_UP)
+	{
+		if (CurrentFightingOption == FightingOptions::pokemon || CurrentFightingOption == FightingOptions::run)
+		{
+			arrowSpritePosition.y -= g_HeightOfTextBlock / 3.f;
+			if (CurrentFightingOption == FightingOptions::pokemon)
+			{
+				CurrentFightingOption = FightingOptions::fight;
+			}
+			else if (CurrentFightingOption == FightingOptions::run)
+			{
+				CurrentFightingOption = FightingOptions::bag;
+			}
+		}
+	}
+	else if (key == SDLK_SPACE)
+	{
+		if (CurrentFightingOption == FightingOptions::fight)
 		{
 			g_Attack = true;
-			Damage(HPBarEnemyPokemon, Tackle);
-			Damage(HPBarAllyPokemon, StrongTackle);
 		}
-		else if (mouseX >= pokemonButton.left && mouseX <= (pokemonButton.left + pokemonButton.width) &&
-			mouseY >= pokemonButton.top && mouseY <= (pokemonButton.top + pokemonButton.height))
+		else if (CurrentFightingOption == FightingOptions::bag)
+		{
+			g_Item = true;
+		}
+		else if (CurrentFightingOption == FightingOptions::pokemon)
 		{
 			g_Switch = true;
 		}
-		else if (mouseX >= itemButton.left && mouseX <= (itemButton.left + itemButton.width) &&
-			mouseY >= itemButton.top && mouseY <= (itemButton.top + itemButton.height))
-		{
-			g_Item = true;
-			Heal(HPBarAllyPokemon);
-			Damage(HPBarAllyPokemon, StrongTackle);
-		}
-		else if (mouseX >= runButton.left && mouseX <= (runButton.left + runButton.width) &&
-			mouseY >= runButton.top && mouseY <= (runButton.top + runButton.height))
+		else if (CurrentFightingOption == FightingOptions::run)
 		{
 			g_Run = true;
 		}
 	}
 }
-
 //		DRAW
-
 void DrawBattle()
 {
 	const Rectf
 		destinationBackground
-		{
-			0.f,
-			0.f,
-			g_WindowWidth,
-			g_WindowHeight,
-		},
-		destinationFightingOptions
-		{
-			g_HalfWidth,
-			g_WindowHeight - g_HeightOfTextBlock,
-			g_HalfWidth,
-			g_HeightOfTextBlock,
-		},
-		destinationgInfoAllyPokemonTexture
-		{
-			g_HalfWidth,
-			g_WindowHeight - (g_HeightOfTextBlock * 1.75f),
-			g_HalfWidth,
-			g_HeightOfTextBlock * 0.7f,
-		},
-		destinationgInfoEnemyPokemonTexture
-		{
-			0.f,
-			0.f,
-			g_WindowWidth*0.48f,
-			g_HeightOfTextBlock * 0.6f,
-		},
-		destinationLaxMan
-		{
-			AllyPokemon.position.x,
-			AllyPokemon.position.y,
-			g_WindowWidth * 0.3f,
-			g_HeightOfTextBlock,
-		},
-		destinationGodmoonguss
-		{
-			EnemyPokemon.position.x,
-			EnemyPokemon.position.y,
-			g_WindowWidth * 0.39f,
-			g_HeightOfTextBlock*1.32f,
-		},
-		destinationAttack
-		{
-			attackSpriteSize.x,
-			attackSpriteSize.y,
-			g_WindowWidth * 0.1f,
-			g_WindowHeight * 0.1f,
-		},
-		destinationTextBlock
-		{
-			textBlockSpriteSize.x,
-			textBlockSpriteSize.y,
-			g_WindowWidth * 0.987f,
-			g_WindowHeight * 0.3197f,
-		};
+	{
+		0.f,
+		0.f,
+		g_WindowWidth,
+		g_WindowHeight,
+	},
+	destinationFightingOptions
+	{
+		g_HalfWidth,
+		g_WindowHeight - g_HeightOfTextBlock,
+		g_HalfWidth,
+		g_HeightOfTextBlock,
+	},
+	destinationgInfoAllyPokemonTexture
+	{
+		g_HalfWidth,
+		g_WindowHeight - (g_HeightOfTextBlock * 1.75f),
+		g_HalfWidth,
+		g_HeightOfTextBlock * 0.7f,
+	},
+	destinationgInfoEnemyPokemonTexture
+	{
+		0.f,
+		0.f,
+		g_WindowWidth * 0.48f,
+		g_HeightOfTextBlock * 0.6f,
+	},
+	destinationArrowTexture
+	{
+		arrowSpritePosition.x,
+		arrowSpritePosition.y,
+		destinationFightingOptions.width * 0.05f,
+		destinationFightingOptions.height * 0.2f,
+	},
+	destinationAllyPokemon
+	{
+		AllyPokemon.position.x,
+		AllyPokemon.position.y,
+		g_WindowWidth * 0.3f,
+		g_HeightOfTextBlock,
+	},
+	destinationEnemyPokemon
+	{
+		EnemyPokemon.position.x,
+		EnemyPokemon.position.y,
+		g_WindowWidth * 0.39f,
+		g_HeightOfTextBlock * 1.32f,
+	},
+	destinationAttack
+	{
+		attackSpriteSize.x,
+		attackSpriteSize.y,
+		g_WindowWidth * 0.1f,
+		g_WindowHeight * 0.1f,
+	};
 	DrawTexture(g_BackgroundTexture, destinationBackground);
-	DrawTexture(g_LaxManTexture, destinationLaxMan);
-	DrawTexture(g_GodmoongussTexture, destinationGodmoonguss);
+	DrawTexture(g_LaxManTexture, destinationAllyPokemon);
+	DrawTexture(g_GodmoongussTexture, destinationEnemyPokemon);
 	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
@@ -142,6 +208,7 @@ void DrawBattle()
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, destinationFightingOptions);
+		DrawTexture(g_ArrowTexture, destinationArrowTexture);
 	}
 	if (EnemyPokemon.attackTextureIsOn == true)
 	{
@@ -152,9 +219,9 @@ void DrawBattle()
 	}
 	if (AllyPokemon.attackTextureIsOn == true)
 	{
-		DrawTexture(g_LaxAttackText,Point2f{
+		DrawTexture(g_LaxAttackText, Point2f{
 				g_WindowWidth / 2 - g_LaxAttackText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock*0.7f)
+				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
 	}
 	if (g_WaitTextBlock == true)
@@ -244,10 +311,8 @@ void DrawBattle()
 
 
 }
-
 //		UPDATE
-
-void	UpdateBattle(float elapsedSec) {
+void UpdateBattle(float elapsedSec) {
 	if (g_Attack)
 	{
 		Attack(elapsedSec);
@@ -282,6 +347,7 @@ void Attack(float elapsedSec)
 		Move(elapsedSec, EnemyPokemon, 1);
 		break;
 	case Phases::phase_hpbarenemy_down:
+		Damage(HPBarEnemyPokemon, Tackle);
 		HPBarMath(HPBarEnemyPokemon,elapsedSec);
 		break;
 	case Phases::phase_wait:
@@ -299,6 +365,7 @@ void Attack(float elapsedSec)
 		Move(elapsedSec, AllyPokemon, -1);
 		break;
 	case Phases::phase_hpbarally_down:
+		Damage(HPBarAllyPokemon, StrongTackle);
 		HPBarMath(HPBarAllyPokemon, elapsedSec);
 		break;
 	case Phases::phase_done:
@@ -312,18 +379,21 @@ void Attack(float elapsedSec)
 				g_FaintTextureIsOn = true;
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
-			g_Attack = false;
 			g_notFirstTurn = true;
 			if (HPBarAllyPokemon.actual != 0.f)
 			{
 				g_FightingOptionsTextureIsOn = true;
 			}
+			g_Attack = false;
 		}
 		break;
 	}
 }
 void Item(float elapsedSec)
 {
+	
+
+	std::cout << "Item called. Phase = " << (int)ItemSequence << "\n";
 	if (g_notFirstTurn == true)
 	{
 		if (g_ItemOnlyOnce == false)
@@ -331,6 +401,8 @@ void Item(float elapsedSec)
 			switch (ItemSequence)
 			{
 			case Phases::phase_hpbarally_up:
+				Heal(HPBarAllyPokemon);
+				std::cout << elapsedSec << std::endl;
 				HPBarMath(HPBarAllyPokemon, elapsedSec);
 				g_ItemTextureIsOn = true;
 				g_FightingOptionsTextureIsOn = false;
@@ -340,8 +412,8 @@ void Item(float elapsedSec)
 				Wait(elapsedSec);
 				break;
 			case Phases::phase_enemypokemoncounter_move:
-				Move(elapsedSec, EnemyPokemon, -1);
 				EnemyPokemon.attackTextureIsOn = true;
+				Move(elapsedSec, EnemyPokemon, -1);
 				break;
 			case Phases::phase_attackcounter:
 				AttackEffect(elapsedSec, AllyPokemon.position.x, AllyPokemon.position.y);
@@ -350,13 +422,13 @@ void Item(float elapsedSec)
 				Move(elapsedSec, AllyPokemon, -1);
 				break;
 			case Phases::phase_hpbarally_down:
+				Damage(HPBarAllyPokemon, StrongTackle);
 				HPBarMath(HPBarAllyPokemon, elapsedSec);
 				break;
 			case Phases::phase_done:
 				EnemyPokemon.attackTextureIsOn = false;
 				if (g_Item)
 				{
-					g_Item = false;
 					g_ItemOnlyOnce = true;
 					g_FightingOptionsTextureIsOn = true;
 					if (HPBarAllyPokemon.width <= 0.f)
@@ -364,6 +436,7 @@ void Item(float elapsedSec)
 						g_FightingOptionsTextureIsOn = false;
 						g_FaintTextureIsOn = true;
 					}
+					g_Item = false;
 				}
 				break;
 			}
@@ -372,7 +445,8 @@ void Item(float elapsedSec)
 		{
 			g_FightingOptionsTextureIsOn = false;
 			g_ItemDoneTextureIsOn = true;
-			g_PhaseDoneCounter += 1.f;
+			float waitIncrementation{ 50.f };
+			g_PhaseDoneCounter += waitIncrementation * elapsedSec;
 			if (g_PhaseDoneCounter >= 180)
 			{
 				g_ItemDoneTextureIsOn = false;
@@ -387,7 +461,8 @@ void Item(float elapsedSec)
 	{
 		g_FightingOptionsTextureIsOn = false;
 		g_NotFirstTurnTextureIsOn = true;
-		g_PhaseDoneCounter += 1.f;
+		float waitIncrementation{ 50.f };
+		g_PhaseDoneCounter += waitIncrementation * elapsedSec;
 		if (g_PhaseDoneCounter >= 180)
 		{
 			g_PhaseDoneCounter = 0;
@@ -473,7 +548,6 @@ void Wait(float elapsedSec)
 		g_WaitTextBlock = false;
 	}
 }
-
 void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 {
 	if (g_SavedPosition < 0)
@@ -517,16 +591,20 @@ void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 	float currentX = utils::Lerp(g_SavedPosition, target, alpha);
 	pokemon.position.x = currentX;
 }
-
 void Damage(HPBar& hpBarForDamage, Moves& move)
 {
-	hpBarForDamage.actual -= move.damage;
-	std::cout << "HP bar: " << HPBarEnemyPokemon.width << " | Target: " << HPBarEnemyPokemon.actual << std::endl;
+	if (g_SavedHPDamage < 0) {
+		g_SavedHPDamage = move.damage;
+		hpBarForDamage.actual -= g_SavedHPDamage;
+	}
 }
 void Heal(HPBar& hpBarForHealing)
 {
 	g_IsHeal = true;
-	hpBarForHealing.actual += (hpBarForHealing.total - hpBarForHealing.actual);
+	if (g_SavedHPHeal < 0) {
+		g_SavedHPHeal = hpBarForHealing.total;
+		hpBarForHealing.actual += (g_SavedHPHeal - hpBarForHealing.actual);
+	}
 }
 void HPBarMath(HPBar& hpBar,float elapsedTime)
 {
@@ -539,10 +617,12 @@ void HPBarMath(HPBar& hpBar,float elapsedTime)
 				AttackSequence == Phases::phase_hpbarenemy_down)
 			{
 				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+				g_SavedHPDamage = -1;
 			}
 			else if (ItemSequence == Phases::phase_hpbarally_down)
 			{
 				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+				g_SavedHPDamage = -1;
 			}
 			return;
 		}
@@ -555,27 +635,9 @@ void HPBarMath(HPBar& hpBar,float elapsedTime)
 			hpBar.animHP = hpBar.actual;
 			ItemSequence = Phases::phase_wait;
 			g_IsHeal = false;
+			g_SavedHPHeal = -1;
 			return;
 		}
 		hpBar.animHP += elapsedTime * g_SpeedHPBar;
 	}
-}
-void FreeBattle()
-{
-	DeleteTexture(g_BackgroundTexture);
-	DeleteTexture(g_LaxManTexture);
-	DeleteTexture(g_InfoAllyPokemonTexture);
-	DeleteTexture(g_GodmoongussTexture);
-	DeleteTexture(g_AttackTexture);
-	DeleteTexture(g_GodmoongussAttackText);
-	DeleteTexture(g_LaxAttackText);
-	DeleteTexture(g_WaitText);
-	DeleteTexture(g_ItemText);
-	DeleteTexture(g_SwitchText);
-	DeleteTexture(g_RunText);
-	DeleteTexture(g_ItemDoneText);
-	DeleteTexture(g_NotFirstTurnText);
-	DeleteTexture(g_FaintText);
-	DeleteTexture(g_FightingOptionsTexture);
-	DeleteTexture(g_InfoEnemyPokemonTexture);
 }

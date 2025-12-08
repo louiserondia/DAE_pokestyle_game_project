@@ -28,6 +28,13 @@ enum class Phases
 	phase_done,
 	phase_hpbarally_up
 };
+enum class FightingOptions
+{
+	fight,
+	bag,
+	pokemon,
+	run
+};
 
 
 
@@ -140,7 +147,9 @@ g_SavedPosition{ -1 },
 g_PhaseDoneCounter{ 0.f },
 g_MovementAnimAlpha{ 0.f },
 g_HPBarTarget{},
-g_AnimationTime{ 1.f / 0.6f };
+g_AnimationTime{ 1.f / 0.6f },
+g_SavedHPDamage{ -1 },
+g_SavedHPHeal{ -1 };
 
 bool
 g_Attack{},
@@ -176,10 +185,11 @@ g_ItemDoneText{},
 g_NotFirstTurnText{},
 g_FaintText{},
 g_FightingOptionsTexture{},
-g_InfoEnemyPokemonTexture{};
+g_InfoEnemyPokemonTexture{},
+g_ArrowTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
-Point2f	textBlockSpriteSize{ g_WindowWidth * 0.0062548866f, g_WindowHeight * 0.674196351f };
+Point2f arrowSpritePosition{ g_HalfWidth + g_HalfWidth * 0.075f, g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock *0.25f};
 Point2f g_BackgroundPosition{ 0.f,0.f };
 
 
@@ -188,7 +198,7 @@ Point2f g_BackgroundPosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
-
+FightingOptions CurrentFightingOption{ FightingOptions::fight };
 
 // you could also try to define their position from another variable
 

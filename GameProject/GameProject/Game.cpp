@@ -12,7 +12,7 @@ void	UpdateOverworld(float elapsedSec);
 void	InitBattle();
 void	DrawBattle();
 void	UpdateBattle(float elapsedSec);
-void	HandleMouseUpBattle(const SDL_MouseButtonEvent& e);
+void	HandleKeyUpBattle(SDL_Keycode key);
 void	PrintTileIndex(float x, float y);
 
 //Basic game functions
@@ -61,6 +61,7 @@ void OnKeyDownEvent(SDL_Keycode key)
 
 void OnKeyUpEvent(SDL_Keycode key)
 {
+	HandleKeyUpBattle(key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)
@@ -74,7 +75,6 @@ void OnMouseDownEvent(const SDL_MouseButtonEvent& e)
 
 void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 {
-	HandleMouseUpBattle(e);
 }
 #pragma endregion inputHandling
 
