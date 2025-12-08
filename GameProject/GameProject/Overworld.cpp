@@ -21,43 +21,50 @@ void	InitOverworld() {
 	InitCamera();
 	InitCollisionMapPaths();
 	InitCollisionMap();
+	InitAnimTextureMapPaths();
+	InitAnimTextureMap();
 	InitAudioFiles();
 }
 
 void	InitScenes() {
-	if (!TextureFromFile("Resources/map_three_island.png", g_World.scenes[0].texture))
-		ErrorLoadMsg("Resources/map_three_island.png", "map 0");
-	if (!TextureFromFile("Resources/map_three_island_houses_2.png", g_World.scenes[0].fgTexture))
-		ErrorLoadMsg("Resources/map_three_island_houses_2.png", "fg map 0");
-	g_World.scenes[0].entryPoints["Spawn"] = 183;
-	g_World.scenes[0].entryPoints["East"] = 215;
-	g_World.scenes[0].nrDoors = 1;
-	g_World.scenes[0].doors[0] = Door{ "East", 1, "West" };
+	Scene* pScene{ &g_World.scenes[0] };
 
-	if (!TextureFromFile("Resources/bridge.png", g_World.scenes[1].texture))
-		ErrorLoadMsg("Resources/bridge.png", "map 1");
-	if (!TextureFromFile("Resources/bridge_fg.png", g_World.scenes[1].fgTexture))
-		ErrorLoadMsg("Resources/bridge_fg.png", "fg map 1");
-	g_World.scenes[1].entryPoints["Spawn"] = 752;
-	g_World.scenes[1].entryPoints["West"] = 752;
-	g_World.scenes[1].entryPoints["NorthEast"] = 81;
-	g_World.scenes[1].nrDoors = 2;
-	g_World.scenes[1].doors[0] = Door{ "West", 0, "East" };
-	g_World.scenes[1].doors[1] = Door{ "NorthEast", 2, "South" };
+	if (!TextureFromFile("Resources/map_three_island.png", pScene->texture))
+		ErrorLoadMsg("Resources/map_three_island.png");
+	if (!TextureFromFile("Resources/map_three_island_houses_2.png", pScene->fgTexture))
+		ErrorLoadMsg("Resources/map_three_island_houses_2.png");
+	pScene->entryPoints["Spawn"] = 183;
+	pScene->entryPoints["East"] = 215;
+	pScene->nrDoors = 1;
+	pScene->doors[0] = Door{ "East", 1, "West" };
 
-	if (!TextureFromFile("Resources/kindle.png", g_World.scenes[2].texture))
-		ErrorLoadMsg("Resources/kindle.png", "map 2");
-	if (!TextureFromFile("Resources/kindle_fg.png", g_World.scenes[2].fgTexture))
-		ErrorLoadMsg("Resources/kindle_fg.png", "fg map 2");
-	g_World.scenes[2].entryPoints["South"] = 2844;
-	g_World.scenes[2].entryPoints["North"] = 11;
-	g_World.scenes[2].entryPoints["Spawn"] = 2844;
-	g_World.scenes[2].nrDoors = 2;
-	g_World.scenes[2].doors[0] = Door{ "South", 1, "NorthEast" };
-	g_World.scenes[2].doors[1] = Door{ "North", 0, "East" };
+	pScene = &g_World.scenes[1];
 
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	InitScene(pScene);
+	if (!TextureFromFile("Resources/bridge_no_anim.png", pScene->texture))
+		ErrorLoadMsg("Resources/bridge_no_anim.png");
+	if (!TextureFromFile("Resources/bridge_fg.png", pScene->fgTexture))
+		ErrorLoadMsg("Resources/bridge_fg.png");
+	pScene->entryPoints["Spawn"] = 1085;
+	pScene->entryPoints["West"] = 752;
+	pScene->entryPoints["NorthEast"] = 81;
+	pScene->nrDoors = 2;
+	pScene->doors[0] = Door{ "West", 0, "East" };
+	pScene->doors[1] = Door{ "NorthEast", 2, "South" };
+
+	pScene = &g_World.scenes[2];
+
+	if (!TextureFromFile("Resources/kindle.png", pScene->texture))
+		ErrorLoadMsg("Resources/kindle.png");
+	if (!TextureFromFile("Resources/kindle_fg.png", pScene->fgTexture))
+		ErrorLoadMsg("Resources/kindle_fg.png");
+	pScene->entryPoints["South"] = 2844;
+	pScene->entryPoints["North"] = 11;
+	pScene->entryPoints["Spawn"] = 2844;
+	pScene->nrDoors = 2;
+	pScene->doors[0] = Door{ "South", 1, "NorthEast" };
+	pScene->doors[1] = Door{ "North", 0, "East" };
+
+	InitScene(&g_World.scenes[g_World.currentSceneIndex]);
 }
 
 void	InitScene(Scene* pScene) {
@@ -144,6 +151,38 @@ void	InitCollisionMap() {
 	//Print2DArray(g_CollisionMaps[sceneIndex], g_CollisionMapSize, g_NrCols);
 }
 
+void	InitAnimTextureMapPaths() {
+	g_AnimTextureMapPaths[0] = "../Resources/three_island_textures.txt";
+	g_AnimTextureMapPaths[1] = "../Resources/bridge_textures.txt";
+	g_AnimTextureMapPaths[2] = "../Resources/kindle_textures.txt";
+}
+
+void	InitAnimTextureMap() {
+	const int sceneIndex{ g_World.currentSceneIndex };
+	std::string path{ g_AnimTextureMapPaths[sceneIndex] };
+	g_AnimTextureMapSize = static_cast<float>(g_NrCols * g_NrRows);
+	g_AnimTextureMaps[sceneIndex] = new char[static_cast<size_t>(g_AnimTextureMapSize)];
+
+	if (!TextureFromFile("Resources/animated_tiles.png", g_AnimTiles))
+		ErrorLoadMsg("Resources/animated_tiles.png");
+
+	if (!TextureFromFile("Resources/water_shadow.png", g_WaterShadowTexture))
+		ErrorLoadMsg("Resources/water_shadow.png");
+
+	std::ifstream	file(path);
+	if (!file)
+		ErrorLoadMsg(path);
+
+	int index{};
+	char ch{};
+	while (file.get(ch) && index < static_cast<int>(g_AnimTextureMapSize)) {
+		if (ch == '0' || ch == '1' || ch == '2' || ch == 'm' || ch == 'r' || ch == 'f') {
+			g_AnimTextureMaps[sceneIndex][index] = ch;
+			++index;
+		}
+	}
+}
+
 void InitAudioFiles() {
 	LoadSoundEffect(g_Sounds.collision, "../Resources/collision.wav");
 	LoadSoundEffect(g_Sounds.grass, "../Resources/grass.wav");
@@ -155,23 +194,91 @@ void	FreeOverworld() {
 	DeleteTexture(g_World.scenes[0].texture);
 	DeleteTexture(g_World.scenes[0].fgTexture);
 	DeleteTexture(g_Character.texture);
+	DeleteTexture(g_AnimTiles);
 	Mix_FreeChunk(g_Sounds.collision);
 	Mix_FreeChunk(g_Sounds.grass);
 
 	for (int index{}; index < g_NrScenes; ++index) {
 		delete[] g_CollisionMaps[index];
+		delete[] g_AnimTextureMaps[index];
 	}
 }
 
 //		DRAW
 
 void	DrawOverworld() {
+	DrawSea();
+	DrawRocks();
 	DrawMap();
-	//DrawTiles();
+	DrawFlowers();
 	//DrawCollisions();
+	//DrawTiles();
 	DrawCharacter();
 	DrawFgMap();
 	DrawLoadingScreen();
+}
+
+void DrawSea() {
+	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
+	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+
+	for (int index{}; index < g_AnimTextureMapSize; ++index) {
+		if (map[index] != 'm' && map[index] != 'r')
+			continue;
+
+		const Rectf dst{
+			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
+			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
+			g_TileSize, g_TileSize
+		};
+		const Rectf src{ g_AnimTextureFrames.sea * size, 0.f, size, size };
+
+		DrawTexture(g_AnimTiles, dst, src);
+	}
+}
+
+void DrawRocks() {
+	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
+	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+
+	for (int index{}; index < g_AnimTextureMapSize; ++index) {
+		if (map[index] != 'r')
+			continue;
+
+		Rectf dst{
+			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
+			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
+			g_TileSize * 2, g_TileSize * 2
+		};
+		const Rectf src{ g_AnimTextureFrames.rock * size, size, size, size };
+
+		DrawTexture(g_WaterShadowTexture, dst);
+
+		dst.left += g_TileSize / 2;
+		dst.top += g_TileSize / 2;
+		dst.width /= 2;
+		dst.height /= 2;
+		DrawTexture(g_AnimTiles, dst, src);
+	}
+}
+
+void DrawFlowers() {
+	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
+	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+
+	for (int index{}; index < g_AnimTextureMapSize; ++index) {
+		if (map[index] != 'f')
+			continue;
+
+		const Rectf dst{
+			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
+			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
+			g_TileSize, g_TileSize
+		};
+		const Rectf src{ g_AnimTextureFrames.flower * size, 2 * size, size, size };
+
+		DrawTexture(g_AnimTiles, dst, src);
+	}
 }
 
 void	DrawMap() {
@@ -273,8 +380,9 @@ void	UpdateOverworld(float elapsedSec) {
 	UpdateCharacterPos(elapsedSec);
 	HandleWalk();
 	UpdateCharacterFrameInTime(elapsedSec);
-	UpdateMapPos(elapsedSec);
+	UpdateAnimTextureFrames();
 	UpdateCameraPos(elapsedSec);
+	UpdateMapPos(elapsedSec);
 	UpdateScene();
 
 	g_FrameTime += elapsedSec;
@@ -282,6 +390,7 @@ void	UpdateOverworld(float elapsedSec) {
 	g_Sounds.collisionCooldown += elapsedSec;
 	g_Sounds.grassCooldown += elapsedSec;
 	g_LoadingScreenCooldown += elapsedSec;
+	g_AnimTextureTime += elapsedSec;
 }
 
 void UpdateCharacterPos(float elapsedSec) {
@@ -385,6 +494,19 @@ void	UpdateCharacterFrameInTime(float elapsedSec) {
 	}
 }
 
+void	UpdateAnimTextureFrames() {
+	const float frameRate{ 1.f / 4 };
+
+	if (g_AnimTextureTime > frameRate) {
+		g_AnimTextureTime = 0.f;
+		g_AnimTextureFrames.sea = (g_AnimTextureFrames.sea + 1) % g_AnimTextureFrames.seaMax;
+		g_AnimTextureFrames.rock = (g_AnimTextureFrames.rock + 1) % g_AnimTextureFrames.rockMax;
+		g_AnimTextureFrames.flower = (g_AnimTextureFrames.flower + 1) % g_AnimTextureFrames.flowerMax;
+		//std::cout << "\nsea : " << g_AnimTextureFrames.sea << std::endl;
+		//std::cout << "flower : " << g_AnimTextureFrames.flower << std::endl;
+	}
+}
+
 void	CheckSoundEffect(SDL_Keycode key) {
 	const float collisionCooldown{ .6f };
 	const float grassCooldown{ .3f };
@@ -424,6 +546,7 @@ void UpdateScene() {
 
 	InitCamera();
 	InitCollisionMap();
+	InitAnimTextureMap();
 }
 
 void StopWalkingAndReset() {
@@ -436,7 +559,7 @@ void StopWalkingAndReset() {
 
 void CheckBattleInGrass() {
 	if (IsTallGrass(g_Character.curTile)) {
-		const int randNum{ rand() % 5 };
+		const int randNum{ rand() % 10 };
 
 		if (!randNum) {
 			StopWalkingAndReset();

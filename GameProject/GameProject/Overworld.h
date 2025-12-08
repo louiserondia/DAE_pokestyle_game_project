@@ -60,7 +60,7 @@ struct Scene {
 	Point2f	startOffset{};
 	float	screenWidth{};
 	float	screenHeight{};
-	int		id{}; 
+	int		id{};
 	std::map<std::string, int> entryPoints{}; // key = name of entry point, value is target tile
 	Door	doors[5]; // max doors = 5 (variable ?)
 	int		nrDoors{};
@@ -73,7 +73,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		currentSceneIndex{1}; // to debug, set to the scene you want to start at
+	int		currentSceneIndex{ 2 }; // to debug, set to the scene you want to start at
 };
 
 struct KeyPressed {
@@ -90,6 +90,14 @@ struct Sounds {
 	float		grassCooldown{};
 };
 
+struct AnimTextureFrames {
+	int	sea{};
+	int rock{};
+	int flower{};
+	const int seaMax{ 8 };
+	const int rockMax{ 8 };
+	const int flowerMax{ 5 };
+};
 
 //		--- VARIABLES ---
 
@@ -106,9 +114,16 @@ std::map<std::string, AnimFrame> g_AnimFrames{};
 float		g_FrameTime{};
 float		g_TileSize{ 16.f };
 
-int* g_CollisionMaps[g_NrScenes]{};
+int*		g_CollisionMaps[g_NrScenes]{};
 float		g_CollisionMapSize{};
 std::string	g_CollisionMapPaths[g_NrScenes]{};
+
+char*				g_AnimTextureMaps[g_NrScenes]{};
+float				g_AnimTextureMapSize{};
+std::string			g_AnimTextureMapPaths[g_NrScenes]{};
+AnimTextureFrames	g_AnimTextureFrames{};
+Texture				g_AnimTiles{};
+Texture				g_WaterShadowTexture{};
 
 SDL_Keycode g_CurKey{};
 SDL_Keycode g_NextKey{};
@@ -119,6 +134,7 @@ float		g_MoveDist{};
 Sounds		g_Sounds{};
 
 float		g_LoadingScreenCooldown{};
+float		g_AnimTextureTime{};
 float		g_Time{};
 
 //		--- FUNCTIONS ---
@@ -133,6 +149,8 @@ void	InitCharacter();
 void	InitAnimFrames();
 void	InitCollisionMapPaths();
 void	InitCollisionMap();
+void	InitAnimTextureMapPaths();
+void	InitAnimTextureMap();
 void	InitAudioFiles();
 
 //		END
@@ -142,6 +160,9 @@ void	FreeOverworld();
 //		DRAW
 
 void	DrawOverworld();
+void	DrawSea();
+void	DrawRocks();
+void	DrawFlowers();
 void	DrawMap();
 void	DrawFgMap();
 void	DrawCharacter();
@@ -165,6 +186,7 @@ void	UpdateCharacterPos(float elapsedSec);
 void	StopWalkingAndReset();
 void	HandleWalk();
 void	UpdateAnimFrameState();
+void	UpdateAnimTextureFrames();
 void	UpdateCharacterFrameInTime(float elapsedSec);
 void	UpdateScene();
 void	CheckSoundEffect(SDL_Keycode key);
