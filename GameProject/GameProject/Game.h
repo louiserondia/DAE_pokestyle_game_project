@@ -8,6 +8,21 @@ using namespace utils;
 // TODO: Set your name and group in the title here
 std::string g_WindowTitle{ "Pokestyle Game Project - Rahimov, Javid & Rondia, Louise - 1DAE12" };
 
+
+//	       \:.             .:/
+//	        \``._________.''/ 
+//	         \             / 
+//	 .--.--, / .':.   .':. \	
+//	/__:  /  | '::' . '::' |
+//	   / /   |`.   ._.   .'|
+//	  / /    |.'         '.|
+//	 /___-_-,|.\  \   /  /.|
+//	      // |''\.;   ;,/ '|
+//	      `==|:=         =:|	
+//	         `.          .'
+//             :-._____.-:
+//	          `''       `''
+
 // Change the window dimensions here
 float g_WindowWidth{ 1080 };
 float g_WindowHeight{ 720 };
