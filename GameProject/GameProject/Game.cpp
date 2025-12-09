@@ -15,6 +15,9 @@ void	DrawBattle();
 void	UpdateBattle(float elapsedSec);
 void	HandleKeyUpBattle(SDL_Keycode key);
 void	PrintTileIndex(float x, float y);
+void	InitAlphabet();
+void	DrawTextFromString(const std::string& str, Point2f pos, int fontSize = g_DefaultFontSize, bool isBlack = 1);
+
 
 //Basic game functions
 
@@ -25,6 +28,8 @@ void Start()
 	InitAudio();
 	InitOverworld();
 	InitBattle();
+	InitAlphabet();
+
 }
 
 void Draw()

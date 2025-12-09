@@ -23,6 +23,8 @@ bool	g_IsDoneDrawing{ true };
 
 float	g_GlobalTime{};
 
+const int g_DefaultFontSize{ 100 };
+
 // Declare your own functions here
 
 void DrawBattleTransitionAnimation();
