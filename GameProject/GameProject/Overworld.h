@@ -84,6 +84,7 @@ struct Character {
 	Point2f		targetPos{};
 	float		offsetTile{};
 	bool		isMoving{};
+	float		progression{};
 
 	Rectf		dst{};
 	Rectf		src{ 0.f, 0.f, 16.f, 24.f };
@@ -92,21 +93,25 @@ struct Character {
 	AnimFrame	curAnimFrame{}; // frame 2D pos in sprite sheet and nr frames
 	// change to only one frame, maybe 2d and start == row and add index
 	Frame		frame{};
+	float		frameTime{};
 
 	void		Draw();
+	void		UpdateFrame(float elapsedSec, float frameRate = 1 / 8.f);
+	void		UpdateAnimFrameState();
 };
 
 // change everything so character is a special npc and make functions as methods  like update pos and others i pass an npc
 
 struct Player : Character {
-	float		progression{};
-
 	void Init(const Scene& scene);
 	void UpdatePos(float elapsedSec, float speed, float maxDist);
 };
 
 struct NPC : Character {
+	bool isMvtVertical{};
+
 	void Init(int tile, const Rectf& dimensions, const Scene& scene);
+	void Walk(float elapsedSec, float moveSpeed);
 };
 
 struct Camera {
@@ -142,8 +147,6 @@ Camera		g_Camera{};
 NPC			g_NPC[g_NrNPC]{};
 Sounds		g_Sounds{};
 KeyPressed	g_KeyPressed{};
-
-float		g_FrameTime{};
 
 std::map<std::string, AnimFrame> g_AnimFrames{};
 
@@ -202,9 +205,7 @@ void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
 void	StopWalkingAndReset();
 void	HandleWalk();
-void	UpdateAnimFrameState();
 void	UpdateAnimTextureFrames();
-void	UpdatePlayerFrameInTime(float elapsedSec);
 void	UpdateScene();
 void	CheckSoundEffect(SDL_Keycode key);
 void	CheckBattleInGrass();

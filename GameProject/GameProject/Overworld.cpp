@@ -127,7 +127,8 @@ void NPC::Init(int tile, const Rectf& dimensions, const Scene& scene) {
 		scene.tileSize,
 		scene.tileSize * 1.5f
 	};
-	curAnimFrame = g_AnimFrames["walkdown"]; // add to animframes one for the motorbike
+	isMvtVertical = rand() & 1;
+	curAnimFrame = g_AnimFrames[isMvtVertical ? "walkdown" : "walkright"]; // add one to animframes for the motorbike
 	frame.start = 0;
 	frame.index = 1;
 	src = Rectf{
@@ -136,7 +137,8 @@ void NPC::Init(int tile, const Rectf& dimensions, const Scene& scene) {
 		dimensions.width,
 		dimensions.height
 	};
-	dir = Point2f{ 0.f, 1.f };
+	isMoving = true;
+	dir = isMvtVertical ? Point2f{ 0.f, 1.f } : Point2f{ 1.f, 0.f };
 }
 
 void	InitCamera() {
@@ -372,7 +374,7 @@ void OnKeyDownEventOnce(SDL_Keycode key) {
 				g_NextKey = key;
 			}
 
-			UpdateAnimFrameState();
+			g_Player.UpdateAnimFrameState();
 		}
 	}
 }
@@ -416,13 +418,14 @@ void	UpdateOverworld(float elapsedSec) {
 
 	g_Player.UpdatePos(elapsedSec, g_World.moveSpeed, scene.tileSize);
 	HandleWalk();
-	UpdatePlayerFrameInTime(elapsedSec);
+	g_NPC[0].Walk(elapsedSec, g_World.moveSpeed / 3);
+	g_NPC[0].UpdateFrame(elapsedSec, 1 / 4.f);
+	g_Player.UpdateFrame(elapsedSec);
 	UpdateAnimTextureFrames();
 	UpdateCameraPos(elapsedSec);
 	UpdateMapPos(elapsedSec);
 	UpdateScene();
 
-	g_FrameTime += elapsedSec;
 	g_Time += elapsedSec;
 	g_Sounds.collisionCooldown += elapsedSec;
 	g_Sounds.grassCooldown += elapsedSec;
@@ -479,7 +482,41 @@ void HandleWalk() {
 	}
 	else
 		g_Player.isMoving = false;
-	UpdateAnimFrameState();
+	g_Player.UpdateAnimFrameState();
+}
+
+void NPC::Walk(float elapsedSec, float moveSpeed) {
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const float maxWalk{ scene.tileSize * 4 };
+
+	if (progression > maxWalk) {
+		progression = 0;
+		//Point2f newDir{ dir.y * -1, dir.x * -1 };
+		dir.x *= -1;
+		dir.y *= -1;
+		UpdateAnimFrameState();
+	}
+	else {
+		const float delta{ elapsedSec * moveSpeed };
+		const float epsilon{ 32.f };
+		const int tile{ TileFromPos(dst.left + (dir.x == 1 ? dst.width + epsilon : - epsilon) + delta * dir.x,
+			dst.top + scene.tileSize / 2 + (dir.y == 1 ? dst.height + epsilon : - epsilon) + delta * dir.y) };
+	
+		if (tile == g_Player.curTile || !IsWalkable(tile)) {
+			Point2f newDir{ dir.y, dir.x };
+			if (rand() & 1) {
+				newDir.x *= -1;
+				newDir.y *= -1;
+			}
+			dir = newDir;
+			UpdateAnimFrameState();
+		}
+		else {
+			dst.left += delta * dir.x;
+			dst.top += delta * dir.y;
+			progression += delta;
+		}
+	}
 }
 
 void UpdateCameraPos(float elapsedSec) {
@@ -507,31 +544,45 @@ void	UpdateMapPos(float elapsedSec) {
 	scene.dst.top = -g_Camera.pos.y;
 }
 
-void	UpdateAnimFrameState() {
-	if (g_Player.dir.x == 1.f)
-		g_Player.curAnimFrame = g_AnimFrames["walkright"];
-	else if (g_Player.dir.x == -1.f)
-		g_Player.curAnimFrame = g_AnimFrames["walkleft"];
-	else if (g_Player.dir.y == -1.f)
-		g_Player.curAnimFrame = g_AnimFrames["walkup"];
-	else if (g_Player.dir.y == 1.f)
-		g_Player.curAnimFrame = g_AnimFrames["walkdown"];
+void	Character::UpdateAnimFrameState() {
+	if (dir.x == 1.f)
+		curAnimFrame = g_AnimFrames["walkright"];
+	else if (dir.x == -1.f)
+		curAnimFrame = g_AnimFrames["walkleft"];
+	else if (dir.y == -1.f)
+		curAnimFrame = g_AnimFrames["walkup"];
+	else if (dir.y == 1.f)
+		curAnimFrame = g_AnimFrames["walkdown"];
 }
 
-void	UpdatePlayerFrameInTime(float elapsedSec) {
-	g_Player.frame.start = g_Player.curAnimFrame.col;
-	g_Player.src.left = (g_Player.frame.start + g_Player.frame.index) * g_Player.src.width;
+void	Character::UpdateFrame(float elapsedSec, float frameRate) {
+	frame.start = curAnimFrame.col;
+	src.left = (frame.start + frame.index) * src.width;
 
-	const float frameRate{ 1.f / 8 };
-
-	if (g_FrameTime > frameRate) {
-		g_FrameTime = 0.f;
-		if (g_Player.isMoving)
-			g_Player.frame.index = (g_Player.frame.index + 1) % g_Player.curAnimFrame.nrFrames;
+	if (frameTime > frameRate) {
+		frameTime = 0.f;
+		if (isMoving)
+			frame.index = (frame.index + 1) % curAnimFrame.nrFrames;
 		else
-			g_Player.frame.index = 1;
+			frame.index = 1;
 	}
+	frameTime += elapsedSec;
 }
+
+//void	UpdatePlayerFrameInTime(float elapsedSec) {
+//	g_Player.frame.start = g_Player.curAnimFrame.col;
+//	g_Player.src.left = (g_Player.frame.start + g_Player.frame.index) * g_Player.src.width;
+//
+//	const float frameRate{ 1.f / 8 };
+//
+//	if (g_FrameTime > frameRate) {
+//		g_FrameTime = 0.f;
+//		if (g_Player.isMoving)
+//			g_Player.frame.index = (g_Player.frame.index + 1) % g_Player.curAnimFrame.nrFrames;
+//		else
+//			g_Player.frame.index = 1;
+//	}
+//}
 
 void	UpdateAnimTextureFrames() {
 	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
