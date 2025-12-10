@@ -16,11 +16,13 @@ struct Point2f
 {
 	Point2f( );
 	explicit Point2f( float x, float y );
+	bool operator== (const Point2f& rhs);
 
 	float x;
 	float y;
 };
 
+bool operator==(const Point2f& lhs, const Point2f& rhs);
 
 
 struct Rectf

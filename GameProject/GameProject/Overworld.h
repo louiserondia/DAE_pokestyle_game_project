@@ -98,20 +98,24 @@ struct Character {
 	void		Draw();
 	void		UpdateFrame(float elapsedSec, float frameRate = 1 / 8.f);
 	void		UpdateAnimFrameState();
+	void UpdatePos(float elapsedSec, float speed, float maxDist);
+
 };
 
 // change everything so character is a special npc and make functions as methods  like update pos and others i pass an npc
 
 struct Player : Character {
 	void Init(const Scene& scene);
-	void UpdatePos(float elapsedSec, float speed, float maxDist);
+	//void UpdatePos(float elapsedSec, float speed, float maxDist);
 };
 
 struct NPC : Character {
 	bool isMvtVertical{};
+	int	startTile{};
 
 	void Init(int tile, const Rectf& dimensions, const Scene& scene);
-	void Walk(float elapsedSec, float moveSpeed);
+	void Walk();
+	//void Walk(float elapsedSec, float moveSpeed);
 };
 
 struct Camera {
@@ -204,7 +208,7 @@ void	UpdateOverworld(float elapsedSec);
 void	UpdateMapPos(float elapsedSec);
 void	UpdateCameraPos(float elapsedSec);
 void	StopWalkingAndReset();
-void	HandleWalk();
+void	HandlePlayerWalk();
 void	UpdateAnimTextureFrames();
 void	UpdateScene();
 void	CheckSoundEffect(SDL_Keycode key);
@@ -218,6 +222,7 @@ int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
 Point2f	PosFromTile(int row, int col);
 int		TargetTileFromKey(int curTile, SDL_Keycode key);
+int		TargetTileFromDir(int curTile, const Point2f& dir);
 Point2f	TargetPosFromKey(const Rectf& rect, SDL_Keycode key);
 Point2f	TargetPosFromKey(const Point2f& rect, SDL_Keycode key);
 Point2f	DirFromKey(SDL_Keycode key);
@@ -227,7 +232,10 @@ void	PrintTileIndex(float x, float y);
 void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
 bool	IsWalkable(int index);
 bool	IsTallGrass(int index);
+bool	IsPlayerOnTile(int index);
+bool	IsNPCOnTile(int index);
 Door	GetDoor();
 bool	IsGoingOutsideMap();
+Point2f Turn(Point2f dir, float angle);
 
 #pragma endregion ownDeclarations
