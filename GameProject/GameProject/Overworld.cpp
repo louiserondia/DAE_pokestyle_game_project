@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Core.h"
 #include "Overworld.h"
 #include <iostream>
@@ -10,18 +10,27 @@ void TurnOnBattle();
 
 #pragma region ownDeclarations
 
-//		INITIALIZATIONS
+//								                   ▄▄                  ▄▄ 
+//	  ▄▄▄   	▀▀        ▀▀  ██                   ██                  ██ 
+//	▄████   	██  ████▄ ██ ▀██▀▀   ▀▀█▄ ████▄ ▄████   ▄█▀█▄ ████▄ ▄████ 
+//	  ███   	██  ██ ██ ██  ██    ▄█▀██ ██ ██ ██ ██   ██▄█▀ ██ ██ ██ ██ 
+//	  ███ ██	██▄ ██ ██ ██▄ ██    ▀█▄██ ██ ██ ▀████   ▀█▄▄▄ ██ ██ ▀████ 
 
 void	InitOverworld() {
-	g_TileSize *= g_Camera.zoom;
-	g_MoveDist = g_TileSize;
+
+	// init static
+	if (!TextureFromFile("Resources/character.png", g_NPCTexture))
+		std::cout << "Couldn't load character texture at Resources/character.png";
+	if (!TextureFromFile("Resources/animated_tiles.png", g_AnimTextures))
+		ErrorLoadMsg("Resources/animated_tiles.png");
+	if (!TextureFromFile("Resources/water_shadow.png", g_WaterShadowTexture))
+		ErrorLoadMsg("Resources/water_shadow.png");
+
 	InitScenes();
 	InitAnimFrames();
-	InitCharacter();
+	InitCharacters();
 	InitCamera();
-	InitCollisionMapPaths();
 	InitCollisionMap();
-	InitAnimTextureMapPaths();
 	InitAnimTextureMap();
 	InitAudioFiles();
 }
@@ -29,112 +38,130 @@ void	InitOverworld() {
 void	InitScenes() {
 	Scene* pScene{ &g_World.scenes[0] };
 
-	if (!TextureFromFile("Resources/map_three_island.png", pScene->texture))
-		ErrorLoadMsg("Resources/map_three_island.png");
-	if (!TextureFromFile("Resources/map_three_island_houses_2.png", pScene->fgTexture))
-		ErrorLoadMsg("Resources/map_three_island_houses_2.png");
+	pScene->name = "three_island";
 	pScene->entryPoints["Spawn"] = 183;
 	pScene->entryPoints["East"] = 215;
 	pScene->nrDoors = 1;
 	pScene->doors[0] = Door{ "East", 1, "West" };
+	pScene->LoadStatic();
 
 	pScene = &g_World.scenes[1];
 
-	if (!TextureFromFile("Resources/bridge_no_anim.png", pScene->texture))
-		ErrorLoadMsg("Resources/bridge_no_anim.png");
-	if (!TextureFromFile("Resources/bridge_fg.png", pScene->fgTexture))
-		ErrorLoadMsg("Resources/bridge_fg.png");
+	pScene->name = "bridge";
 	pScene->entryPoints["Spawn"] = 1085;
 	pScene->entryPoints["West"] = 752;
 	pScene->entryPoints["NorthEast"] = 81;
 	pScene->nrDoors = 2;
 	pScene->doors[0] = Door{ "West", 0, "East" };
 	pScene->doors[1] = Door{ "NorthEast", 2, "South" };
+	pScene->LoadStatic();
 
 	pScene = &g_World.scenes[2];
 
-	if (!TextureFromFile("Resources/kindle.png", pScene->texture))
-		ErrorLoadMsg("Resources/kindle.png");
-	if (!TextureFromFile("Resources/kindle_fg.png", pScene->fgTexture))
-		ErrorLoadMsg("Resources/kindle_fg.png");
+	pScene->name = "kindle";
 	pScene->entryPoints["South"] = 2844;
 	pScene->entryPoints["North"] = 11;
 	pScene->entryPoints["Spawn"] = 2844;
 	pScene->nrDoors = 2;
 	pScene->doors[0] = Door{ "South", 1, "NorthEast" };
 	pScene->doors[1] = Door{ "North", 0, "East" };
+	pScene->LoadStatic();
 
-	InitScene(&g_World.scenes[g_World.currentSceneIndex]);
+	g_World.scenes[g_World.curSceneIndex].Init();
 }
 
-void	InitScene(Scene* pScene) {
-	const float width{ pScene->texture.width },
-		height{ pScene->texture.height },
-		screenWidth{ pScene->texture.width * g_Camera.zoom },
-		screenHeight{ pScene->texture.height * g_Camera.zoom };
-
-	pScene->screenWidth = screenWidth;
-	pScene->screenHeight = screenHeight;
-	pScene->startOffset.x = std::max(0.f, (g_WindowWidth - pScene->screenWidth) / 2);
-	pScene->startOffset.y = std::max(0.f, (g_WindowHeight - pScene->screenHeight) / 2);
-
-	pScene->dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
-	g_NrCols = static_cast<int>(screenWidth / g_TileSize);
-	g_NrRows = static_cast<int>(screenHeight / g_TileSize);
+void	Scene::LoadStatic() {
+	if (!TextureFromFile("Resources/" + name + ".png", texture))
+		ErrorLoadMsg("Resources/" + name + ".png");
+	if (!TextureFromFile("Resources/" + name + "_fg.png", fgTexture))
+		ErrorLoadMsg("Resources/" + name + "_fg.png");
+	collisionMapPath = "../Resources/" + name + "_collisions.txt";
+	animTextureMapPath = "../Resources/" + name + "_textures.txt";
 }
 
-void	InitAnimFrames() {
+void	Scene::Init() {
+	tileSize = 16.f * g_Camera.zoom;
+	screenWidth = texture.width * g_Camera.zoom;
+	screenHeight = texture.height * g_Camera.zoom;
+	startOffset.x = std::max(0.f, (g_WindowWidth - screenWidth) / 2);
+	startOffset.y = std::max(0.f, (g_WindowHeight - screenHeight) / 2);
+
+	dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
+	nrCols = static_cast<int>(screenWidth / tileSize);
+	nrRows = static_cast<int>(screenHeight / tileSize);
+}
+
+void InitAnimFrames() {
 	g_AnimFrames["walkdown"] = AnimFrame{ 0, 0, 4 };
 	g_AnimFrames["walkup"] = AnimFrame{ 0, 4, 4 };
 	g_AnimFrames["walkleft"] = AnimFrame{ 0, 8, 4 };
 	g_AnimFrames["walkright"] = AnimFrame{ 0, 12, 4 };
 }
 
-void	InitCharacter() {
-	if (!TextureFromFile("Resources/character.png", g_Character.texture))
-		std::cout << "Couldn't load character texture at Resources/character.png";
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+void InitCharacters() {
+	g_Player.Init(g_World.scenes[0]);
+	g_NPC[0].Init(g_Player.curTile + 4, Rectf{ 0.f, 0.f, 16.f, 24.f }, g_World.scenes[g_World.curSceneIndex]);
+}
 
-	g_Character.curTile = pScene->entryPoints["Spawn"];
-	g_Character.dst = Rectf{
-		GetCol(g_Character.curTile, g_NrCols) * g_TileSize,
-		GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2,
-		g_TileSize,
-		g_TileSize * 1.5f
+void Player::Init(const Scene& scene) {
+	curTile = scene.entryPoints.at("Spawn");
+	dst = Rectf{
+		GetCol(curTile, scene.nrCols) * scene.tileSize,
+		GetRow(curTile, scene.nrCols) * scene.tileSize - scene.tileSize / 2,
+		scene.tileSize,
+		scene.tileSize * 1.5f
 	};
-	g_Character.targetTile = g_Character.curTile;
-	g_Character.curAnimFrame = g_AnimFrames["walkdown"];
-	g_Character.frameStartIndex = g_Character.curAnimFrame.col;
-	g_Character.frameIndex = 1;
-	g_Character.src.left = (g_Character.frameStartIndex + g_Character.frameIndex) * g_Character.frameDimensions.x;
-	g_Character.dir = Point2f{ 0.f, 1.f };
+	targetTile = curTile;
+	curAnimFrame = g_AnimFrames["walkdown"];
+	frame.start = curAnimFrame.col;
+	frame.index = 1;
+	src.left = (frame.start + frame.index) * src.width;
+	dir = Point2f{ 0.f, 1.f };
+}
+
+void NPC::Init(int tile, const Rectf& dimensions, const Scene& scene) {
+	startTile = tile;
+	curTile = tile;
+	targetTile = tile;
+	dst = Rectf{
+		GetCol(curTile, scene.nrCols) * scene.tileSize,
+		GetRow(curTile, scene.nrCols) * scene.tileSize - scene.tileSize / 2,
+		scene.tileSize,
+		scene.tileSize * 1.5f
+	};
+	isMvtVertical = rand() & 1;
+	curAnimFrame = g_AnimFrames[isMvtVertical ? "walkdown" : "walkright"]; // add one to animframes for the motorbike
+	frame.start = 0;
+	frame.index = 1;
+	src = Rectf{
+		(frame.start + frame.index) * dimensions.width,
+		dimensions.top,
+		dimensions.width,
+		dimensions.height
+	};
+	isMoving = true;
+	dir = isMvtVertical ? Point2f{ 0.f, 1.f } : Point2f{ 1.f, 0.f };
 }
 
 void	InitCamera() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	Point2f	posCharacterMid{ g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2, g_Character.dst.top - g_WindowHeight / 2 };
+	Point2f	posPlayerMid{ g_Player.dst.left + (g_Player.dst.width / 2) - g_WindowWidth / 2, g_Player.dst.top - g_WindowHeight / 2 };
 
-	if (posCharacterMid.x < 0) posCharacterMid.x = 0;
-	else if (posCharacterMid.x + g_WindowWidth > pScene->dst.width) posCharacterMid.x = pScene->dst.width - g_WindowWidth;
-	if (posCharacterMid.y < 0) posCharacterMid.y = 0;
-	else if (posCharacterMid.y + g_WindowHeight > pScene->dst.height) posCharacterMid.y = pScene->dst.height - g_WindowHeight;
+	if (posPlayerMid.x < 0) posPlayerMid.x = 0;
+	else if (posPlayerMid.x + g_WindowWidth > scene.dst.width) posPlayerMid.x = scene.dst.width - g_WindowWidth;
+	if (posPlayerMid.y < 0) posPlayerMid.y = 0;
+	else if (posPlayerMid.y + g_WindowHeight > scene.dst.height) posPlayerMid.y = scene.dst.height - g_WindowHeight;
 
-	g_Camera.pos = posCharacterMid;
-
-}
-
-void	InitCollisionMapPaths() {
-	g_CollisionMapPaths[0] = "../Resources/map_three_island_2.txt";
-	g_CollisionMapPaths[1] = "../Resources/bridge.txt";
-	g_CollisionMapPaths[2] = "../Resources/kindle.txt";
+	g_Camera.pos = posPlayerMid;
 }
 
 void	InitCollisionMap() {
-	const int sceneIndex{ g_World.currentSceneIndex };
-	std::string path{ g_CollisionMapPaths[sceneIndex] };
-	g_CollisionMapSize = static_cast<float>(g_NrCols * g_NrRows);
-	g_CollisionMaps[sceneIndex] = new int[static_cast<size_t>(g_CollisionMapSize)];
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+
+	std::string path{ scene.collisionMapPath };
+	scene.collisionMapSize = static_cast<float>(scene.nrCols * scene.nrRows);
+	scene.collisionMap = new int[static_cast<size_t>(scene.collisionMapSize)];
 
 	std::ifstream	file(path);
 	if (!file)
@@ -142,32 +169,23 @@ void	InitCollisionMap() {
 
 	int index{};
 	char ch{};
-	while (file.get(ch) && index < static_cast<int>(g_CollisionMapSize)) {
+	while (file.get(ch) && index < static_cast<int>(scene.collisionMapSize)) {
 		if (ch == '0' || ch == '1' || ch == '2') {
-			g_CollisionMaps[sceneIndex][index] = ch - '0';
+			scene.collisionMap[index] = ch - '0';
 			++index;
 		}
 	}
-	//Print2DArray(g_CollisionMaps[sceneIndex], g_CollisionMapSize, g_NrCols);
+	//Print2DArray(scene.collisionMap[sceneIndex], scene.collisionMapSize, scene.nrCols);
 }
 
-void	InitAnimTextureMapPaths() {
-	g_AnimTextureMapPaths[0] = "../Resources/three_island_textures.txt";
-	g_AnimTextureMapPaths[1] = "../Resources/bridge_textures.txt";
-	g_AnimTextureMapPaths[2] = "../Resources/kindle_textures.txt";
-}
 
 void	InitAnimTextureMap() {
-	const int sceneIndex{ g_World.currentSceneIndex };
-	std::string path{ g_AnimTextureMapPaths[sceneIndex] };
-	g_AnimTextureMapSize = static_cast<float>(g_NrCols * g_NrRows);
-	g_AnimTextureMaps[sceneIndex] = new char[static_cast<size_t>(g_AnimTextureMapSize)];
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	if (!TextureFromFile("Resources/animated_tiles.png", g_AnimTiles))
-		ErrorLoadMsg("Resources/animated_tiles.png");
+	std::string path{ scene.animTextureMapPath };
 
-	if (!TextureFromFile("Resources/water_shadow.png", g_WaterShadowTexture))
-		ErrorLoadMsg("Resources/water_shadow.png");
+	scene.animTextureMapSize = scene.nrCols * scene.nrRows;
+	scene.animTextureMap = new char[scene.animTextureMapSize];
 
 	std::ifstream	file(path);
 	if (!file)
@@ -175,9 +193,9 @@ void	InitAnimTextureMap() {
 
 	int index{};
 	char ch{};
-	while (file.get(ch) && index < static_cast<int>(g_AnimTextureMapSize)) {
+	while (file.get(ch) && index < scene.animTextureMapSize) {
 		if (ch == '0' || ch == '1' || ch == '2' || ch == 'm' || ch == 'r' || ch == 'f') {
-			g_AnimTextureMaps[sceneIndex][index] = ch;
+			scene.animTextureMap[index] = ch;
 			++index;
 		}
 	}
@@ -191,114 +209,149 @@ void InitAudioFiles() {
 //		END
 
 void	FreeOverworld() {
-	DeleteTexture(g_World.scenes[0].texture);
-	DeleteTexture(g_World.scenes[0].fgTexture);
-	DeleteTexture(g_Character.texture);
-	DeleteTexture(g_AnimTiles);
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+
+	DeleteTexture(g_NPCTexture);
+	DeleteTexture(g_WaterShadowTexture);
+	DeleteTexture(g_AnimTextures);
 	Mix_FreeChunk(g_Sounds.collision);
 	Mix_FreeChunk(g_Sounds.grass);
 
 	for (int index{}; index < g_NrScenes; ++index) {
-		delete[] g_CollisionMaps[index];
-		delete[] g_AnimTextureMaps[index];
+		DeleteTexture(scene.texture);
+		DeleteTexture(scene.fgTexture);
+		delete[] scene.collisionMap;
+		delete[] scene.animTextureMap;
 	}
 }
 
-//		DRAW
+//			         ▄▄                     
+//			         ██                     
+//	▄▀▀██▄ 	      ▄████ ████▄  ▀▀█▄ ██   ██ 
+//	  ▄██▀ 	      ██ ██ ██ ▀▀ ▄█▀██ ██ █ ██ 
+//	▄███▄▄▄	 ██   ▀████ ██    ▀█▄██  ██▀██  
+//
 
 void	DrawOverworld() {
+
 	DrawSea();
 	DrawRocks();
 	DrawMap();
 	DrawFlowers();
 	//DrawCollisions();
-	//DrawTiles();
-	DrawCharacter();
+	//DrawTiles
+	//DrawCurrentAndTargetTiles();
+	for (NPC& npc : g_NPC) {
+		npc.Draw();
+	}
+	g_Player.Draw();
 	DrawFgMap();
 	DrawLoadingScreen();
 }
 
-void DrawSea() {
-	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
-	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+Scene& GetScene() {
+	return g_World.scenes[g_World.curSceneIndex];
+}
+void DrawCurrentAndTargetTiles() {
+	const Scene& scene{ GetScene() };
 
-	for (int index{}; index < g_AnimTextureMapSize; ++index) {
-		if (map[index] != 'm' && map[index] != 'r')
+	SetColor(g_Red); // target
+	for (const NPC& npc : g_NPC) {
+		FillRect(PosFromTile(npc.targetTile).x - g_Camera.pos.x, PosFromTile(npc.targetTile).y - g_Camera.pos.y, scene.tileSize, scene.tileSize);
+	}
+	FillRect(PosFromTile(g_Player.targetTile).x - g_Camera.pos.x, PosFromTile(g_Player.targetTile).y - g_Camera.pos.y, scene.tileSize, scene.tileSize);
+
+	SetColor(g_Blue); // current
+	for (const NPC& npc : g_NPC) {
+		FillRect(PosFromTile(npc.curTile).x - g_Camera.pos.x, PosFromTile(npc.curTile).y - g_Camera.pos.y, scene.tileSize, scene.tileSize);
+	}
+	FillRect(PosFromTile(g_Player.curTile).x - g_Camera.pos.x, PosFromTile(g_Player.curTile).y - g_Camera.pos.y, scene.tileSize, scene.tileSize);
+
+}
+
+
+void DrawSea() {
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const float size{ g_AnimTextures.width / scene.animTextureFrames.sea.end };
+	const char* map{ scene.animTextureMap };
+
+	for (int index{}; index < scene.animTextureMapSize; ++index) {
+		if (scene.animTextureMap[index] != 'm' && scene.animTextureMap[index] != 'r')
 			continue;
 
 		const Rectf dst{
-			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
-			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
-			g_TileSize, g_TileSize
+			GetCol(index, scene.nrCols) * scene.tileSize - g_Camera.pos.x,
+			GetRow(index, scene.nrCols) * scene.tileSize - g_Camera.pos.y,
+			scene.tileSize, scene.tileSize
 		};
-		const Rectf src{ g_AnimTextureFrames.sea * size, 0.f, size, size };
+		const Rectf src{ scene.animTextureFrames.sea.index * size, 0.f, size, size };
 
-		DrawTexture(g_AnimTiles, dst, src);
+		DrawTexture(g_AnimTextures, dst, src);
 	}
 }
 
 void DrawRocks() {
-	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
-	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const float size{ g_AnimTextures.width / scene.animTextureFrames.sea.end };
 
-	for (int index{}; index < g_AnimTextureMapSize; ++index) {
-		if (map[index] != 'r')
+	for (int index{}; index < scene.animTextureMapSize; ++index) {
+		if (scene.animTextureMap[index] != 'r')
 			continue;
 
 		Rectf dst{
-			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
-			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
-			g_TileSize * 2, g_TileSize * 2
+			GetCol(index, scene.nrCols) * scene.tileSize - g_Camera.pos.x,
+			GetRow(index, scene.nrCols) * scene.tileSize - g_Camera.pos.y,
+			scene.tileSize * 2, scene.tileSize * 2
 		};
-		const Rectf src{ g_AnimTextureFrames.rock * size, size, size, size };
+		const Rectf src{ scene.animTextureFrames.rock.index * size, size, size, size };
 
 		DrawTexture(g_WaterShadowTexture, dst);
 
-		dst.left += g_TileSize / 2;
-		dst.top += g_TileSize / 2;
+		dst.left += scene.tileSize / 2;
+		dst.top += scene.tileSize / 2;
 		dst.width /= 2;
 		dst.height /= 2;
-		DrawTexture(g_AnimTiles, dst, src);
+		DrawTexture(g_AnimTextures, dst, src);
 	}
 }
 
 void DrawFlowers() {
-	const float size{ g_AnimTiles.width / g_AnimTextureFrames.seaMax };
-	const char* map{ g_AnimTextureMaps[g_World.currentSceneIndex] };
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const float size{ g_AnimTextures.width / scene.animTextureFrames.sea.end };
 
-	for (int index{}; index < g_AnimTextureMapSize; ++index) {
-		if (map[index] != 'f')
+	for (int index{}; index < scene.animTextureMapSize; ++index) {
+		if (scene.animTextureMap[index] != 'f')
 			continue;
 
 		const Rectf dst{
-			GetCol(index, g_NrCols) * g_TileSize - g_Camera.pos.x,
-			GetRow(index, g_NrCols) * g_TileSize - g_Camera.pos.y,
-			g_TileSize, g_TileSize
+			GetCol(index, scene.nrCols) * scene.tileSize - g_Camera.pos.x,
+			GetRow(index, scene.nrCols) * scene.tileSize - g_Camera.pos.y,
+			scene.tileSize, scene.tileSize
 		};
-		const Rectf src{ g_AnimTextureFrames.flower * size, 2 * size, size, size };
+		const Rectf src{ scene.animTextureFrames.flower.index * size, 2 * size, size, size };
 
-		DrawTexture(g_AnimTiles, dst, src);
+		DrawTexture(g_AnimTextures, dst, src);
 	}
 }
 
 void	DrawMap() {
-	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	DrawTexture(pScene->texture, pScene->dst);
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	DrawTexture(scene.texture, scene.dst);
 }
 
 void	DrawFgMap() {
-	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	DrawTexture(pScene->fgTexture, pScene->dst);
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	DrawTexture(scene.fgTexture, scene.dst);
 }
 
-void	DrawCharacter() {
+void	Character::Draw() {
 	const Rectf rect{
-		g_Character.dst.left - g_Camera.pos.x,
-		g_Character.dst.top - g_Camera.pos.y,
-		g_Character.dst.width ,
-		g_Character.dst.height
+		dst.left - g_Camera.pos.x,
+		dst.top - g_Camera.pos.y,
+		dst.width ,
+		dst.height
 	};
-	DrawTexture(g_Character.texture, rect, g_Character.src);
+	DrawTexture(g_NPCTexture, rect, src);
 }
 
 void DrawLoadingScreen() {
@@ -309,20 +362,25 @@ void DrawLoadingScreen() {
 	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
-//		INPUT HANDLING
+//              ▀▀                     ██
+//  ▄▄▄▄▄       ██  ████▄ ████▄ ██ ██ ▀██▀▀ ▄█▀▀▀
+//   ▄▄██       ██  ██ ██ ██ ██ ██ ██  ██   ▀███▄
+//  ▄▄▄██  ██   ██▄ ██ ██ ████▀ ▀██▀█  ██   ▄▄▄█▀
+//                        ██                      
+//                        ▀▀                      
 
 void OnKeyDownEventOnce(SDL_Keycode key) {
 	if (key == SDLK_LEFT || key == SDLK_RIGHT || key == SDLK_UP || key == SDLK_DOWN) {
 
 		// Turn character when key pressed if not in the right direction
-		if (!g_Character.isMoving && key == SDLK_LEFT && g_Character.dir.x != -1.f)
-			g_Character.dir = Point2f{ -1.f, 0.f };
-		else if (!g_Character.isMoving && key == SDLK_RIGHT && g_Character.dir.x != 1.f)
-			g_Character.dir = Point2f{ 1.f, 0.f };
-		else if (!g_Character.isMoving && key == SDLK_UP && g_Character.dir.y != -1.f)
-			g_Character.dir = Point2f{ 0.f, -1.f };
-		else if (!g_Character.isMoving && key == SDLK_DOWN && g_Character.dir.y != 1.f)
-			g_Character.dir = Point2f{ 0.f, 1.f };
+		if (!g_Player.isMoving && key == SDLK_LEFT && g_Player.dir.x != -1.f)
+			g_Player.dir = Point2f{ -1.f, 0.f };
+		else if (!g_Player.isMoving && key == SDLK_RIGHT && g_Player.dir.x != 1.f)
+			g_Player.dir = Point2f{ 1.f, 0.f };
+		else if (!g_Player.isMoving && key == SDLK_UP && g_Player.dir.y != -1.f)
+			g_Player.dir = Point2f{ 0.f, -1.f };
+		else if (!g_Player.isMoving && key == SDLK_DOWN && g_Player.dir.y != 1.f)
+			g_Player.dir = Point2f{ 0.f, 1.f };
 
 		// updates key pressed if not already pressed
 		else {
@@ -343,7 +401,7 @@ void OnKeyDownEventOnce(SDL_Keycode key) {
 				g_NextKey = key;
 			}
 
-			UpdateAnimFrameState();
+			g_Player.UpdateAnimFrameState();
 		}
 	}
 }
@@ -372,20 +430,34 @@ SDL_Keycode	UpdateCurKey() {
 	return NULL;
 }
 
-//		UPDATE
+
+//		                       ▄▄                   
+//                             ██        ██         
+//   █  ██      ██ ██ ████▄ ▄████  ▀▀█▄ ▀██▀▀ ▄█▀█▄ 
+//   █████      ██ ██ ██ ██ ██ ██ ▄█▀██  ██   ██▄█▀ 
+//      ██ ██   ▀██▀█ ████▀ ▀████ ▀█▄██  ██   ▀█▄▄▄ 
+//                    ██                            
+//                    ▀▀                            
 
 void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	UpdateCharacterPos(elapsedSec);
-	HandleWalk();
-	UpdateCharacterFrameInTime(elapsedSec);
+	HandlePlayerWalk();
+	g_Player.UpdateFrame(elapsedSec);
+	g_Player.UpdatePos(elapsedSec, g_World.moveSpeed, scene.tileSize);
+
+	for (NPC& npc : g_NPC) {
+		npc.Walk();
+		npc.UpdatePos(elapsedSec, g_World.moveSpeed / 3, scene.tileSize);
+		npc.UpdateFrame(elapsedSec, 1 / 4.f);
+	}
+
 	UpdateAnimTextureFrames();
 	UpdateCameraPos(elapsedSec);
 	UpdateMapPos(elapsedSec);
 	UpdateScene();
 
-	g_FrameTime += elapsedSec;
 	g_Time += elapsedSec;
 	g_Sounds.collisionCooldown += elapsedSec;
 	g_Sounds.grassCooldown += elapsedSec;
@@ -393,126 +465,150 @@ void	UpdateOverworld(float elapsedSec) {
 	g_AnimTextureTime += elapsedSec;
 }
 
-void UpdateCharacterPos(float elapsedSec) {
-	if (!g_Character.isMoving)
+void Character::UpdatePos(float elapsedSec, float speed, float maxDist) {
+	if (!isMoving)
 		return;
 
 	const float
-		dx{ g_Character.dir.x * g_MoveSpeed * elapsedSec },
-		dy{ g_Character.dir.y * g_MoveSpeed * elapsedSec };
+		dx{ dir.x * speed * elapsedSec },
+		dy{ dir.y * speed * elapsedSec };
 
-	if (g_Progression + abs(dx + dy) < g_MoveDist) {
-		g_Progression += abs(dx + dy);
-		g_Character.dst.left += dx;
-		g_Character.dst.top += dy;
+	if (stepProgress + abs(dx + dy) < maxDist) {
+		stepProgress += abs(dx + dy);
+		dst.left += dx;
+		dst.top += dy;
 	}
 	else {
-		g_Character.dst.left = g_Character.targetPos.x;
-		g_Character.dst.top = g_Character.targetPos.y - g_TileSize / 2;
-		g_Progression = 0.f;
-		g_Character.curTile = g_Character.targetTile;
-
-		g_CurKey = UpdateCurKey();
-		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey)))
-			g_Character.isMoving = false;
-		CheckBattleInGrass();
+		dst.left = targetPos.x;
+		dst.top = targetPos.y - dst.height / 3;
+		stepProgress = 0.f;
+		curTile = targetTile;
 	}
 }
 
-void HandleWalk() {
+void HandlePlayerWalk() {
 	if (!g_CurKey)
 		g_CurKey = UpdateCurKey();
 
+	if (g_Player.isMoving && g_Player.stepProgress == 0.f) {
+		g_CurKey = UpdateCurKey();
+		const int targetTemp{ TargetTileFromKey(g_Player.curTile, g_CurKey) };
+
+		if (!IsWalkable(targetTemp) || IsNPCOnTile(targetTemp))
+			g_Player.isMoving = false;
+		CheckBattleInGrass();
+	}
+
 	if (g_CurKey) {
-		g_Character.dir = DirFromKey(g_CurKey);
-		g_Character.targetTile = TargetTileFromKey(g_Character.curTile, g_CurKey);
+		g_Player.dir = DirFromKey(g_CurKey);
+		g_Player.targetTile = TargetTileFromKey(g_Player.curTile, g_CurKey);
 		CheckSoundEffect(g_CurKey);
 
-		if (!IsWalkable(TargetTileFromKey(g_Character.curTile, g_CurKey))) {
-			g_Character.targetTile = g_Character.curTile;
+		// stop if trying to walk on illegal tiles
+		if (!IsWalkable(g_Player.targetTile) || IsNPCOnTile(g_Player.targetTile)) {
+			g_Player.targetTile = g_Player.curTile;
 			g_CurKey = UpdateCurKey();
 		}
 		else {
-			g_Character.targetPos = PosFromTile(g_Character.targetTile);
-			g_Character.isMoving = true;
+			g_Player.targetPos = PosFromTile(g_Player.targetTile);
+			g_Player.isMoving = true;
 		}
-		// now walk is handled in UpdateCharacterPos
+		// now walk is handled in UpdatePlayerPos
 	}
 	else
-		g_Character.isMoving = false;
+		g_Player.isMoving = false;
+	g_Player.UpdateAnimFrameState();
+}
+
+void NPC::Walk() {
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const int dist{ TileDist(startTile, curTile, scene.tileSize) };
+
+	if (dist > 1) {
+		dir = Turn90(dir);
+		startTile = curTile;
+	}
+	if (stepProgress == 0.f) {
+		const int targetTemp{ TargetTileFromDir(curTile, dir) };
+		if (IsWalkable(targetTile) && !IsPlayerOnTile(targetTemp)) {
+			targetTile = targetTemp;
+			targetPos = PosFromTile(targetTile);
+			isMoving = true;
+		}
+		else
+			isMoving = false;
+	}
 	UpdateAnimFrameState();
 }
 
 void UpdateCameraPos(float elapsedSec) {
-	if (!g_Character.isMoving)
+	if (!g_Player.isMoving)
 		return;
 
-	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	if (g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2 >= 0.f
-		&& g_Character.dst.left + (g_Character.dst.width / 2) + g_WindowWidth / 2 <= pScene->screenWidth)
+	if (g_Player.dst.left + (g_Player.dst.width / 2) - g_WindowWidth / 2 >= 0.f
+		&& g_Player.dst.left + (g_Player.dst.width / 2) + g_WindowWidth / 2 <= scene.screenWidth)
 	{
-		g_Camera.pos.x = g_Character.dst.left + (g_Character.dst.width / 2) - g_WindowWidth / 2;
+		g_Camera.pos.x = g_Player.dst.left + (g_Player.dst.width / 2) - g_WindowWidth / 2;
 	}
-	if (g_Character.dst.top - g_WindowHeight / 2 >= 0.f
-		&& g_Character.dst.top + g_WindowHeight / 2 <= pScene->screenHeight)
+	if (g_Player.dst.top - g_WindowHeight / 2 >= 0.f
+		&& g_Player.dst.top + g_WindowHeight / 2 <= scene.screenHeight)
 	{
-		g_Camera.pos.y = g_Character.dst.top - g_WindowHeight / 2;
+		g_Camera.pos.y = g_Player.dst.top - g_WindowHeight / 2;
 	}
 }
 
 void	UpdateMapPos(float elapsedSec) {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	pScene->dst.left = -g_Camera.pos.x;
-	pScene->dst.top = -g_Camera.pos.y;
+	scene.dst.left = -g_Camera.pos.x;
+	scene.dst.top = -g_Camera.pos.y;
 }
 
-void	UpdateAnimFrameState() {
-	if (g_Character.dir.x == 1.f)
-		g_Character.curAnimFrame = g_AnimFrames["walkright"];
-	else if (g_Character.dir.x == -1.f)
-		g_Character.curAnimFrame = g_AnimFrames["walkleft"];
-	else if (g_Character.dir.y == -1.f)
-		g_Character.curAnimFrame = g_AnimFrames["walkup"];
-	else if (g_Character.dir.y == 1.f)
-		g_Character.curAnimFrame = g_AnimFrames["walkdown"];
+void	Character::UpdateAnimFrameState() {
+	if (dir.x == 1.f)
+		curAnimFrame = g_AnimFrames["walkright"];
+	else if (dir.x == -1.f)
+		curAnimFrame = g_AnimFrames["walkleft"];
+	else if (dir.y == -1.f)
+		curAnimFrame = g_AnimFrames["walkup"];
+	else if (dir.y == 1.f)
+		curAnimFrame = g_AnimFrames["walkdown"];
 }
 
-void	UpdateCharacterFrameInTime(float elapsedSec) {
-	g_Character.frameStartIndex = g_Character.curAnimFrame.col;
-	g_Character.src.left = (g_Character.frameStartIndex + g_Character.frameIndex) * g_Character.frameDimensions.x;
+void	Character::UpdateFrame(float elapsedSec, float frameRate) {
+	frame.start = curAnimFrame.col;
+	src.left = (frame.start + frame.index) * src.width;
 
-	const float frameRate{ 1.f / 8 };
-
-	if (g_FrameTime > frameRate) {
-		g_FrameTime = 0.f;
-		if (g_Character.isMoving)
-			g_Character.frameIndex = (g_Character.frameIndex + 1) % g_Character.curAnimFrame.nrFrames;
+	if (frameTime > frameRate) {
+		frameTime = 0.f;
+		if (isMoving)
+			frame.index = (frame.index + 1) % curAnimFrame.nrFrames;
 		else
-			g_Character.frameIndex = 1;
+			frame.index = 1;
 	}
+	frameTime += elapsedSec;
 }
 
 void	UpdateAnimTextureFrames() {
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 	const float frameRate{ 1.f / 4 };
 
 	if (g_AnimTextureTime > frameRate) {
 		g_AnimTextureTime = 0.f;
-		g_AnimTextureFrames.sea = (g_AnimTextureFrames.sea + 1) % g_AnimTextureFrames.seaMax;
-		g_AnimTextureFrames.rock = (g_AnimTextureFrames.rock + 1) % g_AnimTextureFrames.rockMax;
-		g_AnimTextureFrames.flower = (g_AnimTextureFrames.flower + 1) % g_AnimTextureFrames.flowerMax;
-		//std::cout << "\nsea : " << g_AnimTextureFrames.sea << std::endl;
-		//std::cout << "flower : " << g_AnimTextureFrames.flower << std::endl;
+		scene.animTextureFrames.sea.index = (scene.animTextureFrames.sea.index + 1) % scene.animTextureFrames.sea.end;
+		scene.animTextureFrames.rock.index = (scene.animTextureFrames.rock.index + 1) % scene.animTextureFrames.rock.end;
+		scene.animTextureFrames.flower.index = (scene.animTextureFrames.flower.index + 1) % scene.animTextureFrames.flower.end;
 	}
 }
 
 void	CheckSoundEffect(SDL_Keycode key) {
 	const float collisionCooldown{ .6f };
 	const float grassCooldown{ .3f };
-	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
+	const int targetTile{ TargetTileFromKey(g_Player.curTile, g_CurKey) };
 
-	if (!IsWalkable(targetTile) && g_Sounds.collisionCooldown > collisionCooldown) {
+	if ((!IsWalkable(targetTile) || IsNPCOnTile(targetTile)) && g_Sounds.collisionCooldown > collisionCooldown) {
 		Mix_Volume(-1, 64);
 		PlaySoundEffect(g_Sounds.collision);
 		g_Sounds.collisionCooldown = 0.f;
@@ -529,20 +625,20 @@ void UpdateScene() {
 		return;
 
 	g_LoadingScreenCooldown = 0.f;
-	g_Character.isMoving = false;
+	g_Player.isMoving = false;
 
 	const Door door{ GetDoor() };
 
-	g_World.currentSceneIndex = door.targetSceneId;
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] }; // new scene
+	g_World.curSceneIndex = door.targetSceneId;
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	InitScene(pScene);
+	scene.Init();
 
-	g_Character.curTile = pScene->entryPoints[door.targetEntryId];
-	g_Character.dst.left = GetCol(g_Character.curTile, g_NrCols) * g_TileSize;
-	g_Character.dst.top = GetRow(g_Character.curTile, g_NrCols) * g_TileSize - g_TileSize / 2;
-	g_Character.targetTile = g_Character.curTile;
-	g_Character.targetPos = Point2f{ g_Character.dst.left, g_Character.dst.top };
+	g_Player.curTile = scene.entryPoints[door.targetEntryId];
+	g_Player.dst.left = GetCol(g_Player.curTile, scene.nrCols) * scene.tileSize;
+	g_Player.dst.top = GetRow(g_Player.curTile, scene.nrCols) * scene.tileSize - scene.tileSize / 2;
+	g_Player.targetTile = g_Player.curTile;
+	g_Player.targetPos = Point2f{ g_Player.dst.left, g_Player.dst.top };
 
 	InitCamera();
 	InitCollisionMap();
@@ -552,13 +648,13 @@ void UpdateScene() {
 void StopWalkingAndReset() {
 	g_CurKey = NULL;
 	g_NextKey = NULL;
-	g_Character.isMoving = false;
-	g_Character.targetTile = g_Character.curTile;
-	g_Character.targetPos = PosFromTile(g_Character.curTile); // those 3 lines could be a reset pos function
+	g_Player.isMoving = false;
+	g_Player.targetTile = g_Player.curTile;
+	g_Player.targetPos = PosFromTile(g_Player.curTile); // those 3 lines could be a reset pos function ?
 }
 
 void CheckBattleInGrass() {
-	if (IsTallGrass(g_Character.curTile)) {
+	if (IsTallGrass(g_Player.curTile)) {
 		const int randNum{ rand() % 10 };
 
 		if (!randNum) {
@@ -568,26 +664,40 @@ void CheckBattleInGrass() {
 	}
 }
 
-//		UTILS
+//								  ▄▄     
+//                       ██   ▀▀  ██       
+//   ██▀▀▀▀       ██ ██ ▀██▀▀ ██  ██ ▄█▀▀▀ 
+//   ▀▀▀▀██       ██ ██  ██   ██  ██ ▀███▄ 
+//   ████▀▀  ██   ▀██▀█  ██   ██▄ ██ ▄▄▄█▀ 
 
-Point2f	GetBottomLeftInRect(const Rectf& rect) {
+
+
+Point2f	GetBottomLeftRect(const Rectf& rect) {
 	return Point2f{ rect.left, rect.top + rect.height };
 }
 
 int	TileFromPos(float x, float y) {
-	return GetIndex(static_cast<int>(y / g_TileSize), static_cast<int>(x / g_TileSize), g_NrCols);
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+
+	return GetIndex(static_cast<int>(y / scene.tileSize), static_cast<int>(x / scene.tileSize), scene.nrCols);
 }
 
 int	TileFromPos(const Point2f& pos) {
-	return GetIndex(static_cast<int>(pos.y / g_TileSize), static_cast<int>(pos.x / g_TileSize), g_NrCols);
+	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+
+	return GetIndex(static_cast<int>(pos.y / scene.tileSize), static_cast<int>(pos.x / scene.tileSize), scene.nrCols);
 }
 
 Point2f	PosFromTile(int index) {
-	return PosFromTile(GetRow(index, g_NrCols), GetCol(index, g_NrCols));
+	const int nrCols{ g_World.scenes[g_World.curSceneIndex].nrCols };
+
+	return PosFromTile(GetRow(index, nrCols), GetCol(index, nrCols));
 }
 
 Point2f	PosFromTile(int row, int col) {
-	return Point2f{ col * g_TileSize, row * g_TileSize };
+	const float tileSize{ g_World.scenes[g_World.curSceneIndex].tileSize };
+
+	return Point2f{ col * tileSize, row * tileSize };
 }
 
 Point2f	DirFromKey(SDL_Keycode key) {
@@ -603,14 +713,30 @@ Point2f	DirFromKey(SDL_Keycode key) {
 }
 
 int		TargetTileFromKey(int curTile, SDL_Keycode key) {
+	const int nrCols{ g_World.scenes[g_World.curSceneIndex].nrCols };
+
 	if (key == SDLK_LEFT)
 		return curTile - 1;
 	if (key == SDLK_RIGHT)
 		return curTile + 1;
 	if (key == SDLK_UP)
-		return curTile - g_NrCols;
+		return curTile - nrCols;
 	if (key == SDLK_DOWN)
-		return curTile + g_NrCols;
+		return curTile + nrCols;
+	return curTile;
+}
+
+int		TargetTileFromDir(int curTile, const Point2f& dir) {
+	const int nrCols{ g_World.scenes[g_World.curSceneIndex].nrCols };
+
+	if (dir == Point2f{ -1.f, 0.f })
+		return  curTile - 1;
+	if (dir == Point2f{ 1.f, 0.f })
+		return  curTile + 1;
+	if (dir == Point2f{ 0.f, -1.f })
+		return  curTile - nrCols;
+	if (dir == Point2f{ 0.f, 1.f })
+		return curTile + nrCols;
 	return curTile;
 }
 
@@ -619,14 +745,16 @@ Point2f		TargetPosFromKey(const Rectf& rect, SDL_Keycode key) {
 }
 
 Point2f		TargetPosFromKey(const Point2f& pos, SDL_Keycode key) {
+	const float tileSize{ g_World.scenes[g_World.curSceneIndex].tileSize };
+
 	if (key == SDLK_LEFT)
-		return Point2f{ pos.x - g_MoveDist, pos.y };
+		return Point2f{ pos.x - tileSize, pos.y };
 	else if (key == SDLK_RIGHT)
-		return Point2f{ pos.x + g_MoveDist, pos.y };
+		return Point2f{ pos.x + tileSize, pos.y };
 	else if (key == SDLK_UP)
-		return Point2f{ pos.x, pos.y - g_MoveDist };
+		return Point2f{ pos.x, pos.y - tileSize };
 	else if (key == SDLK_DOWN)
-		return Point2f{ pos.x, pos.y + g_MoveDist };
+		return Point2f{ pos.x, pos.y + tileSize };
 	return pos;
 }
 
@@ -639,22 +767,22 @@ bool	IsPosInCenterX(float pos) {
 
 bool	IsPosInCenterY(float pos) {
 	const float centerY = g_WindowHeight / 2.f;
-	const float epsilon = g_TileSize;
+	const float epsilon = g_World.scenes[g_World.curSceneIndex].tileSize;
 
 	return std::abs(pos - centerY) < epsilon;
 }
 
 void	DrawTiles() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	for (int row{}; row < g_NrRows; ++row) {
-		for (int col{}; col < g_NrCols; ++col) {
+	for (int row{}; row < scene.nrRows; ++row) {
+		for (int col{}; col < scene.nrCols; ++col) {
 			SetColor(g_White);
 			DrawRect(
-				pScene->dst.left + col * g_TileSize,
-				pScene->dst.top + row * g_TileSize,
-				g_TileSize,
-				g_TileSize,
+				scene.dst.left + col * scene.tileSize,
+				scene.dst.top + row * scene.tileSize,
+				scene.tileSize,
+				scene.tileSize,
 				3.f
 			);
 		}
@@ -662,24 +790,25 @@ void	DrawTiles() {
 }
 
 void	DrawCollisions() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
-	for (int row{}; row < g_NrRows; ++row) {
-		for (int col{}; col < g_NrCols; ++col) {
+	for (int row{}; row < scene.nrRows; ++row) {
+		for (int col{}; col < scene.nrCols; ++col) {
 
-			SetColor(!IsWalkable(GetIndex(row, col, g_NrCols)) ? g_Red : g_White);
+			SetColor(!IsWalkable(GetIndex(row, col, scene.nrCols)) ? g_Red : g_White);
 			FillRect(
-				pScene->dst.left + col * g_TileSize,
-				pScene->dst.top + row * g_TileSize,
-				g_TileSize,
-				g_TileSize
+				scene.dst.left + col * scene.tileSize,
+				scene.dst.top + row * scene.tileSize,
+				scene.tileSize,
+				scene.tileSize
 			);
 		}
 	}
 }
 
 void PrintTileIndex(float x, float y) {
-	std::cout << "Tile index from position [" << x << ", " << y << "] : " << TileFromPos(x + g_Camera.pos.x, y + g_Camera.pos.y) << std::endl;
+	std::cout << "Tile index from position [" << x << ", " << y << "] : "
+		<< TileFromPos(x + g_Camera.pos.x, y + g_Camera.pos.y) << std::endl;
 }
 
 void ErrorLoadMsg(const std::string& path, const std::string& name) {
@@ -687,52 +816,77 @@ void ErrorLoadMsg(const std::string& path, const std::string& name) {
 }
 
 bool IsWalkable(int index) {
-	return !(g_CollisionMaps[g_World.currentSceneIndex][index] == 1);
+	return !(g_World.scenes[g_World.curSceneIndex].collisionMap[index] == 1);
+}
+
+bool IsPlayerOnTile(int index) {
+	return (g_Player.curTile == index || g_Player.targetTile == index);
+}
+
+bool IsNPCOnTile(int index) {
+	for (const NPC& npc : g_NPC) {
+		if (npc.curTile == index || npc.targetTile == index)
+			return true;
+	}
+	return false;
 }
 
 bool IsTallGrass(int index) {
-	return g_CollisionMaps[g_World.currentSceneIndex][index] == 2;
+	return g_World.scenes[g_World.curSceneIndex].collisionMap[index] == 2;
 }
 
 Door GetDoor() {
-	Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	const int sceneIndex{ g_World.currentSceneIndex };
-	const int row{ GetRow(g_Character.curTile, g_NrCols) },
-		col{ GetCol(g_Character.curTile, g_NrCols) };
+	const int sceneIndex{ g_World.curSceneIndex };
+	const Scene& scene{ g_World.scenes[sceneIndex] };
+	const int row{ GetRow(g_Player.curTile, scene.nrCols) },
+		col{ GetCol(g_Player.curTile, scene.nrCols) };
 
 	if (!sceneIndex) {
-		return pScene->doors[0]; // east
+		return scene.doors[0]; // east
 	}
 	else if (sceneIndex == 1) {
 		if (row == 0)
-			return pScene->doors[1]; // north east
+			return scene.doors[1]; // north east
 		else
-			return pScene->doors[0]; // west
+			return scene.doors[0]; // west
 	}
 	else if (sceneIndex == 2) {
 		if (row == 0)
-			return pScene->doors[1]; // north 
-		else if (row == g_NrRows - 1)
-			return pScene->doors[0]; // south
+			return scene.doors[1]; // north 
+		else if (row == scene.nrRows - 1)
+			return scene.doors[0]; // south
 	}
-	return pScene->doors[0];
+	return scene.doors[0];
 }
-
 // make start of walk animation when collision (changes leg each time)
 
 bool IsGoingOutsideMap() {
-	const Scene* pScene{ &g_World.scenes[g_World.currentSceneIndex] };
-	const int targetTile{ TargetTileFromKey(g_Character.curTile, g_CurKey) };
+	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const int targetTile{ TargetTileFromKey(g_Player.curTile, g_CurKey) };
 	const Point2f targetPos{ PosFromTile(targetTile) };
 
 	const int
-		targetRow{ GetRow(targetTile, g_NrCols) },
-		targetCol{ GetCol(targetTile, g_NrCols) },
-		curRow{ GetRow(g_Character.curTile, g_NrCols) },
-		curCol{ GetCol(g_Character.curTile, g_NrCols) };
+		targetRow{ GetRow(targetTile, scene.nrCols) },
+		targetCol{ GetCol(targetTile, scene.nrCols) },
+		curRow{ GetRow(g_Player.curTile, scene.nrCols) },
+		curCol{ GetCol(g_Player.curTile, scene.nrCols) };
 
 	return ((targetRow != curRow && g_CurKey != SDLK_UP && g_CurKey != SDLK_DOWN)
-		|| targetRow >= g_NrRows || targetRow < 0);
+		|| targetRow >= scene.nrRows || targetRow < 0);
+}
+
+int TileDist(int start, int end, float tileSize) {
+	Point2f startPos{ PosFromTile(start) }, endPos{ PosFromTile(end) };
+
+	return abs(startPos.x - endPos.x + startPos.y - endPos.y) / static_cast<int>(tileSize);
+}
+
+Point2f Turn(Point2f dir, float angle) {
+	return Point2f{ dir.x * cosf(angle) - dir.y * sinf(angle), dir.x * sinf(angle) + dir.y * cosf(angle) };
+}
+
+Point2f Turn90(Point2f dir) {
+	return Point2f{ -dir.y,  dir.x };
 }
 
 #pragma endregion ownDeclarations
