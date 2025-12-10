@@ -1,8 +1,9 @@
 #pragma once
 #include <utils.h>
+#include "Audio.h"
 using namespace utils;
 
-//		--- CONST VARIABLES ---
+#pragma region ConstVariables
 const float
 g_SpeedHPBar{ 25.f },
 g_MovementLength{ 55.f },
@@ -12,8 +13,9 @@ g_HalfWidth{ g_WindowWidth / 2.f };
 
 const int
 g_AmmountOfMoves{ 6 };
-//		--- ENUM & STRUCTS ---
+#pragma endregion ConstVariables
 
+#pragma region Enum&Structs
 enum class Phases
 {
 	phase_allypokemon_move,
@@ -34,6 +36,13 @@ enum class FightingOptions
 	bag,
 	pokemon,
 	run
+};
+enum class MoveOptions
+{
+	topleft,
+	topright,
+	bottomleft,
+	bottomright
 };
 
 
@@ -56,8 +65,8 @@ struct HPBar
 		0.f,
 	};
 	float
-		width{ g_WindowWidth * 0.23f }, //full width of the bar
-		height{ g_WindowHeight * 0.0175f }, //full height of the bar
+		width{ g_WindowWidth * 0.23f },
+		height{ g_WindowHeight * 0.0175f },
 		total{ 100.f },
 		actual{ total },
 		animHP{ actual };
@@ -70,9 +79,18 @@ struct PokemonInBattle
 	bool
 		attackTextureIsOn{};
 };
+struct Sounds
+{
+	Mix_Music* g_GodmungussBattleMusic{};
+	Mix_Chunk* g_ArrowMove{};
+	Mix_Chunk* g_Attack{};
+	Mix_Chunk* g_DamageTaken{};
+};
+#pragma endregion Enum&Structs
 
-
-//		--- VARIABLES ---
+#pragma region Variables
+Sounds
+g_Noises{};
 PokemonInBattle
 AllyPokemon
 {
@@ -88,6 +106,14 @@ EnemyPokemon
 	{
 	(g_WindowWidth / 2) + 50.f,
 	g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
+	}
+},
+BossPokemon
+{
+	Point2f
+	{
+	(g_WindowWidth *0.575f),
+	0.f
 	}
 };
 HPBar HPBarAllyPokemon
@@ -113,32 +139,19 @@ Moves StrongTackle
 {
 	20.f
 };
-Rectf fightButton{
-		g_WindowWidth * 0.494125f,
-		g_WindowHeight * 0.77125f,
-		g_WindowWidth * 0.26f,
-		g_WindowHeight * 0.06625f,
+Rectf
+MoveOptionsRect{
+		0.f,
+		g_WindowHeight - g_HeightOfTextBlock,
+		g_WindowWidth * 0.66f,
+		g_HeightOfTextBlock,
 },
-pokemonButton
+DestinationFightingOptions
 {
-	g_WindowWidth * 0.789625f,
-	fightButton.top,
-	g_WindowWidth * 0.1211875f,
-	fightButton.height,
-},
-itemButton
-{
-	fightButton.left,
-	g_WindowHeight * 0.88125f,
-	fightButton.width,
-	g_WindowHeight * 0.0608125f,
-},
-runButton
-{
-	pokemonButton.left,
-	itemButton.top,
-	g_WindowWidth * 0.15625f,
-	itemButton.height,
+		g_HalfWidth,
+		g_WindowHeight - g_HeightOfTextBlock,
+		g_HalfWidth,
+		g_HeightOfTextBlock,
 };
 float
 g_SpeedAttack{ 0.f },
@@ -162,11 +175,13 @@ g_ItemTextureIsOn{},
 g_SwitchTextureIsOn{},
 g_RunTextureIsOn{},
 g_ItemDoneTextureIsOn{},
-g_FightingOptionsTextureIsOn{true},
+g_FightingOptionsTextureIsOn{ true },
 g_NotFirstTurnTextureIsOn{},
 g_FaintTextureIsOn{},
 g_ItemOnlyOnce{},
-g_IsHeal{};
+g_IsHeal{},
+g_PickingMoves{},
+g_SoundDone{};
 
 
 utils::Texture
@@ -186,45 +201,36 @@ g_NotFirstTurnText{},
 g_FaintText{},
 g_FightingOptionsTexture{},
 g_InfoEnemyPokemonTexture{},
-g_ArrowTexture{};
+g_ArrowTexture{},
+g_MovesTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
-Point2f arrowSpritePosition{ g_HalfWidth + g_HalfWidth * 0.075f, g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock *0.25f};
+Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
+Point2f arrowSpritePositionMoves{ 0.f + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
 Point2f g_BackgroundPosition{ 0.f,0.f };
-
-
-// and * 0.0062548866f -> also you can define it's position directly on the screen but you could also define it compared to another thing
-//for ex maybe it's just 10px under the ennemy position
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
 FightingOptions CurrentFightingOption{ FightingOptions::fight };
+MoveOptions CurrentMove{ MoveOptions::topleft };
+#pragma endregion Variables
 
-// you could also try to define their position from another variable
-
-// also instead of always windowWidth * value, you can sometimes use windowwidth - offset (as in 10px or so)
-
-
-//		--- FUNCTIONS ---
-
-//		INIT
+#pragma region Functions
+#pragma region Init
 
 void	InitBattle();
-
-
-//		END
-
-
-//		INPUT HANDLING
-
-void	HandleMouseUpBattle(const SDL_MouseButtonEvent& e);
-
-//		DRAW
-
+void	InitText();
+void	InitSprites();
+void	InitMusic();
+#pragma endregion Init
+#pragma region End
+#pragma endregion End
+#pragma region InputHandling
+#pragma endregion InputHandling
+#pragma region Draw
 void	DrawBattle();
-
-//		UPDATE
-
+#pragma endregion Draw
+#pragma region Update
 void	UpdateBattle(float elapsedSec);
 void	Attack(float elapsedSec);
 void	Item(float elapsedSec);
@@ -236,8 +242,8 @@ void	Wait(float elapsedSec);
 void	Damage(HPBar& hpBarForDamage, Moves& move);
 void	Heal(HPBar& hpBar);
 void	HPBarMath( HPBar& hpBar, float elapsedTime);
-
-//		UTILS
+#pragma endregion Update
+#pragma endregion Functions
 
 
 

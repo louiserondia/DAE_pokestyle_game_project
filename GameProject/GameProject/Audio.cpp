@@ -32,7 +32,7 @@ void LoadSoundEffect(Mix_Chunk*& sound, const std::string& path) {
 }
 
 void PlayMusic(Mix_Music* sound, int repeat) {
-	Mix_PlayMusic(sound, -1);
+	Mix_PlayMusic(sound, repeat);
 }
 
 void PlaySoundEffect(Mix_Chunk* sound, int repeat, int canal) {
