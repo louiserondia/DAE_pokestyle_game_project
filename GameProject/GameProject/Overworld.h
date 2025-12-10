@@ -9,12 +9,13 @@ using namespace utils;
 
 //		--- CONST VARIABLES ---
 
-const int	g_NrScenes{ 3 };
-const int	g_NrNPC{ 1 };
+const int		g_NrScenes{ 3 };
+const int		g_NrNPC{ 1 };
 
-const Color4f g_White(.9f, .9f, .9f, .5f);
-const Color4f g_Black(.2f, .2f, .2f, .5f);
-const Color4f g_Red(1.f, .0f, .0f, .5f);
+const Color4f	g_White(.9f, .9f, .9f, .5f);
+const Color4f	g_Black(.2f, .2f, .2f, .5f);
+const Color4f	g_Red(1.f, .0f, .0f, .5f);
+const Color4f	g_Blue(.0f, 0.f, 1.f, .5f);
 
 //		--- ENUM & STRUCTS ---
 
@@ -63,7 +64,7 @@ struct Scene {
 	int		nrDoors{};
 	std::map<std::string, int> entryPoints{}; // key = name of entry point, value is target tile
 
-	float	tileSize{ 16.f };
+	float	tileSize{ 16.f }; // is it really better here or can be global ?
 
 	char* animTextureMap{};
 	int					animTextureMapSize{};
@@ -84,7 +85,7 @@ struct Character {
 	Point2f		targetPos{};
 	float		offsetTile{};
 	bool		isMoving{};
-	float		progression{};
+	float		stepProgress{};
 
 	Rectf		dst{};
 	Rectf		src{ 0.f, 0.f, 16.f, 24.f };
@@ -98,15 +99,13 @@ struct Character {
 	void		Draw();
 	void		UpdateFrame(float elapsedSec, float frameRate = 1 / 8.f);
 	void		UpdateAnimFrameState();
-	void UpdatePos(float elapsedSec, float speed, float maxDist);
+	void		UpdatePos(float elapsedSec, float speed, float maxDist);
 
 };
 
-// change everything so character is a special npc and make functions as methods  like update pos and others i pass an npc
 
 struct Player : Character {
 	void Init(const Scene& scene);
-	//void UpdatePos(float elapsedSec, float speed, float maxDist);
 };
 
 struct NPC : Character {
@@ -115,7 +114,6 @@ struct NPC : Character {
 
 	void Init(int tile, const Rectf& dimensions, const Scene& scene);
 	void Walk();
-	//void Walk(float elapsedSec, float moveSpeed);
 };
 
 struct Camera {
@@ -191,15 +189,13 @@ void	DrawRocks();
 void	DrawFlowers();
 void	DrawMap();
 void	DrawFgMap();
-void	DrawTiles();
-void	DrawCollisions();
 void	DrawLoadingScreen();
 
 //		INPUT HANDLING
 
-void	HandleKeyDownOverworld(SDL_Keycode key);
-void	HandleKeyUpOverworld(SDL_Keycode key);
-void	OnKeyDownEventOnce(SDL_Keycode key);
+void		HandleKeyDownOverworld(SDL_Keycode key);
+void		HandleKeyUpOverworld(SDL_Keycode key);
+void		OnKeyDownEventOnce(SDL_Keycode key);
 SDL_Keycode	UpdateCurKey();
 
 //		UPDATE
@@ -216,7 +212,6 @@ void	CheckBattleInGrass();
 
 //		UTILS
 
-Point2f	GetBottomLeftInRect(const Rectf& rect);
 int		TileFromPos(float x, float y);
 int		TileFromPos(const Point2f& pos);
 Point2f	PosFromTile(int index);
@@ -225,17 +220,31 @@ int		TargetTileFromKey(int curTile, SDL_Keycode key);
 int		TargetTileFromDir(int curTile, const Point2f& dir);
 Point2f	TargetPosFromKey(const Rectf& rect, SDL_Keycode key);
 Point2f	TargetPosFromKey(const Point2f& rect, SDL_Keycode key);
+int		TileDist(int start, int end, float tileSize);
 Point2f	DirFromKey(SDL_Keycode key);
+
+Point2f	GetBottomLeftRect(const Rectf& rect);
 bool	IsPosInCenterX(float pos);
 bool	IsPosInCenterY(float pos);
-void	PrintTileIndex(float x, float y);
-void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
+
 bool	IsWalkable(int index);
 bool	IsTallGrass(int index);
 bool	IsPlayerOnTile(int index);
 bool	IsNPCOnTile(int index);
-Door	GetDoor();
 bool	IsGoingOutsideMap();
+
 Point2f Turn(Point2f dir, float angle);
+Point2f Turn90(Point2f dir);
+Door	GetDoor();
+Scene&	GetScene();
+
+
+// DEBUG
+
+void	PrintTileIndex(float x, float y);
+void	ErrorLoadMsg(const std::string& path, const std::string& name = "file");
+void	DrawTiles();
+void	DrawCollisions();
+void	DrawCurrentAndTargetTiles();
 
 #pragma endregion ownDeclarations
