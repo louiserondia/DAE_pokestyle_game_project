@@ -76,6 +76,10 @@ void OnKeyUpEvent(SDL_Keycode key)
 		else
 			TurnOnBattle();
 	}
+	else if (key == SDLK_m) {
+		Mix_VolumeMusic(0);
+	}
+		
 	if (g_IsOverworldOn)
 		HandleKeyUpOverworld(key);
 
