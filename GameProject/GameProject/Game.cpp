@@ -26,9 +26,12 @@ void Start()
 {
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	InitAudio();
+	Mix_VolumeMusic(0); //
 	InitOverworld();
 	InitBattle();
 	InitAlphabet();
+
+
 
 }
 
@@ -77,7 +80,7 @@ void OnKeyUpEvent(SDL_Keycode key)
 			TurnOnBattle();
 	}
 	else if (key == SDLK_m) {
-		Mix_VolumeMusic(0);
+		Mix_VolumeMusic(75);
 	}
 		
 	if (g_IsOverworldOn)

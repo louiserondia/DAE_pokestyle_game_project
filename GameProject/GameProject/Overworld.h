@@ -91,7 +91,6 @@ struct Scene {
 	void	DrawMap() const;
 	void	DrawFgMap() const;
 
-	void	UpdateScene(Camera& camera, Player& player);
 	void	UpdateMapPos(float elapsedSec, const Camera& camera);
 	void	UpdateAnimTextureFrames();
 };
@@ -147,7 +146,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
+	int		curSceneIndex{ 1 }; // to debug, set to the scene you want to start at
 	const float moveSpeed{ 250.f };
 };
 
@@ -216,6 +215,7 @@ SDL_Keycode	UpdateCurKey();
 //		UPDATE
 
 void	UpdateOverworld(float elapsedSec);
+void	UpdateScene(Camera& camera, Player& player);
 void	HandlePlayerWalk();
 void	CheckSoundEffect(SDL_Keycode key);
 void	CheckBattleInGrass();

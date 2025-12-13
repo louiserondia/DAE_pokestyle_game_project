@@ -24,7 +24,7 @@ Texture Character::texture = Texture{};
 void	InitOverworld() {
 
 	if (!TextureFromFile("Resources/character.png", Character::texture))
-		std::cout << "Couldn't load character texture at Resources/character.png";
+		ErrorLoadMsg("Resources/character.png");
 	if (!TextureFromFile("Resources/animated_tiles.png", g_AnimTextures))
 		ErrorLoadMsg("Resources/animated_tiles.png");
 	if (!TextureFromFile("Resources/water_shadow.png", g_WaterShadowTexture))
@@ -37,8 +37,6 @@ void	InitOverworld() {
 	InitAnimFrames();
 	InitCharacters(scene);
 	g_Camera.Init(scene);
-	scene.InitCollisionMap();
-	scene.InitAnimTextureMap();
 	InitAudioFiles();
 }
 
@@ -48,20 +46,27 @@ void	InitScenes() {
 	pScene->name = "three_island";
 	pScene->entryPoints["Spawn"] = 183;
 	pScene->entryPoints["East"] = 215;
-	pScene->nrDoors = 1;
-	pScene->doors[0] = Door{ "East", 0, "Spawn" };
+	pScene->nrDoors = 2;
+	pScene->doors[0] = Door{ "East", 1, "West" };
+	pScene->doors[1] = Door{ "South", 0, "East" };
 	pScene->LoadStatic();
-//add door south ?????
-	pScene = &g_World.scenes[1];
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
 
+	pScene = &g_World.scenes[1];
 	pScene->name = "bridge";
-	pScene->entryPoints["Spawn"] = 1085;
+	//pScene->entryPoints["Spawn"] = 1085;
+	pScene->entryPoints["Spawn"] = 175;
 	pScene->entryPoints["West"] = 752;
 	pScene->entryPoints["NorthEast"] = 81;
 	pScene->nrDoors = 2;
 	pScene->doors[0] = Door{ "West", 0, "East" };
 	pScene->doors[1] = Door{ "NorthEast", 2, "South" };
 	pScene->LoadStatic();
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
 
 	pScene = &g_World.scenes[2];
 
@@ -73,6 +78,9 @@ void	InitScenes() {
 	pScene->doors[0] = Door{ "South", 1, "NorthEast" };
 	pScene->doors[1] = Door{ "North", 0, "East" };
 	pScene->LoadStatic();
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
 
 	g_World.scenes[g_World.curSceneIndex].Init();
 }
@@ -96,6 +104,52 @@ void	Scene::Init() {
 	dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
 	nrCols = static_cast<int>(screenWidth / tileSize);
 	nrRows = static_cast<int>(screenHeight / tileSize);
+}
+
+void	Scene::InitCollisionMap() {
+
+	std::string path{ collisionMapPath };
+	collisionMapSize = nrCols * nrRows;
+	collisionMap = new int[collisionMapSize];
+
+	std::cout << "\n path of " << name << " : " << path << std::endl;
+	std::cout << " map size " << collisionMapSize << " cols : " << nrCols << std::endl;
+
+	std::ifstream	file(path);
+	if (!file)
+		ErrorLoadMsg(path);
+
+	int index{};
+	char ch{};
+	while (file.get(ch) && index < collisionMapSize) {
+		if (ch == '0' || ch == '1' || ch == '2') {
+			collisionMap[index] = ch - '0';
+			++index;
+		}
+	}
+	Print2DArray(collisionMap, collisionMapSize, nrCols);
+}
+
+
+void	Scene::InitAnimTextureMap() {
+	std::string path{ animTextureMapPath };
+
+	animTextureMapSize = nrCols * nrRows;
+	animTextureMap = new char[animTextureMapSize];
+
+	std::ifstream	file(path);
+	if (!file)
+		ErrorLoadMsg(path);
+
+	int index{};
+	char ch{};
+	while (file.get(ch) && index < animTextureMapSize) {
+		if (ch == '0' || ch == '1' || ch == '2' || ch == 'm' || ch == 'r' || ch == 'f') {
+			animTextureMap[index] = ch;
+			++index;
+		}
+	}
+	Print2DArray(animTextureMap, animTextureMapSize, nrCols);
 }
 
 void InitAnimFrames() {
@@ -156,7 +210,6 @@ void NPC::Init(int tile, const Rectf& dimensions) {
 }
 
 void	Camera::Init(const Scene& scene) {
-
 	Point2f	posPlayerMid{ g_Player.dst.left + (g_Player.dst.width / 2) - g_WindowWidth / 2, g_Player.dst.top - g_WindowHeight / 2 };
 
 	if (posPlayerMid.x < 0) {
@@ -172,49 +225,7 @@ void	Camera::Init(const Scene& scene) {
 		posPlayerMid.y = scene.dst.height - g_WindowHeight;
 	}
 
-	g_Camera.pos = posPlayerMid;
-}
-
-void	Scene::InitCollisionMap() {
-
-	std::string path{ collisionMapPath };
-	collisionMapSize = nrCols * nrRows;
-	collisionMap = new int[collisionMapSize];
-
-	std::ifstream	file(path);
-	if (!file)
-		ErrorLoadMsg(path);
-
-	int index{};
-	char ch{};
-	while (file.get(ch) && index < collisionMapSize) {
-		if (ch == '0' || ch == '1' || ch == '2') {
-			collisionMap[index] = ch - '0';
-			++index;
-		}
-	}
-	//Print2DArray(collisionMap, collisionMapSize, nrCols);
-}
-
-
-void	Scene::InitAnimTextureMap() {
-	std::string path{ animTextureMapPath };
-
-	animTextureMapSize = nrCols * nrRows;
-	animTextureMap = new char[animTextureMapSize];
-
-	std::ifstream	file(path);
-	if (!file)
-		ErrorLoadMsg(path);
-
-	int index{};
-	char ch{};
-	while (file.get(ch) && index < animTextureMapSize) {
-		if (ch == '0' || ch == '1' || ch == '2' || ch == 'm' || ch == 'r' || ch == 'f') {
-			animTextureMap[index] = ch;
-			++index;
-		}
-	}
+	pos = posPlayerMid;
 }
 
 void InitAudioFiles() {
@@ -225,8 +236,6 @@ void InitAudioFiles() {
 //		END
 
 void	FreeOverworld() {
-	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
-
 	DeleteTexture(Character::texture);
 	DeleteTexture(g_WaterShadowTexture);
 	DeleteTexture(g_AnimTextures);
@@ -234,10 +243,10 @@ void	FreeOverworld() {
 	Mix_FreeChunk(g_Sounds.grass);
 
 	for (int index{}; index < g_NrScenes; ++index) {
-		DeleteTexture(scene.texture);
-		DeleteTexture(scene.fgTexture);
-		//delete scene.collisionMap;
-		//delete scene.animTextureMap; delete only visited scenes of init them all in start
+		DeleteTexture(g_World.scenes[index].texture);
+		DeleteTexture(g_World.scenes[index].fgTexture);
+		delete g_World.scenes[index].collisionMap;
+		delete g_World.scenes[index].animTextureMap;
 	}
 }
 
@@ -255,7 +264,7 @@ void	DrawOverworld() {
 	scene.DrawRocks();
 	scene.DrawMap();
 	scene.DrawFlowers();
-	//DrawCollisions();
+	DrawCollisions();
 	//DrawTiles()
 	//DrawCurrentAndTargetTiles();
 	for (NPC& npc : g_NPC) {
@@ -269,7 +278,6 @@ void	DrawOverworld() {
 
 void Scene::DrawSea() const {
 	const float size{ g_AnimTextures.width / animTextureFrames.sea.end };
-	const char* map{ animTextureMap };
 
 	for (int index{}; index < animTextureMapSize; ++index) {
 		if (animTextureMap[index] != 'm' && animTextureMap[index] != 'r')
@@ -454,7 +462,7 @@ void	UpdateOverworld(float elapsedSec) {
 	scene.UpdateAnimTextureFrames();
 	g_Camera.UpdatePos(elapsedSec, scene, g_Player);
 	scene.UpdateMapPos(elapsedSec, g_Camera);
-	scene.UpdateScene(g_Camera, g_Player);
+	UpdateScene(g_Camera, g_Player);
 
 	g_Time += elapsedSec;
 	g_Sounds.collisionCooldown += elapsedSec;
@@ -595,7 +603,7 @@ void	Character::UpdateAnimFrameState() {
 }
 
 void	Character::UpdateFrame(float elapsedSec, float frameRate) {
-	frame.start = curAnimFrame.col; 
+	frame.start = curAnimFrame.col;
 	src.left = (frame.start + frame.index) * src.width;
 
 	if (frameTime > frameRate) {
@@ -636,7 +644,8 @@ void	CheckSoundEffect(SDL_Keycode key) {
 	}
 }
 
-void Scene::UpdateScene(Camera& camera, Player& player) {
+void UpdateScene(Camera& camera, Player& player) {
+	Scene* pScene{ &GetScene() };
 	if (!IsGoingOutsideMap())
 		return;
 
@@ -645,23 +654,19 @@ void Scene::UpdateScene(Camera& camera, Player& player) {
 
 	const Door door{ GetDoor() };
 
-	if (!g_World.curSceneIndex && !door.targetSceneId) {
-		//startMotoInteraction();
-	}
-
 	g_World.curSceneIndex = door.targetSceneId;
 
-	Init();
+	pScene = &g_World.scenes[g_World.curSceneIndex];
+	pScene->Init();
 
-	player.curTile = entryPoints[door.targetEntryId];
-	player.dst.left = GetCol(player.curTile, nrCols) * tileSize;
-	player.dst.top = GetRow(player.curTile, nrCols) * tileSize - tileSize / 2;
+	player.curTile = pScene->entryPoints[door.targetEntryId];
+	player.dst.left = GetCol(player.curTile, Scene::nrCols) * Scene::tileSize;
+	player.dst.top = GetRow(player.curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2;
 	player.targetTile = player.curTile;
 	player.targetPos = Point2f{ player.dst.left, player.dst.top };
 
-	camera.Init(*this);
-	InitCollisionMap();
-	InitAnimTextureMap();
+	camera.Init(*pScene);
+
 }
 
 void Character::StopWalkingAndReset(int& curKey, int& nextKey) {
@@ -795,7 +800,7 @@ void	DrawTiles() {
 }
 
 void	DrawCollisions() {
-	const Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
+	const Scene& scene{ GetScene() };
 
 	for (int row{}; row < Scene::nrRows; ++row) {
 		for (int col{}; col < Scene::nrCols; ++col) {
@@ -838,7 +843,9 @@ void ErrorLoadMsg(const std::string& path, const std::string& name) {
 }
 
 bool IsWalkable(int index) {
-	return !(g_World.scenes[g_World.curSceneIndex].collisionMap[index] == 1);
+	const Scene& scene{ GetScene() };
+
+	return (index >= 0 && index < scene.collisionMapSize && scene.collisionMap[index] != 1);
 }
 
 bool IsPlayerOnTile(int index) {
@@ -854,7 +861,9 @@ bool IsNPCOnTile(int index) {
 }
 
 bool IsTallGrass(int index) {
-	return g_World.scenes[g_World.curSceneIndex].collisionMap[index] == 2;
+	const Scene& scene{ GetScene() };
+
+	return index >= 0 && index < scene.collisionMapSize && scene.collisionMap[index] == 2;
 }
 
 Scene& GetScene() {
@@ -867,8 +876,11 @@ Door GetDoor() {
 		col{ GetCol(g_Player.curTile, Scene::nrCols) };
 	const Scene& scene{ g_World.scenes[sceneIndex] };
 
-	if (!sceneIndex) {
-		return scene.doors[0]; // east
+	if (!sceneIndex) { 
+		if (row == 0)
+			return scene.doors[0]; // east
+		else
+			return scene.doors[1]; // south
 	}
 	else if (sceneIndex == 1) {
 		if (row == 0)
@@ -897,7 +909,7 @@ bool IsGoingOutsideMap() {
 		curCol{ GetCol(g_Player.curTile, Scene::nrCols) };
 
 	return ((targetRow != curRow && g_CurKey != SDLK_UP && g_CurKey != SDLK_DOWN)
-		|| targetRow >= Scene::nrRows || targetRow < 0);
+		|| targetRow >= Scene::nrRows || targetRow < 0 || targetTile < 0);
 }
 
 int TileDist(int start, int end, float tileSize) {
