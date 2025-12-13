@@ -122,6 +122,8 @@ struct Character {
 
 
 struct Player : Character {
+	bool isFrozen{};
+
 	void Init(int entryPoint);
 };
 
@@ -129,16 +131,29 @@ struct NPC : Character {
 	bool isMoto{};
 	int	startTile{};
 	int sceneIndex{};
+	int path[100];
+	Point2f pathDir[100];
+	int pathIndex{};
+	int pathLength{};
+	bool isLooping{};
+	bool isWalkingTowardsPlayer{};
+	bool hasBattled{};
+
+	static int battleRange;
 
 	void Init(int tile, const Rectf& dimensions);
 	void Walk();
 	void Drive();
 	void UpdateMotoFrame();
+	void FollowPath();
+	void DrawPath() const;
+	void EngageBattle(Player& player);
+	bool IsPlayerInRange(const Player& player);
 };
 
 struct Camera {
 	Point2f pos{};
-	float	zoom{ 4.f };
+	static float	zoom;
 
 	void Init(const Scene& scene);
 	void UpdatePos(float elapsedSec, const Scene& scene, const Player& player);
@@ -146,7 +161,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 1 }; // to debug, set to the scene you want to start at
+	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
 	const float moveSpeed{ 250.f };
 };
 
@@ -195,6 +210,7 @@ void	InitScenes();
 void 	InitCharacters(const Scene& scene);
 void	InitAnimFrames();
 void	InitAudioFiles();
+void	InitNPCPath(NPC& npc, int tile, Point2f dir);
 
 //		END
 
@@ -219,6 +235,7 @@ void	UpdateScene(Camera& camera, Player& player);
 void	HandlePlayerWalk();
 void	CheckSoundEffect(SDL_Keycode key);
 void	CheckBattleInGrass();
+void	EndBattleOverworld();
 
 //		UTILS
 
@@ -243,8 +260,8 @@ bool	IsPlayerOnTile(int index);
 bool	IsNPCOnTile(int index);
 bool	IsGoingOutsideMap();
 
-Point2f Turn(Point2f dir, float angle);
-Point2f Turn90(Point2f dir);
+void	Turn(Point2f& dir, float angle);
+void	Turn90(Point2f& dir);
 Door	GetDoor();
 Scene& GetScene();
 

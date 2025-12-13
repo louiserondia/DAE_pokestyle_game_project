@@ -11,6 +11,8 @@ void TurnOnBattle();
 int Scene::nrCols = 0;
 int Scene::nrRows = 0;
 float Scene::tileSize = 0.0f;
+float Camera::zoom = 4.f;
+int NPC::battleRange = 2;
 Texture Character::texture = Texture{};
 
 #pragma region ownDeclarations
@@ -95,9 +97,9 @@ void	Scene::LoadStatic() {
 }
 
 void	Scene::Init() {
-	tileSize = 16.f * g_Camera.zoom;
-	screenWidth = texture.width * g_Camera.zoom;
-	screenHeight = texture.height * g_Camera.zoom;
+	tileSize = 16.f * Camera::zoom;
+	screenWidth = texture.width * Camera::zoom;
+	screenHeight = texture.height * Camera::zoom;
 	startOffset.x = std::max(0.f, (g_WindowWidth - screenWidth) / 2);
 	startOffset.y = std::max(0.f, (g_WindowHeight - screenHeight) / 2);
 
@@ -112,9 +114,6 @@ void	Scene::InitCollisionMap() {
 	collisionMapSize = nrCols * nrRows;
 	collisionMap = new int[collisionMapSize];
 
-	std::cout << "\n path of " << name << " : " << path << std::endl;
-	std::cout << " map size " << collisionMapSize << " cols : " << nrCols << std::endl;
-
 	std::ifstream	file(path);
 	if (!file)
 		ErrorLoadMsg(path);
@@ -127,9 +126,8 @@ void	Scene::InitCollisionMap() {
 			++index;
 		}
 	}
-	Print2DArray(collisionMap, collisionMapSize, nrCols);
+	//Print2DArray(collisionMap, collisionMapSize, nrCols);
 }
-
 
 void	Scene::InitAnimTextureMap() {
 	std::string path{ animTextureMapPath };
@@ -149,7 +147,7 @@ void	Scene::InitAnimTextureMap() {
 			++index;
 		}
 	}
-	Print2DArray(animTextureMap, animTextureMapSize, nrCols);
+	//Print2DArray(animTextureMap, animTextureMapSize, nrCols);
 }
 
 void InitAnimFrames() {
@@ -163,7 +161,10 @@ void InitAnimFrames() {
 
 void InitCharacters(const Scene& scene) {
 	g_Player.Init(scene.entryPoints.at("Spawn"));
-	g_NPC[0].Init(199, Rectf{ 0.f, 24.f, 24.f, 24.f });
+	//g_NPC[0].Init(199, Rectf{ 0.f, 24.f, 24.f, 24.f }); // moto guy
+	g_NPC[0].Init(210, Rectf{ 0.f, 0.f, 16.f, 24.f });
+	InitNPCPath(g_NPC[0], g_NPC[0].curTile, g_NPC[0].dir);
+
 }
 
 void Player::Init(int entryPoint) {
@@ -189,11 +190,11 @@ void NPC::Init(int tile, const Rectf& dimensions) {
 	dst = Rectf{
 		GetCol(curTile, Scene::nrCols) * Scene::tileSize,
 		GetRow(curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2,
-		Scene::tileSize * 1.5f,
-		Scene::tileSize * 1.5f
+		dimensions.width * Camera::zoom,
+		dimensions.height * Camera::zoom
 	};
-	isMoto = true; // pass as argument
-	isMoving = false;
+	//isMoto = true; // pass as argument
+	isLooping = true;
 	curAnimFrame = g_AnimFrames["walkdown"];
 	if (isMoto)
 		curAnimFrame = g_AnimFrames["driveright"];
@@ -264,12 +265,15 @@ void	DrawOverworld() {
 	scene.DrawRocks();
 	scene.DrawMap();
 	scene.DrawFlowers();
-	DrawCollisions();
+	//DrawCollisions();
 	//DrawTiles()
 	//DrawCurrentAndTargetTiles();
 	for (NPC& npc : g_NPC) {
-		if (npc.sceneIndex == g_World.curSceneIndex)
+		if (npc.sceneIndex == g_World.curSceneIndex) {
 			npc.Draw();
+			//npc.DrawPath();
+		}
+
 	}
 	g_Player.Draw();
 	scene.DrawFgMap();
@@ -442,9 +446,11 @@ void	UpdateOverworld(float elapsedSec) {
 	const Uint8* pStates = SDL_GetKeyboardState(nullptr);
 	Scene& scene{ GetScene() };
 
-	HandlePlayerWalk();
-	g_Player.UpdateFrame(elapsedSec);
-	g_Player.UpdatePos(elapsedSec, g_World.moveSpeed, Scene::tileSize);
+	if (!g_Player.isFrozen) {
+		HandlePlayerWalk();
+		g_Player.UpdateFrame(elapsedSec);
+		g_Player.UpdatePos(elapsedSec, g_World.moveSpeed, Scene::tileSize);
+	}
 
 	for (NPC& npc : g_NPC) {
 		if (npc.isMoto) {
@@ -453,10 +459,12 @@ void	UpdateOverworld(float elapsedSec) {
 			npc.UpdateFrame(elapsedSec, 1 / 8.f);
 		}
 		else {
-			npc.Walk();
+			//npc.Walk();
+			npc.FollowPath();
 			npc.UpdatePos(elapsedSec, g_World.moveSpeed / 3, Scene::tileSize);
 			npc.UpdateFrame(elapsedSec, 1 / 4.f);
 		}
+		npc.EngageBattle(g_Player);
 	}
 
 	scene.UpdateAnimTextureFrames();
@@ -530,12 +538,12 @@ void NPC::Walk() {
 	const int dist{ TileDist(startTile, curTile, Scene::tileSize) };
 
 	if (dist > 1) {
-		dir = Turn90(dir);
+		Turn90(dir);
 		startTile = curTile;
 	}
 	if (stepProgress == 0.f) {
 		const int targetTemp{ TargetTileFromDir(curTile, dir) };
-		if (IsWalkable(targetTile) && !IsPlayerOnTile(targetTemp)) {
+		if (IsWalkable(targetTile) && (!IsPlayerOnTile(targetTemp)) || isWalkingTowardsPlayer) {
 			targetTile = targetTemp;
 			targetPos = PosFromTile(targetTile);
 			isMoving = true;
@@ -547,8 +555,6 @@ void NPC::Walk() {
 }
 
 void NPC::Drive() {
-	const int dist{ TileDist(startTile, curTile, Scene::tileSize) };
-
 	if (stepProgress == 0.f) {
 		const int targetTemp{ TargetTileFromDir(curTile, dir) };
 		if (IsWalkable(targetTile) && !IsPlayerOnTile(targetTemp)) {
@@ -560,6 +566,43 @@ void NPC::Drive() {
 			isMoving = false;
 	}
 	UpdateMotoFrame();
+}
+
+void InitNPCPath(NPC& npc, int tile, Point2f dir) {
+	// basic square path
+	npc.isLooping = true;
+	for (int index{}; index < 4; ++index) {
+		npc.path[index * 2] = tile;
+		npc.pathDir[index * 2] = dir;
+		tile = TargetTileFromDir(tile, dir);
+		npc.path[index * 2 + 1] = tile;
+		npc.pathDir[index * 2 + 1] = dir;
+		Turn90(dir);
+		tile = TargetTileFromDir(tile, dir);
+		npc.pathLength = index * 2 + 2;
+	}
+	// add dijkstra path
+}
+
+void NPC::FollowPath() {
+	if (stepProgress == 0.f) {
+		const int targetTemp{ path[pathIndex + 1 > pathLength && isLooping ? 0 : pathIndex + 1] };
+
+		if (IsWalkable(targetTile) && (!IsPlayerOnTile(targetTemp) || isWalkingTowardsPlayer)) {
+			pathIndex++;
+			if (pathIndex > pathLength && isLooping) pathIndex = 0;
+			else if (pathIndex > pathLength) return; // should stop drawing ?
+			
+			dir = pathDir[pathIndex];
+			targetTile = targetTemp;
+			targetPos = PosFromTile(targetTile);
+			isMoving = true;
+		}
+		else
+			isMoving = false;
+	}
+	if (isMoto) UpdateMotoFrame();
+	else UpdateAnimFrameState();
 }
 
 void Camera::UpdatePos(float elapsedSec, const Scene& scene, const Player& player) {
@@ -684,6 +727,42 @@ void CheckBattleInGrass() {
 		if (!randNum) {
 			g_Player.StopWalkingAndReset(g_CurKey, g_NextKey);
 			TurnOnBattle();
+		}
+	}
+}
+
+bool NPC::IsPlayerInRange(const Player& player) {
+	int tile{ curTile };
+	for (int index{}; index < battleRange; ++index) {
+		tile = TargetTileFromDir(tile, dir);
+
+		if (IsPlayerOnTile(tile)) return true;
+	}
+	return false;
+}
+
+void NPC::EngageBattle(Player& player) {
+	if (hasBattled || !IsPlayerInRange(player)) return;
+
+	if (!player.isFrozen) {
+		player.StopWalkingAndReset(g_CurKey, g_NextKey);
+		player.isFrozen = true;
+		isWalkingTowardsPlayer = true;
+	}
+
+	if (IsPlayerOnTile(targetTile)) {
+		isMoving = false;
+		TurnOnBattle();
+	}
+}
+
+void	EndBattleOverworld() {
+	for (NPC& npc : g_NPC) {
+		if (npc.isWalkingTowardsPlayer) {
+			npc.hasBattled = true;
+			npc.isWalkingTowardsPlayer = false;
+			npc.isMoving = true;
+			g_Player.isFrozen = false;
 		}
 	}
 }
@@ -830,7 +909,14 @@ void DrawCurrentAndTargetTiles() {
 		FillRect(PosFromTile(npc.curTile).x - g_Camera.pos.x, PosFromTile(npc.curTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
 	}
 	FillRect(PosFromTile(g_Player.curTile).x - g_Camera.pos.x, PosFromTile(g_Player.curTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
+}
 
+void NPC::DrawPath() const {
+	for (int i{}; i < 100; ++i)
+	{
+		SetColor(g_Red);
+		FillRect(PosFromTile(path[i]).x - g_Camera.pos.x, PosFromTile(path[i]).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
+	}
 }
 
 void PrintTileIndex(float x, float y) {
@@ -876,8 +962,8 @@ Door GetDoor() {
 		col{ GetCol(g_Player.curTile, Scene::nrCols) };
 	const Scene& scene{ g_World.scenes[sceneIndex] };
 
-	if (!sceneIndex) { 
-		if (row == 0)
+	if (!sceneIndex) {
+		if (col == Scene::nrCols - 1)
 			return scene.doors[0]; // east
 		else
 			return scene.doors[1]; // south
@@ -908,6 +994,8 @@ bool IsGoingOutsideMap() {
 		curRow{ GetRow(g_Player.curTile, Scene::nrCols) },
 		curCol{ GetCol(g_Player.curTile, Scene::nrCols) };
 
+	//std::cout << "\n targetTile " << targetTile << std::endl;
+
 	return ((targetRow != curRow && g_CurKey != SDLK_UP && g_CurKey != SDLK_DOWN)
 		|| targetRow >= Scene::nrRows || targetRow < 0 || targetTile < 0);
 }
@@ -918,12 +1006,12 @@ int TileDist(int start, int end, float tileSize) {
 	return  static_cast<int>(abs(startPos.x - endPos.x + startPos.y - endPos.y) / tileSize);
 }
 
-Point2f Turn(Point2f dir, float angle) {
-	return Point2f{ dir.x * cosf(angle) - dir.y * sinf(angle), dir.x * sinf(angle) + dir.y * cosf(angle) };
+void Turn(Point2f& dir, float angle) {
+	dir = Point2f{ dir.x * cosf(angle) - dir.y * sinf(angle), dir.x * sinf(angle) + dir.y * cosf(angle) };
 }
 
-Point2f Turn90(Point2f dir) {
-	return Point2f{ -dir.y,  dir.x };
+void Turn90(Point2f& dir) {
+	dir = Point2f{ -dir.y,  dir.x };
 }
 
 #pragma endregion ownDeclarations

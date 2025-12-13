@@ -17,6 +17,7 @@ void	HandleKeyUpBattle(SDL_Keycode key);
 void	PrintTileIndex(float x, float y);
 void	InitAlphabet();
 void	DrawTextFromString(const std::string& str, Point2f pos, int fontSize = g_DefaultFontSize, bool isBlack = 1);
+void	EndBattleOverworld();
 
 
 //Basic game functions
@@ -230,6 +231,7 @@ void TurnOffBattle() {
 	g_IsBattleTransitionOn = true;
 	g_IsDoneDrawing = false;
 	g_GlobalTime = 0.f;
+	EndBattleOverworld();
 }
 
 #pragma endregion ownDefinitions
