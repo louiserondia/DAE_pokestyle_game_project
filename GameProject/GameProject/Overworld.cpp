@@ -278,6 +278,8 @@ void	DrawOverworld() {
 	g_Player.Draw();
 	scene.DrawFgMap();
 	DrawLoadingScreen();
+	DrawBlinkBattle();
+
 }
 
 void Scene::DrawSea() const {
@@ -366,7 +368,16 @@ void DrawLoadingScreen() {
 	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
-//              ▀▀                     ██
+void DrawBlinkBattle() {
+	if (!g_Camera.isBlinking) return;
+
+	const float pulsation{ 15.7f };
+
+	SetColor(0.f, 0.f, 0.f, sinf(pulsation * g_BlinkTime - (pulsation / 2)) / 2 + .5f);
+	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
+}
+
+//              ▀▀                     ██ 
 //  ▄▄▄▄▄       ██  ████▄ ████▄ ██ ██ ▀██▀▀ ▄█▀▀▀
 //   ▄▄██       ██  ██ ██ ██ ██ ██ ██  ██   ▀███▄
 //  ▄▄▄██  ██   ██▄ ██ ██ ████▀ ▀██▀█  ██   ▄▄▄█▀
@@ -473,6 +484,7 @@ void	UpdateOverworld(float elapsedSec) {
 	UpdateScene(g_Camera, g_Player);
 
 	g_Time += elapsedSec;
+	g_BlinkTime += elapsedSec;
 	g_Sounds.collisionCooldown += elapsedSec;
 	g_Sounds.grassCooldown += elapsedSec;
 	g_LoadingScreenCooldown += elapsedSec;
@@ -588,12 +600,12 @@ void NPC::FollowPath() {
 	if (stepProgress == 0.f) {
 		const int targetTemp{ path[pathIndex + 1 > pathLength && isLooping ? 0 : pathIndex + 1] };
 
-		if (IsWalkable(targetTile) && (!IsPlayerOnTile(targetTemp) || isWalkingTowardsPlayer)) {
+		dir = pathDir[pathIndex + 1 > pathLength && isLooping ? 0 : pathIndex + 1];
+		if (IsWalkable(targetTemp) && (!IsPlayerOnTile(targetTemp) || isWalkingTowardsPlayer)) {
 			pathIndex++;
 			if (pathIndex > pathLength && isLooping) pathIndex = 0;
 			else if (pathIndex > pathLength) return; // should stop drawing ?
-			
-			dir = pathDir[pathIndex];
+
 			targetTile = targetTemp;
 			targetPos = PosFromTile(targetTile);
 			isMoving = true;
@@ -606,18 +618,17 @@ void NPC::FollowPath() {
 }
 
 void Camera::UpdatePos(float elapsedSec, const Scene& scene, const Player& player) {
-	if (!player.isMoving)
-		return;
-
-	if (player.dst.left + (player.dst.width / 2) - g_WindowWidth / 2 >= 0.f
-		&& player.dst.left + (player.dst.width / 2) + g_WindowWidth / 2 <= scene.screenWidth)
-	{
-		pos.x = player.dst.left + (player.dst.width / 2) - g_WindowWidth / 2;
-	}
-	if (player.dst.top - g_WindowHeight / 2 >= 0.f
-		&& player.dst.top + g_WindowHeight / 2 <= scene.screenHeight)
-	{
-		pos.y = player.dst.top - g_WindowHeight / 2;
+	if (player.isMoving) {
+		if (player.dst.left + (player.dst.width / 2) - g_WindowWidth / 2 >= 0.f
+			&& player.dst.left + (player.dst.width / 2) + g_WindowWidth / 2 <= scene.screenWidth)
+		{
+			pos.x = player.dst.left + (player.dst.width / 2) - g_WindowWidth / 2;
+		}
+		if (player.dst.top - g_WindowHeight / 2 >= 0.f
+			&& player.dst.top + g_WindowHeight / 2 <= scene.screenHeight)
+		{
+			pos.y = player.dst.top - g_WindowHeight / 2;
+		}
 	}
 }
 
@@ -750,9 +761,16 @@ void NPC::EngageBattle(Player& player) {
 		isWalkingTowardsPlayer = true;
 	}
 
-	if (IsPlayerOnTile(targetTile)) {
+	if (IsPlayerOnTile(targetTile) && !g_Camera.isBlinking) {
 		isMoving = false;
+		g_BlinkTime = 0.f;
+		g_Camera.isBlinking = true;
+		g_Camera.backupPos = g_Camera.pos;
+	}
+	else if (IsPlayerOnTile(targetTile) && g_Camera.isBlinking && g_BlinkTime > .8f) {
 		TurnOnBattle();
+		g_Camera.isBlinking = false;
+		g_Camera.pos = g_Camera.backupPos;
 	}
 }
 
