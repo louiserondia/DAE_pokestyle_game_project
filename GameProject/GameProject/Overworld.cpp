@@ -10,6 +10,7 @@ void TurnOnBattle();
 
 int Scene::nrCols = 0;
 int Scene::nrRows = 0;
+bool Scene::isCave = false;
 float Scene::tileSize = 0.0f;
 float Camera::zoom = 4.f;
 int NPC::battleRange = 2;
@@ -232,6 +233,8 @@ void	Camera::Init(const Scene& scene) {
 void InitAudioFiles() {
 	LoadSoundEffect(g_Sounds.collision, "../Resources/collision.wav");
 	LoadSoundEffect(g_Sounds.grass, "../Resources/grass.wav");
+	LoadMusic(g_Sounds.overworldMusic, "../Resources/music_overworld.ogg");
+	LoadMusic(g_Sounds.caveMusic, "../Resources/music_cave.ogg");
 }
 
 //		END
@@ -242,6 +245,8 @@ void	FreeOverworld() {
 	DeleteTexture(g_AnimTextures);
 	Mix_FreeChunk(g_Sounds.collision);
 	Mix_FreeChunk(g_Sounds.grass);
+	Mix_FreeMusic(g_Sounds.overworldMusic);
+	Mix_FreeMusic(g_Sounds.caveMusic);
 
 	for (int index{}; index < g_NrScenes; ++index) {
 		DeleteTexture(g_World.scenes[index].texture);
@@ -679,6 +684,11 @@ void	Scene::UpdateAnimTextureFrames() {
 		animTextureFrames.rock.index = (animTextureFrames.rock.index + 1) % animTextureFrames.rock.end;
 		animTextureFrames.flower.index = (animTextureFrames.flower.index + 1) % animTextureFrames.flower.end;
 	}
+}
+
+void	PlayMusicOverworld() {
+	if (Scene::isCave) PlayMusic(g_Sounds.caveMusic);
+	else PlayMusic(g_Sounds.overworldMusic);
 }
 
 void	CheckSoundEffect(SDL_Keycode key) {

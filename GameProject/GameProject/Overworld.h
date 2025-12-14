@@ -70,6 +70,7 @@ struct Scene {
 	static int		nrCols;
 	static int		nrRows;
 	static float	tileSize; // is it really better here or can be global ?
+	static bool		isCave;
 
 	char* animTextureMap{};
 	int					animTextureMapSize{};
@@ -177,6 +178,9 @@ struct KeyPressed {
 struct Sounds {
 	Mix_Chunk* collision{};
 	Mix_Chunk* grass{};
+	Mix_Music* overworldMusic{};
+	Mix_Music* caveMusic{};
+
 	float		collisionCooldown{};
 	float		grassCooldown{};
 };
