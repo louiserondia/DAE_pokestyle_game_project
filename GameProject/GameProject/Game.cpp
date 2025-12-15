@@ -17,6 +17,9 @@ void	HandleKeyUpBattle(SDL_Keycode key);
 void	PrintTileIndex(float x, float y);
 void	InitAlphabet();
 void	DrawTextFromString(const std::string& str, Point2f pos, int fontSize = g_DefaultFontSize, bool isBlack = 1);
+void	EndBattleOverworld();
+void	PlayMusicOverworld();
+void	PlayMusicBattle();
 
 
 //Basic game functions
@@ -29,7 +32,7 @@ void Start()
 	InitOverworld();
 	InitBattle();
 	InitAlphabet();
-
+	PlayMusicOverworld();
 }
 
 void Draw()
@@ -76,6 +79,10 @@ void OnKeyUpEvent(SDL_Keycode key)
 		else
 			TurnOnBattle();
 	}
+	else if (key == SDLK_m) {
+		Mix_VolumeMusic(75);
+	}
+		
 	if (g_IsOverworldOn)
 		HandleKeyUpOverworld(key);
 
@@ -99,6 +106,8 @@ void OnMouseUpEvent(const SDL_MouseButtonEvent& e)
 
 #pragma region ownDefinitions
 // Define your own functions here
+
+	//Mix_FreeMusic(g_GlobalSounds.godmungussBattleMusic);
 
 void	UpdateBattleOverworldStati() {
 	if (!g_IsBattleTransitionOn) return;
@@ -161,7 +170,7 @@ void	DrawAnimationHorStripes() {
 	const int nRows{ static_cast<int>(g_WindowHeight / height) };
 
 	for (int index{}; index < nLines; ++index) {
-		float start{ index &1 ? g_WindowWidth : 0.f };
+		float start{ index & 1 ? g_WindowWidth : 0.f };
 		const float width{ g_GlobalTime * speed - index * 10 };
 
 		SetColor(0.f, 0.f, 0.f, 1.f);
@@ -211,18 +220,22 @@ void	DrawBattleTransitionAnimation() {
 	DrawAnimationDoubleSnake();
 }
 
-
 void TurnOnBattle() {
 	g_GlobalTime = 0.f;
 	g_IsOverworldOn = false;
 	g_IsBattleTransitionOn = true;
 	g_IsDoneDrawing = false;
+	PlayMusicBattle(); // should be after is done drawing
+	// also why no isbattleon = true
+	// also should make an enum of state instead of 2 bools (isbattleon & overworld)
 }
 
 void TurnOffBattle() {
 	g_IsBattleTransitionOn = true;
 	g_IsDoneDrawing = false;
 	g_GlobalTime = 0.f;
+	EndBattleOverworld();
+	PlayMusicOverworld();
 }
 
 #pragma endregion ownDefinitions

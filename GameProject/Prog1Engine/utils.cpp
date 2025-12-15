@@ -556,6 +556,26 @@ namespace utils
 		std::cout << "\n";
 	}
 
+	void Print2DArray(const char* array, int size, int nrCols) {
+		for (int index{}; index <= nrCols; ++index) {
+			std::cout << "-";
+		}
+		std::cout << "\n";
+
+		for (int index{}; index < size; ++index) {
+			if (!(index % nrCols))
+				std::cout << "|";
+			std::cout << array[index] << "";
+			if (!((index + 1) % nrCols))
+				std::cout << "|\n";
+		}
+		
+		for (int index{}; index <= nrCols; ++index) {
+			std::cout << "-";
+		}
+		std::cout << "\n";
+	}
+
 #pragma endregion 2DArrayFunctionality
 
 #pragma region CollisionFunctionality

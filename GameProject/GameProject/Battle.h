@@ -256,6 +256,7 @@ void	InitMusic();
 void	DrawBattle();
 #pragma endregion Draw
 #pragma region Update
+void	PlayMusicBattle();
 void	UpdateBattle(float elapsedSec);
 void	Attack(float elapsedSec);
 void	Item(float elapsedSec);

@@ -15,12 +15,17 @@ void InitBattle()
 }
 void InitMusic()
 {
+	//LoadMusic(g_Noises.g_GodmungussBattleMusic, "../Resources/Godmoongus8Bit2.ogg");
 	LoadMusic(g_Noises.g_GodmungussBattleMusic, "../Resources/Godmoongus8Bit2.ogg");
 	LoadSoundEffect(g_Noises.g_ArrowMove, "../Resources/ArrowMoveSondEffect.wav");
 	LoadSoundEffect(g_Noises.g_Attack, "../Resources/AttackSoundEfffect.wav");
 	LoadSoundEffect(g_Noises.g_DamageTaken, "../Resources/DamageSoundEffect.wav");
+}
+
+void PlayMusicBattle() {
 	PlayMusic(g_Noises.g_GodmungussBattleMusic);
 }
+
 void InitSprites()
 {
 	TextureFromFile("Resources/BackgroundCave.png", g_BackgroundTexture);

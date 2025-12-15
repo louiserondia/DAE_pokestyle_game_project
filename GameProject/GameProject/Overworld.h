@@ -19,6 +19,11 @@ const Color4f	g_Blue(.0f, 0.f, 1.f, .5f);
 
 //		--- ENUM & STRUCTS ---
 
+struct Camera;
+struct Character;
+struct Player;
+struct NPC;
+
 struct Frame {
 	int	start{};
 	int	index{};
@@ -58,14 +63,15 @@ struct Scene {
 	Point2f	startOffset{};
 	float	screenWidth{};
 	float	screenHeight{};
-	int		nrRows{};
-	int		nrCols{};
 
 	Door	doors[5];
 	int		nrDoors{};
 	std::map<std::string, int> entryPoints{}; // key = name of entry point, value is target tile
 
-	float	tileSize{ 16.f }; // is it really better here or can be global ?
+	static int		nrCols;
+	static int		nrRows;
+	static float	tileSize; // is it really better here or can be global ?
+	static bool		isCave;
 
 	char* animTextureMap{};
 	int					animTextureMapSize{};
@@ -73,11 +79,22 @@ struct Scene {
 	AnimTextureFrames	animTextureFrames{};
 
 	int* collisionMap{};
-	float				collisionMapSize{};
+	int					collisionMapSize{};
 	std::string			collisionMapPath{};
 
 	void	LoadStatic();
 	void	Init();
+	void	InitCollisionMap();
+	void	InitAnimTextureMap();
+
+	void	DrawSea() const;
+	void	DrawRocks() const;
+	void	DrawFlowers() const;
+	void	DrawMap() const;
+	void	DrawFgMap() const;
+
+	void	UpdateMapPos(float elapsedSec, const Camera& camera);
+	void	UpdateAnimTextureFrames();
 };
 
 struct Character {
@@ -96,30 +113,54 @@ struct Character {
 	// change to only one frame, maybe 2d and start == row and add index
 	Frame		frame{};
 	float		frameTime{};
+	static Texture texture;
 
-	void		Draw();
+	void		Draw() const;
 	void		UpdateFrame(float elapsedSec, float frameRate = 1 / 8.f);
 	void		UpdateAnimFrameState();
 	void		UpdatePos(float elapsedSec, float speed, float maxDist);
-
+	void		StopWalkingAndReset(int& curKey, int& nextKey);
 };
 
 
 struct Player : Character {
-	void Init(const Scene& scene);
+	bool isFrozen{};
+
+	void Init(int entryPoint);
 };
 
 struct NPC : Character {
-	bool isMvtVertical{};
+	bool isMoto{};
 	int	startTile{};
+	int sceneIndex{};
+	int path[100];
+	Point2f pathDir[100];
+	int pathIndex{};
+	int pathLength{};
+	bool isLooping{};
+	bool isWalkingTowardsPlayer{};
+	bool hasBattled{};
 
-	void Init(int tile, const Rectf& dimensions, const Scene& scene);
+	static int battleRange;
+
+	void Init(int tile, const Rectf& dimensions);
 	void Walk();
+	void Drive();
+	void UpdateMotoFrame();
+	void FollowPath();
+	void DrawPath() const;
+	void EngageBattle(Player& player);
+	bool IsPlayerInRange(const Player& player);
 };
 
 struct Camera {
 	Point2f pos{};
-	float	zoom{ 4.f };
+	Point2f	backupPos{};
+	static float	zoom;
+	bool	isBlinking{};
+
+	void Init(const Scene& scene);
+	void UpdatePos(float elapsedSec, const Scene& scene, const Player& player);
 };
 
 struct World {
@@ -138,6 +179,9 @@ struct KeyPressed {
 struct Sounds {
 	Mix_Chunk* collision{};
 	Mix_Chunk* grass{};
+	Mix_Music* overworldMusic{};
+	Mix_Music* caveMusic{};
+
 	float		collisionCooldown{};
 	float		grassCooldown{};
 };
@@ -153,7 +197,6 @@ KeyPressed	g_KeyPressed{};
 
 std::map<std::string, AnimFrame> g_AnimFrames{};
 
-Texture		g_NPCTexture{};
 Texture		g_AnimTextures{};
 Texture		g_WaterShadowTexture{};
 
@@ -163,6 +206,7 @@ SDL_Keycode g_NextKey{};
 float		g_LoadingScreenCooldown{};
 float		g_AnimTextureTime{};
 float		g_Time{};
+float		g_BlinkTime{};
 
 
 //		--- FUNCTIONS ---
@@ -171,12 +215,10 @@ float		g_Time{};
 
 void	InitOverworld();
 void	InitScenes();
-void	InitCamera();
-void	InitCharacters();
+void 	InitCharacters(const Scene& scene);
 void	InitAnimFrames();
-void	InitCollisionMap();
-void	InitAnimTextureMap();
 void	InitAudioFiles();
+void	InitNPCPath(NPC& npc, int tile, Point2f dir);
 
 //		END
 
@@ -185,12 +227,8 @@ void	FreeOverworld();
 //		DRAW
 
 void	DrawOverworld();
-void	DrawSea();
-void	DrawRocks();
-void	DrawFlowers();
-void	DrawMap();
-void	DrawFgMap();
 void	DrawLoadingScreen();
+void	DrawBlinkBattle();
 
 //		INPUT HANDLING
 
@@ -202,14 +240,11 @@ SDL_Keycode	UpdateCurKey();
 //		UPDATE
 
 void	UpdateOverworld(float elapsedSec);
-void	UpdateMapPos(float elapsedSec);
-void	UpdateCameraPos(float elapsedSec);
-void	StopWalkingAndReset();
+void	UpdateScene(Camera& camera, Player& player);
 void	HandlePlayerWalk();
-void	UpdateAnimTextureFrames();
-void	UpdateScene();
 void	CheckSoundEffect(SDL_Keycode key);
 void	CheckBattleInGrass();
+void	EndBattleOverworld();
 
 //		UTILS
 
@@ -234,10 +269,10 @@ bool	IsPlayerOnTile(int index);
 bool	IsNPCOnTile(int index);
 bool	IsGoingOutsideMap();
 
-Point2f Turn(Point2f dir, float angle);
-Point2f Turn90(Point2f dir);
+void	Turn(Point2f& dir, float angle);
+void	Turn90(Point2f& dir);
 Door	GetDoor();
-Scene&	GetScene();
+Scene& GetScene();
 
 
 // DEBUG

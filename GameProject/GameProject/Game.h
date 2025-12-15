@@ -31,16 +31,25 @@ float g_WindowHeight{ 720 };
 #pragma region ownDeclarations
 // Declare your own global variables here
 
-bool	g_IsBattleOn{1};		// press B to switch from battle to map view and mechanics
-bool	g_IsOverworldOn{};		// press B to switch from battle to map view and mechanics
+bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
+bool	g_IsOverworldOn{1};		// press B to switch from battle to map view and mechanics
 bool	g_IsBattleTransitionOn{};
 bool	g_IsDoneDrawing{ true };
 
 float	g_GlobalTime{};
 
+struct Sounds {
+	Mix_Music* godmungussBattleMusic{};
+};
+
+Sounds g_GlobalSounds{};
+
 const int g_DefaultFontSize{ 100 };
 
 // Declare your own functions here
+
+void LoadAudio();
+void FreeAudio();
 
 void DrawBattleTransitionAnimation();
 
