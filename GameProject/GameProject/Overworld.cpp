@@ -220,8 +220,8 @@ void	FreeOverworld() {
 	for (int index{}; index < g_NrScenes; ++index) {
 		DeleteTexture(scene.texture);
 		DeleteTexture(scene.fgTexture);
-		delete[] scene.collisionMap;
-		delete[] scene.animTextureMap;
+		delete scene.collisionMap;
+		delete scene.animTextureMap;
 	}
 }
 

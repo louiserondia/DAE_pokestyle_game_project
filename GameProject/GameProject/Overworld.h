@@ -47,6 +47,7 @@ struct Door {
 	// maybe give them each a name and call them from map, same for doors
 };
 
+
 struct Scene {
 	std::string name{};
 

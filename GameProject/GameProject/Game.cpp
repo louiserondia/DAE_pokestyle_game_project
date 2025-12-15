@@ -79,7 +79,7 @@ void OnKeyUpEvent(SDL_Keycode key)
 	if (g_IsOverworldOn)
 		HandleKeyUpOverworld(key);
 
-	HandleKeyUpBattle(key);
+	if (g_IsBattleOn) HandleKeyUpBattle(key);
 }
 
 void OnMouseMotionEvent(const SDL_MouseMotionEvent& e)

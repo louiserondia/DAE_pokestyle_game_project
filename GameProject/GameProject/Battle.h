@@ -4,18 +4,20 @@
 using namespace utils;
 
 #pragma region ConstVariables
-const float
-g_SpeedHPBar{ 25.f },
-g_MovementLength{ 55.f },
-g_AttackSpeed{ 200.f },
-g_HeightOfTextBlock{ g_WindowHeight * 0.3f },
-g_HalfWidth{ g_WindowWidth / 2.f };
 
-const int
-g_AmmountOfMoves{ 6 };
+const float
+	g_SpeedHPBar{ 25.f },
+	g_MovementLength{ 55.f },
+	g_AttackSpeed{ 200.f },
+	g_HeightOfTextBlock{ g_WindowHeight * 0.3f },
+	g_HalfWidth{ g_WindowWidth / 2.f };
+
+const int g_AmmountOfMoves{ 6 };
+
 #pragma endregion ConstVariables
 
 #pragma region Enum&Structs
+
 enum class Phases
 {
 	phase_allypokemon_move,
@@ -30,6 +32,7 @@ enum class Phases
 	phase_done,
 	phase_hpbarally_up
 };
+
 enum class FightingOptions
 {
 	fight,
@@ -37,6 +40,7 @@ enum class FightingOptions
 	pokemon,
 	run
 };
+
 enum class MoveOptions
 {
 	topleft,
@@ -46,39 +50,41 @@ enum class MoveOptions
 };
 
 
-
 struct Moves
 {
 	float
 		damage{};
 };
-struct Pokemon
-{
-	float hp{100.f};
-	Moves arrMoves[g_AmmountOfMoves]{};
-};
+
 struct HPBar
 {
-	Point2f position
-	{
-		0.f,
-		0.f,
-	};
+	Point2f position{};
 	float
 		width{ g_WindowWidth * 0.23f },
-		height{ g_WindowHeight * 0.0175f },
+		height{ g_WindowHeight * 0.0175f };
+
+};
+
+struct Pokemon
+{
+	std::string name{};
+	Moves arrMoves[g_AmmountOfMoves]{};
+	float
+		speed{},
 		total{ 100.f },
 		actual{ total },
 		animHP{ actual };
-
 };
+
 struct PokemonInBattle
 {
 	Point2f
 		position{};
 	bool
 		attackTextureIsOn{};
+	HPBar hpbar{};
 };
+
 struct Sounds
 {
 	Mix_Music* g_GodmungussBattleMusic{};
@@ -89,120 +95,140 @@ struct Sounds
 #pragma endregion Enum&Structs
 
 #pragma region Variables
+
 Sounds
-g_Noises{};
+	g_Noises{};
+
 PokemonInBattle
-AllyPokemon
-{
-	Point2f
+	g_AllyPokemon
 	{
-	g_WindowWidth /10,
-	g_WindowHeight - (g_HeightOfTextBlock * 2)
-	}
-},
-EnemyPokemon
-{
-	Point2f
+		Point2f
+		{
+			g_WindowWidth / 10,
+			g_WindowHeight - (g_HeightOfTextBlock * 2)
+		}
+	},
+	g_EnemyPokemon
 	{
-	(g_WindowWidth / 2) + 50.f,
-	g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
-	}
-},
-BossPokemon
-{
-	Point2f
+		Point2f
+		{
+		(g_WindowWidth / 2) + 50.f,
+		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
+		}
+	},
+	g_BossPokemon
 	{
-	(g_WindowWidth *0.575f),
-	0.f
-	}
-};
-HPBar HPBarAllyPokemon
-{
-	Point2f
+		Point2f
+		{
+		(g_WindowWidth * 0.575f),
+		0.f
+		}
+	};
+
+HPBar 
+	g_HPBarAllyPokemon
 	{
-		g_WindowWidth - (g_WindowWidth * 0.269f),
-		g_WindowHeight - (g_HeightOfTextBlock * 1.43f),
-	}
-},
-HPBarEnemyPokemon{
-	Point2f
+		Point2f
+		{
+			g_WindowWidth - (g_WindowWidth * 0.269f),
+			g_WindowHeight - (g_HeightOfTextBlock * 1.43f),
+		}
+	},
+	g_HPBarEnemyPokemon{
+		Point2f
+		{
+			g_WindowWidth * 0.1875f,
+			g_WindowHeight * 0.106f,
+		}
+	};
+Moves 
+	g_Tackle
 	{
-		g_WindowWidth * 0.1875f,
-		g_WindowHeight * 0.106f,
-	}
-};
-Moves Tackle
-{
-	10.f
-};
-Moves StrongTackle
-{
-	20.f
-};
+		10.f
+	},
+	g_StrongTackle
+	{
+		20.f
+	};
 Rectf
-MoveOptionsRect{
-		0.f,
-		g_WindowHeight - g_HeightOfTextBlock,
-		g_WindowWidth * 0.66f,
-		g_HeightOfTextBlock,
-},
-DestinationFightingOptions
-{
-		g_HalfWidth,
-		g_WindowHeight - g_HeightOfTextBlock,
-		g_HalfWidth,
-		g_HeightOfTextBlock,
-};
+	g_MoveOptionsRect{
+			0.f,
+			g_WindowHeight - g_HeightOfTextBlock,
+			g_WindowWidth * 0.66f,
+			g_HeightOfTextBlock,
+	},
+	g_DestinationFightingOptions
+	{
+			g_HalfWidth,
+			g_WindowHeight - g_HeightOfTextBlock,
+			g_HalfWidth,
+			g_HeightOfTextBlock,
+	};
+Pokemon
+	g_Godmoonguss
+	{
+		"Godmoonguss",
+		g_Tackle,
+			100.f,
+			300.f
+	},
+	g_Laxman
+	{
+		"Laxman",
+		g_Tackle,
+			50.f,
+			100.f
+	};
 float
-g_SpeedAttack{ 0.f },
-g_PhaseWaitCounter{ 0.f },
-g_SavedPosition{ -1 },
-g_PhaseDoneCounter{ 0.f },
-g_MovementAnimAlpha{ 0.f },
-g_HPBarTarget{},
-g_AnimationTime{ 1.f / 0.6f },
-g_SavedHPDamage{ -1 },
-g_SavedHPHeal{ -1 };
+	g_SpeedAttack{ 0.f },
+	g_PhaseWaitCounter{ 0.f },
+	g_SavedPosition{ -1 },
+	g_PhaseDoneCounter{ 0.f },
+	g_MovementAnimAlpha{ 0.f },
+	g_HPBarTarget{},
+	g_AnimationTime{ 1.f / 0.6f },
+	g_SavedHPDamage{ -1 },
+	g_SavedHPHeal{ -1 };
 
 bool
-g_Attack{},
-g_Item{},
-g_Run{},
-g_Switch{},
-g_notFirstTurn{},
-g_WaitTextBlock{},
-g_ItemTextureIsOn{},
-g_SwitchTextureIsOn{},
-g_RunTextureIsOn{},
-g_ItemDoneTextureIsOn{},
-g_FightingOptionsTextureIsOn{ true },
-g_NotFirstTurnTextureIsOn{},
-g_FaintTextureIsOn{},
-g_ItemOnlyOnce{},
-g_IsHeal{},
-g_PickingMoves{},
-g_SoundDone{};
+	g_Attack{},
+	g_Item{},
+	g_Run{},
+	g_Switch{},
+	g_notFirstTurn{},
+	g_WaitTextBlock{},
+	g_ItemTextureIsOn{},
+	g_SwitchTextureIsOn{},
+	g_RunTextureIsOn{},
+	g_ItemDoneTextureIsOn{},
+	g_FightingOptionsTextureIsOn{ true },
+	g_NotFirstTurnTextureIsOn{},
+	g_FaintTextureIsOn{},
+	g_ItemOnlyOnce{},
+	g_IsHeal{},
+	g_PickingMoves{},
+	g_SoundDone{};
 
 
 utils::Texture
-g_BackgroundTexture{},
-g_LaxManTexture{},
-g_InfoAllyPokemonTexture{},
-g_GodmoongussTexture{},
-g_AttackTexture{},
-g_GodmoongussAttackText{},
-g_LaxAttackText{},
-g_WaitText{},
-g_ItemText{},
-g_SwitchText{},
-g_RunText{},
-g_ItemDoneText{},
-g_NotFirstTurnText{},
-g_FaintText{},
-g_FightingOptionsTexture{},
-g_InfoEnemyPokemonTexture{},
-g_ArrowTexture{},
-g_MovesTexture{};
+	g_BackgroundTexture{},
+	g_LaxManTexture{},
+	g_InfoAllyPokemonTexture{},
+	g_GodmoongussTexture{},
+	g_AttackTexture{},
+	g_GodmoongussAttackText{},
+	g_LaxAttackText{},
+	g_WaitText{},
+	g_ItemText{},
+	g_SwitchText{},
+	g_RunText{},
+	g_ItemDoneText{},
+	g_NotFirstTurnText{},
+	g_FaintText{},
+	g_FightingOptionsTexture{},
+	g_InfoEnemyPokemonTexture{},
+	g_ArrowTexture{},
+	g_MovesTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
@@ -217,7 +243,6 @@ MoveOptions CurrentMove{ MoveOptions::topleft };
 
 #pragma region Functions
 #pragma region Init
-
 void	InitBattle();
 void	InitText();
 void	InitSprites();
@@ -239,9 +264,9 @@ void	RunAway(float elapsedSec);
 void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
 void	Wait(float elapsedSec);
-void	Damage(HPBar& hpBarForDamage, Moves& move);
-void	Heal(HPBar& hpBar);
-void	HPBarMath( HPBar& hpBar, float elapsedTime);
+void	Damage(Pokemon& hpBarForDamage, Moves& move);
+void	Heal(Pokemon& hpBar);
+void	HPBarMath(Pokemon& hpBar, float elapsedTime);
 #pragma endregion Update
 #pragma endregion Functions
 
