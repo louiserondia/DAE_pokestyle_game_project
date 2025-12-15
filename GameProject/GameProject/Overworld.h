@@ -9,8 +9,8 @@ using namespace utils;
 
 //		--- CONST VARIABLES ---
 
-const int		g_NrScenes{ 3 };
-const int		g_NrNPC{ 1 };
+const int		g_NrScenes{ 6 };
+const int		g_NrNPC{ 2 };
 
 const Color4f	g_White(.9f, .9f, .9f, .5f);
 const Color4f	g_Black(.2f, .2f, .2f, .5f);
@@ -34,6 +34,7 @@ struct AnimTextureFrames {
 	Frame	sea{ 0, 0, 8 };
 	Frame	rock{ 0, 0, 8 };
 	Frame	flower{ 0, 0, 5 };
+	Frame	smoke{ 0, 0, 12 };
 };
 
 struct AnimFrame {
@@ -90,6 +91,7 @@ struct Scene {
 	void	DrawSea() const;
 	void	DrawRocks() const;
 	void	DrawFlowers() const;
+	void	DrawSmoke() const;
 	void	DrawMap() const;
 	void	DrawFgMap() const;
 
@@ -104,6 +106,7 @@ struct Character {
 	float		offsetTile{};
 	bool		isMoving{};
 	float		stepProgress{};
+	bool		isGod{};
 
 	Rectf		dst{};
 	Rectf		src{ 0.f, 0.f, 16.f, 24.f };
@@ -133,7 +136,7 @@ struct NPC : Character {
 	bool isMoto{};
 	int	startTile{};
 	int sceneIndex{};
-	int path[100];
+	int path[100]{};
 	Point2f pathDir[100];
 	int pathIndex{};
 	int pathLength{};
@@ -143,7 +146,7 @@ struct NPC : Character {
 
 	static int battleRange;
 
-	void Init(int tile, const Rectf& dimensions);
+	void Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving = 1);
 	void Walk();
 	void Drive();
 	void UpdateMotoFrame();
@@ -165,8 +168,8 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
-	const float moveSpeed{ 250.f };
+	int		curSceneIndex{ 5 }; // to debug, set to the scene you want to start at
+	const float moveSpeed{ 220.f };
 };
 
 struct KeyPressed {
@@ -205,6 +208,7 @@ SDL_Keycode g_NextKey{};
 
 float		g_LoadingScreenCooldown{};
 float		g_AnimTextureTime{};
+float		g_SmokeTime{};
 float		g_Time{};
 float		g_BlinkTime{};
 

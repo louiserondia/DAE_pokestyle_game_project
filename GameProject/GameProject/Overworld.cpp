@@ -59,8 +59,7 @@ void	InitScenes() {
 
 	pScene = &g_World.scenes[1];
 	pScene->name = "bridge";
-	//pScene->entryPoints["Spawn"] = 1085;
-	pScene->entryPoints["Spawn"] = 175;
+	pScene->entryPoints["Spawn"] = 983;
 	pScene->entryPoints["West"] = 752;
 	pScene->entryPoints["NorthEast"] = 81;
 	pScene->nrDoors = 2;
@@ -76,10 +75,50 @@ void	InitScenes() {
 	pScene->name = "kindle";
 	pScene->entryPoints["South"] = 2844;
 	pScene->entryPoints["North"] = 11;
-	pScene->entryPoints["Spawn"] = 2844;
+	pScene->entryPoints["Spawn"] = 11;
 	pScene->nrDoors = 2;
 	pScene->doors[0] = Door{ "South", 1, "NorthEast" };
-	pScene->doors[1] = Door{ "North", 0, "East" };
+	pScene->doors[1] = Door{ "North", 3, "South" };
+	pScene->LoadStatic();
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
+
+	pScene = &g_World.scenes[3];
+
+	pScene->name = "mountain";
+	pScene->entryPoints["South"] = 3050;
+	pScene->entryPoints["North"] = 428;
+	pScene->entryPoints["Spawn"] = 428;
+	pScene->nrDoors = 2;
+	pScene->doors[0] = Door{ "South", 2, "North" };
+	pScene->doors[1] = Door{ "North", 4, "South" };
+	pScene->LoadStatic();
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
+
+	pScene = &g_World.scenes[4];
+
+	pScene->name = "cave";
+	pScene->entryPoints["South"] = 1881;
+	pScene->entryPoints["North"] = 375;
+	pScene->entryPoints["Spawn"] = 375;
+	pScene->nrDoors = 2;
+	pScene->doors[0] = Door{ "South", 3, "North" };
+	pScene->doors[1] = Door{ "North", 5, "South" };
+	pScene->LoadStatic();
+	pScene->Init();
+	pScene->InitCollisionMap();
+	pScene->InitAnimTextureMap();
+
+	pScene = &g_World.scenes[5];
+
+	pScene->name = "spa";
+	pScene->entryPoints["South"] = 1093;
+	pScene->entryPoints["Spawn"] = 345;
+	pScene->nrDoors = 1;
+	pScene->doors[0] = Door{ "South", 4, "North" };
 	pScene->LoadStatic();
 	pScene->Init();
 	pScene->InitCollisionMap();
@@ -98,7 +137,9 @@ void	Scene::LoadStatic() {
 }
 
 void	Scene::Init() {
+	Camera::zoom = name == "cave" ? 3.f : 4.f;
 	tileSize = 16.f * Camera::zoom;
+
 	screenWidth = texture.width * Camera::zoom;
 	screenHeight = texture.height * Camera::zoom;
 	startOffset.x = std::max(0.f, (g_WindowWidth - screenWidth) / 2);
@@ -122,7 +163,7 @@ void	Scene::InitCollisionMap() {
 	int index{};
 	char ch{};
 	while (file.get(ch) && index < collisionMapSize) {
-		if (ch == '0' || ch == '1' || ch == '2') {
+		if (ch == '0' || ch == '1' || ch == '2' || ch == '3') {
 			collisionMap[index] = ch - '0';
 			++index;
 		}
@@ -143,7 +184,7 @@ void	Scene::InitAnimTextureMap() {
 	int index{};
 	char ch{};
 	while (file.get(ch) && index < animTextureMapSize) {
-		if (ch == '0' || ch == '1' || ch == '2' || ch == 'm' || ch == 'r' || ch == 'f') {
+		if (std::strchr("0123mrfs", ch)) {
 			animTextureMap[index] = ch;
 			++index;
 		}
@@ -163,13 +204,15 @@ void InitAnimFrames() {
 void InitCharacters(const Scene& scene) {
 	g_Player.Init(scene.entryPoints.at("Spawn"));
 	//g_NPC[0].Init(199, Rectf{ 0.f, 24.f, 24.f, 24.f }); // moto guy
-	g_NPC[0].Init(210, Rectf{ 0.f, 0.f, 16.f, 24.f });
+	g_NPC[0].Init(1, 817, Rectf{ 0.f, 48.f, 16.f, 24.f });
+	g_NPC[1].Init(5, 257, Rectf{ 0.f, 72.f, 18.f, 24.f }, false);
 	InitNPCPath(g_NPC[0], g_NPC[0].curTile, g_NPC[0].dir);
 
 }
 
 void Player::Init(int entryPoint) {
 	curTile = entryPoint;
+	std::cout << "tile size : " << Scene::tileSize << std::endl;
 	dst = Rectf{
 		GetCol(curTile, Scene::nrCols) * Scene::tileSize,
 		GetRow(curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2,
@@ -184,10 +227,12 @@ void Player::Init(int entryPoint) {
 	dir = Point2f{ 0.f, 1.f };
 }
 
-void NPC::Init(int tile, const Rectf& dimensions) {
+void NPC::Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving) {
 	startTile = tile;
 	curTile = tile;
 	targetTile = tile;
+	this->sceneIndex = sceneIndex;
+	if (sceneIndex == 5) isGod = true;
 	dst = Rectf{
 		GetCol(curTile, Scene::nrCols) * Scene::tileSize,
 		GetRow(curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2,
@@ -207,11 +252,12 @@ void NPC::Init(int tile, const Rectf& dimensions) {
 		dimensions.width,
 		dimensions.height
 	};
-	isMoving = true;
+	this->isMoving = isMoving;
 	dir = Point2f{ 1.f, 0.f };
 }
 
 void	Camera::Init(const Scene& scene) {
+	Camera::zoom = scene.name == "cave" ? 3.f : 4.f;
 	Point2f	posPlayerMid{ g_Player.dst.left + (g_Player.dst.width / 2) - g_WindowWidth / 2, g_Player.dst.top - g_WindowHeight / 2 };
 
 	if (posPlayerMid.x < 0) {
@@ -249,10 +295,10 @@ void	FreeOverworld() {
 	Mix_FreeMusic(g_Sounds.caveMusic);
 
 	for (int index{}; index < g_NrScenes; ++index) {
-		DeleteTexture(scene.texture);
-		DeleteTexture(scene.fgTexture);
-		delete[] scene.collisionMap;
-		delete[] scene.animTextureMap;
+		DeleteTexture(g_World.scenes[index].texture);
+		DeleteTexture(g_World.scenes[index].fgTexture);
+		delete g_World.scenes[index].collisionMap;
+		delete g_World.scenes[index].animTextureMap;
 	}
 }
 
@@ -270,6 +316,7 @@ void	DrawOverworld() {
 	scene.DrawRocks();
 	scene.DrawMap();
 	scene.DrawFlowers();
+	scene.DrawSmoke();
 	//DrawCollisions();
 	//DrawTiles()
 	//DrawCurrentAndTargetTiles();
@@ -278,21 +325,20 @@ void	DrawOverworld() {
 			npc.Draw();
 			//npc.DrawPath();
 		}
-
 	}
 	g_Player.Draw();
-	scene.DrawFgMap();
+	if (scene.fgTexture.height)
+		scene.DrawFgMap();
 	DrawLoadingScreen();
 	DrawBlinkBattle();
 
 }
 
 void Scene::DrawSea() const {
-	const float size{ g_AnimTextures.width / animTextureFrames.sea.end };
+	const float size{ g_AnimTextures.width / animTextureFrames.smoke.end };
 
 	for (int index{}; index < animTextureMapSize; ++index) {
-		if (animTextureMap[index] != 'm' && animTextureMap[index] != 'r')
-			continue;
+		if (animTextureMap[index] != 'm' && animTextureMap[index] != 'r') continue;
 
 		const Rectf dst{
 			GetCol(index, nrCols) * tileSize - g_Camera.pos.x,
@@ -306,11 +352,10 @@ void Scene::DrawSea() const {
 }
 
 void Scene::DrawRocks() const {
-	const float size{ g_AnimTextures.width / animTextureFrames.sea.end };
+	const float size{ g_AnimTextures.width / animTextureFrames.smoke.end };
 
 	for (int index{}; index < animTextureMapSize; ++index) {
-		if (animTextureMap[index] != 'r')
-			continue;
+		if (animTextureMap[index] != 'r') continue;
 
 		Rectf dst{
 			GetCol(index, nrCols) * tileSize - g_Camera.pos.x,
@@ -330,11 +375,10 @@ void Scene::DrawRocks() const {
 }
 
 void Scene::DrawFlowers() const {
-	const float size{ g_AnimTextures.width / animTextureFrames.sea.end };
+	const float size{ g_AnimTextures.width / animTextureFrames.smoke.end };
 
 	for (int index{}; index < animTextureMapSize; ++index) {
-		if (animTextureMap[index] != 'f')
-			continue;
+		if (animTextureMap[index] != 'f') continue;
 
 		const Rectf dst{
 			GetCol(index, nrCols) * tileSize - g_Camera.pos.x,
@@ -342,6 +386,24 @@ void Scene::DrawFlowers() const {
 			tileSize, tileSize
 		};
 		const Rectf src{ animTextureFrames.flower.index * size, 2 * size, size, size };
+
+		DrawTexture(g_AnimTextures, dst, src);
+	}
+}
+
+void Scene::DrawSmoke() const {
+	const float size{ g_AnimTextures.width / animTextureFrames.smoke.end };
+
+	for (int index{}; index < animTextureMapSize; ++index) {
+		if (animTextureMap[index] != 's') continue;
+
+		const Rectf dst{
+			GetCol(index, nrCols) * tileSize - g_Camera.pos.x,
+			GetRow(index, nrCols) * tileSize - g_Camera.pos.y - 10.f,
+			tileSize, tileSize
+		};
+		const int newIndex{ (animTextureFrames.smoke.index + (index % animTextureFrames.smoke.end)) % animTextureFrames.smoke.end };
+		const Rectf src{ newIndex * size, 3 * size, size, size };
 
 		DrawTexture(g_AnimTextures, dst, src);
 	}
@@ -357,9 +419,9 @@ void	Scene::DrawFgMap() const {
 
 void	Character::Draw() const {
 	const Rectf rect{
-		dst.left - g_Camera.pos.x,
+		dst.left - g_Camera.pos.x + (isGod ? Scene::tileSize / 2 : 0.f),
 		dst.top - g_Camera.pos.y,
-		dst.width ,
+		dst.width,
 		dst.height
 	};
 	DrawTexture(texture, rect, src);
@@ -475,7 +537,8 @@ void	UpdateOverworld(float elapsedSec) {
 			npc.UpdateFrame(elapsedSec, 1 / 8.f);
 		}
 		else {
-			//npc.Walk();
+			//if (npc.isWalkingTowardsPlayer) npc.Walk();
+			//else 
 			npc.FollowPath();
 			npc.UpdatePos(elapsedSec, g_World.moveSpeed / 3, Scene::tileSize);
 			npc.UpdateFrame(elapsedSec, 1 / 4.f);
@@ -494,6 +557,7 @@ void	UpdateOverworld(float elapsedSec) {
 	g_Sounds.grassCooldown += elapsedSec;
 	g_LoadingScreenCooldown += elapsedSec;
 	g_AnimTextureTime += elapsedSec;
+	g_SmokeTime += elapsedSec;
 }
 
 void Character::UpdatePos(float elapsedSec, float speed, float maxDist) {
@@ -552,29 +616,22 @@ void HandlePlayerWalk() {
 }
 
 void NPC::Walk() {
-	const int dist{ TileDist(startTile, curTile, Scene::tileSize) };
+	int nextTile{ TargetTileFromDir(curTile, dir) };
 
-	if (dist > 1) {
-		Turn90(dir);
-		startTile = curTile;
+	if (IsWalkable(targetTile) && !IsPlayerOnTile(targetTile)) {
+		targetTile = nextTile;
+		targetPos = PosFromTile(targetTile);
+		nextTile = TargetTileFromDir(curTile, dir);
+		isMoving = true;
 	}
-	if (stepProgress == 0.f) {
-		const int targetTemp{ TargetTileFromDir(curTile, dir) };
-		if (IsWalkable(targetTile) && (!IsPlayerOnTile(targetTemp)) || isWalkingTowardsPlayer) {
-			targetTile = targetTemp;
-			targetPos = PosFromTile(targetTile);
-			isMoving = true;
-		}
-		else
-			isMoving = false;
-	}
+	else isMoving = false;
 	UpdateAnimFrameState();
 }
 
 void NPC::Drive() {
 	if (stepProgress == 0.f) {
 		const int targetTemp{ TargetTileFromDir(curTile, dir) };
-		if (IsWalkable(targetTile) && !IsPlayerOnTile(targetTemp)) {
+		if (IsWalkable(targetTemp) && !IsPlayerOnTile(targetTemp)) {
 			targetTile = targetTemp;
 			targetPos = PosFromTile(targetTile);
 			isMoving = true;
@@ -683,6 +740,7 @@ void	Scene::UpdateAnimTextureFrames() {
 		animTextureFrames.sea.index = (animTextureFrames.sea.index + 1) % animTextureFrames.sea.end;
 		animTextureFrames.rock.index = (animTextureFrames.rock.index + 1) % animTextureFrames.rock.end;
 		animTextureFrames.flower.index = (animTextureFrames.flower.index + 1) % animTextureFrames.flower.end;
+		animTextureFrames.smoke.index = (animTextureFrames.smoke.index + 1) % animTextureFrames.smoke.end;	
 	}
 }
 
@@ -726,6 +784,8 @@ void UpdateScene(Camera& camera, Player& player) {
 	player.curTile = pScene->entryPoints[door.targetEntryId];
 	player.dst.left = GetCol(player.curTile, Scene::nrCols) * Scene::tileSize;
 	player.dst.top = GetRow(player.curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2;
+	player.dst.width = Scene::tileSize;
+	player.dst.height = Scene::tileSize * 1.5f;
 	player.targetTile = player.curTile;
 	player.targetPos = Point2f{ player.dst.left, player.dst.top };
 
@@ -759,6 +819,13 @@ bool NPC::IsPlayerInRange(const Player& player) {
 
 		if (IsPlayerOnTile(tile)) return true;
 	}
+
+	if (isGod) {
+		const Point2f npcPos{ PosFromTile(curTile) }, playerPos{ PosFromTile(player.curTile) };
+		const float dx{ abs(npcPos.x - playerPos.x) }, dy{ abs(npcPos.y - playerPos.y) };
+		if (dx <= 64.f && dy <= 192.f)
+			return true;
+	}
 	return false;
 }
 
@@ -771,13 +838,13 @@ void NPC::EngageBattle(Player& player) {
 		isWalkingTowardsPlayer = true;
 	}
 
-	if (IsPlayerOnTile(targetTile) && !g_Camera.isBlinking) {
+	if ((IsPlayerOnTile(targetTile) || isGod) && !g_Camera.isBlinking) {
 		isMoving = false;
 		g_BlinkTime = 0.f;
 		g_Camera.isBlinking = true;
 		g_Camera.backupPos = g_Camera.pos;
 	}
-	else if (IsPlayerOnTile(targetTile) && g_Camera.isBlinking && g_BlinkTime > .8f) {
+	else if ((IsPlayerOnTile(targetTile) || isGod) && g_Camera.isBlinking && g_BlinkTime > .8f) {
 		TurnOnBattle();
 		g_Camera.isBlinking = false;
 		g_Camera.pos = g_Camera.backupPos;
@@ -968,8 +1035,9 @@ bool IsPlayerOnTile(int index) {
 
 bool IsNPCOnTile(int index) {
 	for (const NPC& npc : g_NPC) {
-		if (npc.curTile == index || npc.targetTile == index)
+		if (npc.sceneIndex == g_World.curSceneIndex && (npc.curTile == index || npc.targetTile == index)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -990,25 +1058,26 @@ Door GetDoor() {
 		col{ GetCol(g_Player.curTile, Scene::nrCols) };
 	const Scene& scene{ g_World.scenes[sceneIndex] };
 
-	if (!sceneIndex) {
-		if (col == Scene::nrCols - 1)
-			return scene.doors[0]; // east
-		else
-			return scene.doors[1]; // south
+	switch (sceneIndex)
+	{
+	case 0:
+		if (col == Scene::nrCols - 1) return scene.doors[0];		// east
+		else return scene.doors[1];									// south
+	case 1:
+		if (row == 0) return scene.doors[1];						// north east
+		else return scene.doors[0];									// west
+	case 2:
+		if (row == 0) return scene.doors[1];						// north 
+		else if (row == Scene::nrRows - 1) return scene.doors[0];	// south
+	case 3:
+		if (row == Scene::nrRows - 1) return scene.doors[0];		// south
+		else return scene.doors[1];									// north
+	case 4:
+		if (row < Scene::nrRows / 2) return scene.doors[1];			// north
+		else return scene.doors[0];									// south
+	default:
+		return scene.doors[0];
 	}
-	else if (sceneIndex == 1) {
-		if (row == 0)
-			return scene.doors[1]; // north east
-		else
-			return scene.doors[0]; // west
-	}
-	else if (sceneIndex == 2) {
-		if (row == 0)
-			return scene.doors[1]; // north 
-		else if (row == Scene::nrRows - 1)
-			return scene.doors[0]; // south
-	}
-	return scene.doors[0];
 }
 // make start of walk animation when collision (changes leg each time)
 
@@ -1023,9 +1092,10 @@ bool IsGoingOutsideMap() {
 		curCol{ GetCol(g_Player.curTile, Scene::nrCols) };
 
 	//std::cout << "\n targetTile " << targetTile << std::endl;
+	const int typeTile{ g_World.scenes[g_World.curSceneIndex].collisionMap[targetTile] };
 
 	return ((targetRow != curRow && g_CurKey != SDLK_UP && g_CurKey != SDLK_DOWN)
-		|| targetRow >= Scene::nrRows || targetRow < 0 || targetTile < 0);
+		|| targetRow >= Scene::nrRows || targetRow < 0 || targetTile < 0 || typeTile == 3);
 }
 
 int TileDist(int start, int end, float tileSize) {
