@@ -38,7 +38,7 @@ void	InitOverworld() {
 	Scene& scene{ g_World.scenes[g_World.curSceneIndex] };
 
 	InitAnimFrames();
-	InitCharacters(scene);
+	InitCharacters(scene, g_World.curSceneIndex);
 	g_Camera.Init(scene);
 	InitAudioFiles();
 }
@@ -101,7 +101,7 @@ void	InitScenes() {
 	pScene = &g_World.scenes[4];
 
 	pScene->name = "cave";
-	pScene->entryPoints["South"] = 1881;
+	pScene->entryPoints["South"] = 1880;
 	pScene->entryPoints["North"] = 375;
 	pScene->entryPoints["Spawn"] = 375;
 	pScene->nrDoors = 2;
@@ -148,6 +148,7 @@ void	Scene::Init() {
 	dst = Rectf{ 0.f, 0.f, screenWidth, screenHeight };
 	nrCols = static_cast<int>(screenWidth / tileSize);
 	nrRows = static_cast<int>(screenHeight / tileSize);
+	isCave = (name == "cave" || name == "spa");
 }
 
 void	Scene::InitCollisionMap() {
@@ -201,13 +202,22 @@ void InitAnimFrames() {
 	g_AnimFrames["driveright"] = AnimFrame{ 1, 3, 3 };
 }
 
-void InitCharacters(const Scene& scene) {
-	g_Player.Init(scene.entryPoints.at("Spawn"));
-	//g_NPC[0].Init(199, Rectf{ 0.f, 24.f, 24.f, 24.f }); // moto guy
-	g_NPC[0].Init(1, 817, Rectf{ 0.f, 48.f, 16.f, 24.f });
-	g_NPC[1].Init(5, 257, Rectf{ 0.f, 72.f, 18.f, 24.f }, false);
-	InitNPCPath(g_NPC[0], g_NPC[0].curTile, g_NPC[0].dir);
+void InitNPCs(int sceneIndex) {
+	if (sceneIndex == 1) { // swimmer is in scene 1
+		g_NPC[0].Init(1, 817, Rectf{ 0.f, 48.f, 16.f, 24.f });
+		InitNPCPath(g_NPC[0], g_NPC[0].curTile, g_NPC[0].dir);
+	}
+	else if (sceneIndex == 5) { // god is in scene 5
+		g_NPC[1].Init(5, 257, Rectf{ 0.f, 72.f, 18.f, 24.f }, false);
+	}
+	else if (!sceneIndex) { // moto guy is in scene 0
+		g_NPC[2].Init(0, 224, Rectf{ 0.f, 24.f, 24.f, 24.f }, true, true);
+	}
+}
 
+void InitCharacters(const Scene& scene, int sceneIndex) {
+	g_Player.Init(scene.entryPoints.at("Spawn"));
+	InitNPCs(sceneIndex);
 }
 
 void Player::Init(int entryPoint) {
@@ -227,7 +237,7 @@ void Player::Init(int entryPoint) {
 	dir = Point2f{ 0.f, 1.f };
 }
 
-void NPC::Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving) {
+void NPC::Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving, bool isMoto) {
 	startTile = tile;
 	curTile = tile;
 	targetTile = tile;
@@ -239,7 +249,6 @@ void NPC::Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving)
 		dimensions.width * Camera::zoom,
 		dimensions.height * Camera::zoom
 	};
-	//isMoto = true; // pass as argument
 	isLooping = true;
 	curAnimFrame = g_AnimFrames["walkdown"];
 	if (isMoto)
@@ -253,6 +262,7 @@ void NPC::Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving)
 		dimensions.height
 	};
 	this->isMoving = isMoving;
+	this->isMoto = isMoto;
 	dir = Point2f{ 1.f, 0.f };
 }
 
@@ -531,6 +541,7 @@ void	UpdateOverworld(float elapsedSec) {
 	}
 
 	for (NPC& npc : g_NPC) {
+		if (npc.sceneIndex != g_World.curSceneIndex) continue;
 		if (npc.isMoto) {
 			npc.Drive();
 			npc.UpdatePos(elapsedSec, g_World.moveSpeed, Scene::tileSize);
@@ -740,7 +751,7 @@ void	Scene::UpdateAnimTextureFrames() {
 		animTextureFrames.sea.index = (animTextureFrames.sea.index + 1) % animTextureFrames.sea.end;
 		animTextureFrames.rock.index = (animTextureFrames.rock.index + 1) % animTextureFrames.rock.end;
 		animTextureFrames.flower.index = (animTextureFrames.flower.index + 1) % animTextureFrames.flower.end;
-		animTextureFrames.smoke.index = (animTextureFrames.smoke.index + 1) % animTextureFrames.smoke.end;	
+		animTextureFrames.smoke.index = (animTextureFrames.smoke.index + 1) % animTextureFrames.smoke.end;
 	}
 }
 
@@ -775,11 +786,20 @@ void UpdateScene(Camera& camera, Player& player) {
 	player.isMoving = false;
 
 	const Door door{ GetDoor() };
+	const bool prevIsCave{ Scene::isCave };
 
 	g_World.curSceneIndex = door.targetSceneId;
 
+	// change the music if change environment
 	pScene = &g_World.scenes[g_World.curSceneIndex];
 	pScene->Init();
+	
+	if (!prevIsCave && Scene::isCave) {
+		PlayMusicOverworld();
+	}
+
+
+	InitNPCs(g_World.curSceneIndex);
 
 	player.curTile = pScene->entryPoints[door.targetEntryId];
 	player.dst.left = GetCol(player.curTile, Scene::nrCols) * Scene::tileSize;
@@ -830,7 +850,7 @@ bool NPC::IsPlayerInRange(const Player& player) {
 }
 
 void NPC::EngageBattle(Player& player) {
-	if (hasBattled || !IsPlayerInRange(player)) return;
+	if (isMoto || hasBattled || !IsPlayerInRange(player) || sceneIndex != g_World.curSceneIndex) return;
 
 	if (!player.isFrozen) {
 		player.StopWalkingAndReset(g_CurKey, g_NextKey);
@@ -1007,11 +1027,14 @@ void DrawCurrentAndTargetTiles() {
 }
 
 void NPC::DrawPath() const {
-	for (int i{}; i < 100; ++i)
+	for (int i{}; i < pathLength; ++i)
 	{
 		SetColor(g_Red);
+
 		FillRect(PosFromTile(path[i]).x - g_Camera.pos.x, PosFromTile(path[i]).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
+		std::cout << path[i] << " ";
 	}
+	std::cout << "\n";
 }
 
 void PrintTileIndex(float x, float y) {
