@@ -172,9 +172,9 @@ Pokemon
 			100.f,
 			300.f
 	},
-	g_Laxman
+	g_Gyaridos
 	{
-		"Laxman",
+		"Gyaridos",
 		g_Tackle,
 			50.f,
 			100.f
@@ -212,12 +212,12 @@ bool
 
 utils::Texture
 	g_BackgroundTexture{},
-	g_LaxManTexture{},
+	g_GyaridosTexture{},
 	g_InfoAllyPokemonTexture{},
 	g_GodmoongussTexture{},
 	g_AttackTexture{},
 	g_GodmoongussAttackText{},
-	g_LaxAttackText{},
+	g_GyaridosAttackText{},
 	g_WaitText{},
 	g_ItemText{},
 	g_SwitchText{},

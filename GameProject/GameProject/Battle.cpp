@@ -25,12 +25,11 @@ void InitMusic()
 void PlayMusicBattle() {
 	PlayMusic(g_Noises.g_GodmungussBattleMusic);
 }
-
 void InitSprites()
 {
 	TextureFromFile("Resources/BackgroundCave.png", g_BackgroundTexture);
 	TextureFromFile("Resources/FightingOptions.png", g_FightingOptionsTexture);
-	TextureFromFile("Resources/LaxMan.png", g_LaxManTexture);
+	TextureFromFile("Resources/Gyaridos.png", g_GyaridosTexture);
 	TextureFromFile("Resources/InfoAllyPokemon.png", g_InfoAllyPokemonTexture);
 	TextureFromFile("Resources/InfoEnemyPokemon.png", g_InfoEnemyPokemonTexture);
 	TextureFromFile("Resources/GodmoongussColor.png", g_GodmoongussTexture);
@@ -41,15 +40,15 @@ void InitSprites()
 void InitText()
 {
 
-	TextureFromString("LaxMan Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_LaxAttackText);
-	TextureFromString("Godmunguss Retaliates with an attack on Laxman", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
+	TextureFromString("Gyaridos Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaridosAttackText);
+	TextureFromString("Godmunguss Retaliates with an attack on Gyaridos", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
 	TextureFromString("Waiting for Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_WaitText);
-	TextureFromString("LaxMan healed with an item", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemText);
+	TextureFromString("Gyaridos healed with an item", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemText);
 	TextureFromString("You don't have any items left", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemDoneText);
 	TextureFromString("Your HP is full", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_NotFirstTurnText);
 	TextureFromString("You can't run from a god", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_RunText);
 	TextureFromString("You don't have pokemon to switch to", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 1.f,1.f,1.f,1.f }, g_SwitchText);
-	TextureFromString("Laxman has fainted", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_FaintText);
+	TextureFromString("Gyaridos has fainted", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_FaintText);
 
 	std::cout << "Music and sprites by Jasper Bouchet" << std::endl;
 }
@@ -59,7 +58,7 @@ void InitText()
 void FreeBattle()
 {
 	DeleteTexture(g_BackgroundTexture);
-	DeleteTexture(g_LaxManTexture);
+	DeleteTexture(g_GyaridosTexture);
 	DeleteTexture(g_InfoAllyPokemonTexture);
 	DeleteTexture(g_GodmoongussTexture);
 	DeleteTexture(g_AttackTexture);
@@ -90,85 +89,85 @@ void HandleKeyUpBattle(SDL_Keycode key)
 		{
 			switch (key)
 			{
-				case::SDLK_RIGHT:
-					if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::pokemon)
-					{
-						PlaySoundEffect(g_Noises.g_ArrowMove);
-						arrowSpritePositionFightingOptions.x += g_HalfWidth * 0.45f;
-						if (CurrentFightingOption == FightingOptions::fight)
-						{
-							CurrentFightingOption = FightingOptions::bag;
-						}
-						else if (CurrentFightingOption == FightingOptions::pokemon)
-						{
-							CurrentFightingOption = FightingOptions::run;
-						}
-					}
-					break;
-				case::SDLK_LEFT:
-					if (CurrentFightingOption == FightingOptions::run || CurrentFightingOption == FightingOptions::bag)
-					{
-						PlaySoundEffect(g_Noises.g_ArrowMove);
-						arrowSpritePositionFightingOptions.x -= g_HalfWidth * 0.45f;
-						if (CurrentFightingOption == FightingOptions::run)
-						{
-							CurrentFightingOption = FightingOptions::pokemon;
-						}
-						else if (CurrentFightingOption == FightingOptions::bag)
-						{
-							CurrentFightingOption = FightingOptions::fight;
-						}
-					}
-					break;
-				case::SDLK_DOWN:
-					if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::bag)
-					{
-						PlaySoundEffect(g_Noises.g_ArrowMove);
-						arrowSpritePositionFightingOptions.y += g_HeightOfTextBlock / 3.f;
-						if (CurrentFightingOption == FightingOptions::fight)
-						{
-							CurrentFightingOption = FightingOptions::pokemon;
-						}
-						else if (CurrentFightingOption == FightingOptions::bag)
-						{
-							CurrentFightingOption = FightingOptions::run;
-						}
-					}
-					break;
-				case::SDLK_UP:
-					if (CurrentFightingOption == FightingOptions::pokemon || CurrentFightingOption == FightingOptions::run)
-					{
-						PlaySoundEffect(g_Noises.g_ArrowMove);
-						arrowSpritePositionFightingOptions.y -= g_HeightOfTextBlock / 3.f;
-						if (CurrentFightingOption == FightingOptions::pokemon)
-						{
-							CurrentFightingOption = FightingOptions::fight;
-						}
-						else if (CurrentFightingOption == FightingOptions::run)
-						{
-							CurrentFightingOption = FightingOptions::bag;
-						}
-					}
-					break;
-				case::SDLK_SPACE:
+			case::SDLK_RIGHT:
+				if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::pokemon)
+				{
 					PlaySoundEffect(g_Noises.g_ArrowMove);
+					arrowSpritePositionFightingOptions.x += g_HalfWidth * 0.45f;
 					if (CurrentFightingOption == FightingOptions::fight)
 					{
-						g_PickingMoves = true;
-					}
-					else if (CurrentFightingOption == FightingOptions::bag)
-					{
-						g_Item = true;
+						CurrentFightingOption = FightingOptions::bag;
 					}
 					else if (CurrentFightingOption == FightingOptions::pokemon)
 					{
-						g_Switch = true;
+						CurrentFightingOption = FightingOptions::run;
+					}
+				}
+				break;
+			case::SDLK_LEFT:
+				if (CurrentFightingOption == FightingOptions::run || CurrentFightingOption == FightingOptions::bag)
+				{
+					PlaySoundEffect(g_Noises.g_ArrowMove);
+					arrowSpritePositionFightingOptions.x -= g_HalfWidth * 0.45f;
+					if (CurrentFightingOption == FightingOptions::run)
+					{
+						CurrentFightingOption = FightingOptions::pokemon;
+					}
+					else if (CurrentFightingOption == FightingOptions::bag)
+					{
+						CurrentFightingOption = FightingOptions::fight;
+					}
+				}
+				break;
+			case::SDLK_DOWN:
+				if (CurrentFightingOption == FightingOptions::fight || CurrentFightingOption == FightingOptions::bag)
+				{
+					PlaySoundEffect(g_Noises.g_ArrowMove);
+					arrowSpritePositionFightingOptions.y += g_HeightOfTextBlock / 3.f;
+					if (CurrentFightingOption == FightingOptions::fight)
+					{
+						CurrentFightingOption = FightingOptions::pokemon;
+					}
+					else if (CurrentFightingOption == FightingOptions::bag)
+					{
+						CurrentFightingOption = FightingOptions::run;
+					}
+				}
+				break;
+			case::SDLK_UP:
+				if (CurrentFightingOption == FightingOptions::pokemon || CurrentFightingOption == FightingOptions::run)
+				{
+					PlaySoundEffect(g_Noises.g_ArrowMove);
+					arrowSpritePositionFightingOptions.y -= g_HeightOfTextBlock / 3.f;
+					if (CurrentFightingOption == FightingOptions::pokemon)
+					{
+						CurrentFightingOption = FightingOptions::fight;
 					}
 					else if (CurrentFightingOption == FightingOptions::run)
 					{
-						g_Run = true;
+						CurrentFightingOption = FightingOptions::bag;
 					}
-					break;
+				}
+				break;
+			case::SDLK_SPACE:
+				PlaySoundEffect(g_Noises.g_ArrowMove);
+				if (CurrentFightingOption == FightingOptions::fight)
+				{
+					g_PickingMoves = true;
+				}
+				else if (CurrentFightingOption == FightingOptions::bag)
+				{
+					g_Item = true;
+				}
+				else if (CurrentFightingOption == FightingOptions::pokemon)
+				{
+					g_Switch = true;
+				}
+				else if (CurrentFightingOption == FightingOptions::run)
+				{
+					g_Run = true;
+				}
+				break;
 			}
 		}
 		else
@@ -306,7 +305,7 @@ void DrawBattle()
 		g_WindowWidth,
 		g_HeightOfTextBlock
 	},
-	destinationAllyPokemon
+		destinationAllyPokemon
 	{
 		g_AllyPokemon.position.x,
 		g_AllyPokemon.position.y,
@@ -328,7 +327,7 @@ void DrawBattle()
 		g_WindowHeight * 0.1f,
 	};
 	DrawTexture(g_BackgroundTexture, destinationBackground);
-	DrawTexture(g_LaxManTexture, destinationAllyPokemon);
+	DrawTexture(g_GyaridosTexture, destinationAllyPokemon);
 	DrawTexture(g_GodmoongussTexture, destinationEnemyPokemon);
 	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
@@ -353,8 +352,8 @@ void DrawBattle()
 	}
 	if (g_AllyPokemon.attackTextureIsOn == true)
 	{
-		DrawTexture(g_LaxAttackText, Point2f{
-				g_WindowWidth / 2 - g_LaxAttackText.width / 2,
+		DrawTexture(g_GyaridosAttackText, Point2f{
+				g_WindowWidth / 2 - g_GyaridosAttackText.width / 2,
 				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
 	}
@@ -408,11 +407,11 @@ void DrawBattle()
 			});
 	}
 	float alphaEnemy{ g_Godmoonguss.animHP / g_Godmoonguss.total };
-	float alphaAlly{ g_Laxman.animHP / g_Laxman.total };
+	float alphaAlly{ g_Gyaridos.animHP / g_Gyaridos.total };
 	if ((g_HPBarEnemyPokemon.width * alphaEnemy) > (g_HPBarEnemyPokemon.width / 2))
 	{
 		SetColor(0.44f, 0.97f, 0.66f);
-		FillRect(g_HPBarEnemyPokemon.position.x, g_HPBarEnemyPokemon.position.y, (g_HPBarEnemyPokemon.width* alphaEnemy), g_HPBarEnemyPokemon.height);
+		FillRect(g_HPBarEnemyPokemon.position.x, g_HPBarEnemyPokemon.position.y, (g_HPBarEnemyPokemon.width * alphaEnemy), g_HPBarEnemyPokemon.height);
 	}
 	else if ((g_HPBarEnemyPokemon.width * alphaEnemy) <= (g_HPBarEnemyPokemon.width / 2) &&
 		(g_HPBarEnemyPokemon.width * alphaEnemy) > (g_HPBarEnemyPokemon.width / 4))
@@ -490,7 +489,7 @@ void Attack(float elapsedSec)
 			g_SoundDone = true;
 		}
 		Damage(g_Godmoonguss, g_Tackle);
-		HPBarMath(g_Godmoonguss,elapsedSec);
+		HPBarMath(g_Godmoonguss, elapsedSec);
 		break;
 	case Phases::phase_wait:
 		g_AllyPokemon.attackTextureIsOn = false;
@@ -512,22 +511,22 @@ void Attack(float elapsedSec)
 			PlaySoundEffect(g_Noises.g_DamageTaken);
 			g_SoundDone = true;
 		}
-		Damage(g_Laxman, g_StrongTackle);
-		HPBarMath(g_Laxman, elapsedSec);
+		Damage(g_Gyaridos, g_StrongTackle);
+		HPBarMath(g_Gyaridos, elapsedSec);
 		break;
 	case Phases::phase_done:
 		g_EnemyPokemon.attackTextureIsOn = false;
 		if (g_Attack)
 		{
-			if (g_Laxman.actual <= 0.f)
+			if (g_Gyaridos.actual <= 0.f)
 			{
-				g_Laxman.actual = 0.f;
+				g_Gyaridos.actual = 0.f;
 				g_FightingOptionsTextureIsOn = false;
 				g_FaintTextureIsOn = true;
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
 			g_notFirstTurn = true;
-			if (g_Laxman.actual != 0.f)
+			if (g_Gyaridos.actual != 0.f)
 			{
 				g_FightingOptionsTextureIsOn = true;
 			}
@@ -538,9 +537,9 @@ void Attack(float elapsedSec)
 }
 void Item(float elapsedSec)
 {
-	
 
-	
+
+
 	if (g_notFirstTurn == true)
 	{
 		if (g_ItemOnlyOnce == false)
@@ -548,8 +547,8 @@ void Item(float elapsedSec)
 			switch (ItemSequence)
 			{
 			case Phases::phase_hpbarally_up:
-				Heal(g_Laxman);
-				HPBarMath(g_Laxman, elapsedSec);
+				Heal(g_Gyaridos);
+				HPBarMath(g_Gyaridos, elapsedSec);
 				g_ItemTextureIsOn = true;
 				g_FightingOptionsTextureIsOn = false;
 				break;
@@ -573,8 +572,8 @@ void Item(float elapsedSec)
 					PlaySoundEffect(g_Noises.g_DamageTaken);
 					g_SoundDone = true;
 				}
-				Damage(g_Laxman, g_StrongTackle);
-				HPBarMath(g_Laxman, elapsedSec);
+				Damage(g_Gyaridos, g_StrongTackle);
+				HPBarMath(g_Gyaridos, elapsedSec);
 				break;
 			case Phases::phase_done:
 				g_EnemyPokemon.attackTextureIsOn = false;
