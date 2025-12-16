@@ -49,15 +49,6 @@ enum class MoveOptions
 	bottomright
 };
 
-enum class HydroPumpModes
-{
-	one,
-	two,
-	three,
-	four,
-	cleanup
-};
-
 
 struct Moves
 {
@@ -216,7 +207,9 @@ Pokemon
 			300.f
 	};
 int
-	g_CurrentHydroPumpIndex{ 1 };
+	g_CurrentHydroPumpIndex{ 1 },
+	g_CurrentDragonRageIndex{ 1 };
+
 float
 	g_SpeedAttack{ 0.f },
 	g_PhaseWaitCounter{ 0.f },
@@ -247,6 +240,7 @@ bool
 	g_PickingMoves{},
 	g_SurfIsOn{},
 	g_HydroPumpIsOn{},
+	g_DragonRageIsOn{},
 	g_SoundDone{};
 
 enum class TextureType
@@ -293,6 +287,7 @@ utils::Texture
 	g_HyperBeamText{},
 	g_SurfTexture{},
 	g_HydroPumpTexture{},
+	g_DragonRageTexture{},
 	g_MoveSurfTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
@@ -301,14 +296,15 @@ Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_Hei
 Point2f g_BackgroundPosition{ 0.f,0.f };
 Point2f g_Move1Position{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,g_WindowHeight - g_HeightOfTextBlock * 0.80f };
 Point2f g_SurfPosition{ 0.f,g_WindowHeight * 0.6f };
-Point2f g_HydroPumpDestinationPosition{ -900.f,-900.f };
+Point2f g_HydroPumpDestinationPosition{ 0.f,0.f };
 Point2f g_HydroPumpSourcePosition{ 0.f,0.f };
+Point2f g_DragonRageDestinationPosition{ 0.f,0.f };
+Point2f g_DragonRageSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
 FightingOptions CurrentFightingOption{ FightingOptions::fight };
 MoveOptions CurrentMove{ MoveOptions::topleft };
-HydroPumpModes CurrentMode{ HydroPumpModes::one };
 #pragma endregion Variables
 
 #pragma region Functions
@@ -333,7 +329,7 @@ void	Attack(float elapsedSec, Moves& currentMove);
 void	Item(float elapsedSec);
 void	Switch(float elapsedSec);
 void	RunAway(float elapsedSec);
-void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
+void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY, float floatattackWidth, float floatattackheight);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
 void	Wait(float elapsedSec);
 void	Damage(Pokemon& hpBarForDamage, Moves& move);

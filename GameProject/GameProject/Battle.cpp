@@ -40,6 +40,7 @@ void InitSprites()
 	TextureFromFile("Resources/MovesOptions.png", g_MovesTexture);
 	TextureFromFile("Resources/Surf.png", g_SurfTexture);
 	TextureFromFile("Resources/HydroPump.png", g_HydroPumpTexture);
+	TextureFromFile("Resources/DragonRage.png", g_DragonRageTexture);
 }
 void InitText()
 {
@@ -276,6 +277,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				else if (CurrentMove == MoveOptions::bottomleft)
 				{
 					g_Attack = true;
+					g_DragonRageIsOn = true;
 				}
 				else if (CurrentMove == MoveOptions::bottomright)
 				{
@@ -359,6 +361,20 @@ void DrawBattle()
 	{
 		g_HydroPumpDestinationPosition.x,
 		g_HydroPumpDestinationPosition.y,
+		g_EnemyPokemon.position.width,
+		g_EnemyPokemon.position.height,
+	},
+	sourceDragonRage
+	{
+		g_DragonRageSourcePosition.x,
+		g_DragonRageSourcePosition.y,
+		g_DragonRageTexture.width,
+		g_DragonRageTexture.height / 4
+	},
+		destinationDragonRage
+	{
+		g_DragonRageDestinationPosition.x,
+		g_DragonRageDestinationPosition.y,
 		g_EnemyPokemon.position.width,
 		g_EnemyPokemon.position.height,
 	};
@@ -456,6 +472,11 @@ void DrawBattle()
 		g_HydroPumpSourcePosition.y = g_CurrentHydroPumpIndex* g_HydroPumpTexture.height / 4;
 		DrawTexture(g_HydroPumpTexture, destinationHydroPump,sourceHydroPump);
 	}
+	if (g_DragonRageIsOn)
+	{
+		g_DragonRageSourcePosition.y = g_CurrentDragonRageIndex * g_DragonRageTexture.height / 5;
+		DrawTexture(g_DragonRageTexture, destinationDragonRage, sourceDragonRage);
+	}
 	DrawHPBar();
 
 }
@@ -545,7 +566,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 		g_PickingMoves = false;
 		break;
 	case Phases::phase_attack:
-		AttackEffect(elapsedSec, g_BossPokemon.position.left, g_BossPokemon.position.top);
+		AttackEffect(elapsedSec, g_BossPokemon.position.left, g_BossPokemon.position.top, g_BossPokemon.position.width, g_BossPokemon.position.height);
 		break;
 	case Phases::phase_enemypokemon_move:
 		Move(elapsedSec, g_BossPokemon, 1);
@@ -568,7 +589,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 		g_EnemyPokemon.attackTextureIsOn = true;
 		break;
 	case Phases::phase_attackcounter:
-		AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top);
+		AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top, g_AllyPokemon.position.width, g_AllyPokemon.position.height);
 		break;
 	case Phases::phase_allypokemoncounter_move:
 		Move(elapsedSec, g_AllyPokemon, -1);
@@ -627,7 +648,7 @@ void Item(float elapsedSec)
 				Move(elapsedSec, g_BossPokemon, -1);
 				break;
 			case Phases::phase_attackcounter:
-				AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top);
+				AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top, g_AllyPokemon.position.width, g_AllyPokemon.position.height);
 				break;
 			case Phases::phase_allypokemoncounter_move:
 				Move(elapsedSec, g_AllyPokemon, -1);
@@ -718,7 +739,7 @@ void RunAway(float elapsedSec)
 		g_FightingOptionsTextureIsOn = true;
 	}
 }
-void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
+void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY, float floatattackWidth, float floatattackheight)
 {
 	static bool attackIsntGoing{ false };
 	float frameRate{ 10.f };
@@ -751,8 +772,8 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			PlaySoundEffect(g_Noises.g_Surf);
 			g_SoundDone = true;
 		}
-		g_HydroPumpDestinationPosition.x = (attackPositionX + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
-		g_HydroPumpDestinationPosition.y = attackPositionY + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
+		g_HydroPumpDestinationPosition.x = (attackPositionX + (floatattackWidth / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
+		g_HydroPumpDestinationPosition.y = attackPositionY + (floatattackWidth / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
 			g_CurrentHydroPumpIndex = HydroPumpAnimatonTime % 4;
 		if (HydroPumpincrementation >= 1.f)
 		{
@@ -763,6 +784,29 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			g_SoundDone = false;
 		}
 		
+	}
+	else if (g_DragonRageIsOn)
+	{
+		static float DragonRageincrementation{ 0.f };
+		DragonRageincrementation += elapsedSec;
+		const int DragonRageAnimatonTime{ static_cast<int>(DragonRageincrementation * frameRate) };
+		if (!g_SoundDone)
+		{
+			PlaySoundEffect(g_Noises.g_Surf);
+			g_SoundDone = true;
+		}
+		g_DragonRageDestinationPosition.x = (attackPositionX + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
+		g_DragonRageDestinationPosition.y = attackPositionY + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
+		g_CurrentDragonRageIndex = DragonRageAnimatonTime;
+		if (DragonRageincrementation >= 1.f)
+		{
+			DragonRageincrementation = 0.f;
+			g_DragonRageSourcePosition.y = 0.f;
+			attackIsntGoing = true;
+			g_DragonRageIsOn = false;
+			g_SoundDone = false;
+		}
+
 	}
 	else if (attackIsntGoing = true)
 	{
