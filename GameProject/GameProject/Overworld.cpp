@@ -222,7 +222,6 @@ void InitCharacters(const Scene& scene, int sceneIndex) {
 
 void Player::Init(int entryPoint) {
 	curTile = entryPoint;
-	std::cout << "tile size : " << Scene::tileSize << std::endl;
 	dst = Rectf{
 		GetCol(curTile, Scene::nrCols) * Scene::tileSize,
 		GetRow(curTile, Scene::nrCols) * Scene::tileSize - Scene::tileSize / 2,

@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <mmsystem.h>
 
+void TurnOffBattle();
+
 #pragma region Init
 void InitBattle()
 {
@@ -40,6 +42,23 @@ void InitSprites()
 }
 void InitText()
 {
+	//g_GyaradosAttackText = "Gyarados Attacks Godmunguss";
+	//	g_GodmoongussAttackText = "Godmunguss Retaliates with an attack on Gyarados";
+	//	g_WaitText = "Waiting for Godmunguss";
+	//	g_ItemText = "Gyarados healed with an item";
+	//	g_ItemDoneText = "You don't have any items left";
+	//	g_NotFirstTurnText = "Your HP is full";
+	//	g_RunText = "You can't run from a god";
+	//	g_SwitchText = "You don't have pokemon to switch to";
+	//	g_FaintText = "Gyarados has fainted";
+	//	g_GyaradosNameText = "Gyarados";
+	//	g_GodmoongussNameText = "Godmoonguss";
+	//	g_SurfText = "Surf";
+	//	g_HydroPumpText = "Hydro Pump";
+	//	g_DragonRageText = "Dragon Rage";
+	//	g_HyperBeamText = "Hyper Beam";
+
+
 
 	TextureFromString("Gyarados Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaradosAttackText);
 	TextureFromString("Godmunguss Retaliates with an attack on Gyarados", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
@@ -565,6 +584,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 				g_Gyarados.actual = 0.f;
 				g_FightingOptionsTextureIsOn = false;
 				g_FaintTextureIsOn = true;
+				TurnOffBattle();
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
 			g_notFirstTurn = true;
@@ -807,6 +827,7 @@ void Damage(Pokemon& hpBarForDamage, Moves& move)
 	if (g_SavedHPDamage < 0) {
 		g_SavedHPDamage = move.damage;
 		hpBarForDamage.actual -= g_SavedHPDamage;
+		if (hpBarForDamage.actual < 0) hpBarForDamage.actual = 0;
 	}
 }
 void Heal(Pokemon& hpBarForHealing)
