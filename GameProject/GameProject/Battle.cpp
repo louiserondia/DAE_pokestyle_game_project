@@ -6,6 +6,8 @@
 #include <windows.h>
 #include <mmsystem.h>
 
+void TurnOffBattle();
+
 #pragma region Init
 void InitBattle()
 {
@@ -40,6 +42,23 @@ void InitSprites()
 }
 void InitText()
 {
+	//g_GyaradosAttackText = "Gyarados Attacks Godmunguss";
+	//	g_GodmoongussAttackText = "Godmunguss Retaliates with an attack on Gyarados";
+	//	g_WaitText = "Waiting for Godmunguss";
+	//	g_ItemText = "Gyarados healed with an item";
+	//	g_ItemDoneText = "You don't have any items left";
+	//	g_NotFirstTurnText = "Your HP is full";
+	//	g_RunText = "You can't run from a god";
+	//	g_SwitchText = "You don't have pokemon to switch to";
+	//	g_FaintText = "Gyarados has fainted";
+	//	g_GyaradosNameText = "Gyarados";
+	//	g_GodmoongussNameText = "Godmoonguss";
+	//	g_SurfText = "Surf";
+	//	g_HydroPumpText = "Hydro Pump";
+	//	g_DragonRageText = "Dragon Rage";
+	//	g_HyperBeamText = "Hyper Beam";
+
+
 
 	TextureFromString("Gyarados Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaradosAttackText);
 	TextureFromString("Godmunguss Retaliates with an attack on Gyarados", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
@@ -349,10 +368,6 @@ void DrawBattle()
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
 	DrawTexture(g_GyaradosNameText, Point2f{ destinationgInfoAllyPokemonTexture.left+ 65.f, destinationgInfoAllyPokemonTexture.top-5.f});
 	DrawTexture(g_GodmoongussNameText, Point2f{ destinationgInfoEnemyPokemonTexture.left + 20.f, destinationgInfoEnemyPokemonTexture.top - 5.f});
-	if (g_SurfIsOn)
-	{
-		DrawTexture(g_SurfTexture, destinationSurf);
-	}
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);
@@ -429,6 +444,10 @@ void DrawBattle()
 				g_WindowWidth / 2 - g_FaintText.width / 2,
 				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
+	}
+	if (g_SurfIsOn)
+	{
+		DrawTexture(g_SurfTexture, destinationSurf);
 	}
 	DrawHPBar();
 
@@ -565,6 +584,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 				g_Gyarados.actual = 0.f;
 				g_FightingOptionsTextureIsOn = false;
 				g_FaintTextureIsOn = true;
+				TurnOffBattle();
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
 			g_notFirstTurn = true;
@@ -708,6 +728,8 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			g_SurfPosition.y -= 200.f * elapsedSec;
 			if (g_SurfPosition.x >= g_WindowWidth)
 			{
+				g_SurfPosition.x = 0.f;
+				g_SurfPosition.y = g_WindowHeight * 0.6f;
 				attackIsntGoing = true;
 				g_SurfIsOn = false;
 				g_SoundDone = false;
@@ -804,6 +826,7 @@ void Damage(Pokemon& hpBarForDamage, Moves& move)
 	if (g_SavedHPDamage < 0) {
 		g_SavedHPDamage = move.damage;
 		hpBarForDamage.actual -= g_SavedHPDamage;
+		if (hpBarForDamage.actual < 0) hpBarForDamage.actual = 0;
 	}
 }
 void Heal(Pokemon& hpBarForHealing)
