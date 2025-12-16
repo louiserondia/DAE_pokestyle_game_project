@@ -15,9 +15,9 @@ void InitBattle()
 }
 void InitMusic()
 {
-	//LoadMusic(g_Noises.g_GodmungussBattleMusic, "../Resources/Godmoongus8Bit2.ogg");
 	LoadMusic(g_Noises.g_GodmungussBattleMusic, "../Resources/Godmoongus8Bit2.ogg");
 	LoadSoundEffect(g_Noises.g_ArrowMove, "../Resources/ArrowMoveSondEffect.wav");
+	LoadSoundEffect(g_Noises.g_Surf, "../Resources/SurfSound.wav");
 	LoadSoundEffect(g_Noises.g_Attack, "../Resources/AttackSoundEfffect.wav");
 	LoadSoundEffect(g_Noises.g_DamageTaken, "../Resources/DamageSoundEffect.wav");
 }
@@ -29,28 +29,35 @@ void InitSprites()
 {
 	TextureFromFile("Resources/BackgroundCave.png", g_BackgroundTexture);
 	TextureFromFile("Resources/FightingOptions.png", g_FightingOptionsTexture);
-	TextureFromFile("Resources/Gyaridos.png", g_GyaridosTexture);
+	TextureFromFile("Resources/Gyarados.png", g_GyaradosTexture);
 	TextureFromFile("Resources/InfoAllyPokemon.png", g_InfoAllyPokemonTexture);
 	TextureFromFile("Resources/InfoEnemyPokemon.png", g_InfoEnemyPokemonTexture);
 	TextureFromFile("Resources/GodmoongussColor.png", g_GodmoongussTexture);
 	TextureFromFile("Resources/ArrowforOptions.png", g_ArrowTexture);
 	TextureFromFile("Resources/Attack.png", g_AttackTexture);
 	TextureFromFile("Resources/MovesOptions.png", g_MovesTexture);
+	TextureFromFile("Resources/Surf.png", g_SurfTexture);
 }
 void InitText()
 {
 
-	TextureFromString("Gyaridos Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaridosAttackText);
-	TextureFromString("Godmunguss Retaliates with an attack on Gyaridos", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
+	TextureFromString("Gyarados Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaradosAttackText);
+	TextureFromString("Godmunguss Retaliates with an attack on Gyarados", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
 	TextureFromString("Waiting for Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_WaitText);
-	TextureFromString("Gyaridos healed with an item", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemText);
+	TextureFromString("Gyarados healed with an item", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemText);
 	TextureFromString("You don't have any items left", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemDoneText);
 	TextureFromString("Your HP is full", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_NotFirstTurnText);
 	TextureFromString("You can't run from a god", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_RunText);
 	TextureFromString("You don't have pokemon to switch to", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 1.f,1.f,1.f,1.f }, g_SwitchText);
-	TextureFromString("Gyaridos has fainted", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_FaintText);
+	TextureFromString("Gyarados has fainted", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_FaintText);
+	TextureFromString("Gyarados", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 0.f,0.f,0.f,1.f }, g_GyaradosNameText);
+	TextureFromString("Godmoonguss", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 0.f,0.f,0.f,1.f }, g_GodmoongussNameText);
+	TextureFromString("Surf", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_SurfText);
+	TextureFromString("Hydro Pump", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_HydroPumpText);
+	TextureFromString("Dragon Rage", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_DragonRageText);
+	TextureFromString("Hyper Beam", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_HyperBeamText);
 
-	std::cout << "Music and sprites by Jasper Bouchet" << std::endl;
+	std::cout << "Music and Godmoonguss sprites by Jasper Bouchet" << std::endl;
 }
 #pragma endregion Init
 
@@ -58,12 +65,12 @@ void InitText()
 void FreeBattle()
 {
 	DeleteTexture(g_BackgroundTexture);
-	DeleteTexture(g_GyaridosTexture);
+	DeleteTexture(g_GyaradosTexture);
 	DeleteTexture(g_InfoAllyPokemonTexture);
 	DeleteTexture(g_GodmoongussTexture);
 	DeleteTexture(g_AttackTexture);
 	DeleteTexture(g_GodmoongussAttackText);
-	DeleteTexture(g_LaxAttackText);
+	DeleteTexture(g_GyaradosAttackText);
 	DeleteTexture(g_WaitText);
 	DeleteTexture(g_ItemText);
 	DeleteTexture(g_SwitchText);
@@ -178,7 +185,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				if (CurrentMove == MoveOptions::topleft || CurrentMove == MoveOptions::bottomleft)
 				{
 					PlaySoundEffect(g_Noises.g_ArrowMove);
-					arrowSpritePositionMoves.x += g_HalfWidth * 0.45f;
+					arrowSpritePositionMoves.x += g_HalfWidth * 0.65f;
 					if (CurrentMove == MoveOptions::topleft)
 					{
 						CurrentMove = MoveOptions::topright;
@@ -193,7 +200,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				if (CurrentMove == MoveOptions::bottomright || CurrentMove == MoveOptions::topright)
 				{
 					PlaySoundEffect(g_Noises.g_ArrowMove);
-					arrowSpritePositionMoves.x -= g_HalfWidth * 0.45f;
+					arrowSpritePositionMoves.x -= g_HalfWidth * 0.65f;
 					if (CurrentMove == MoveOptions::bottomright)
 					{
 						CurrentMove = MoveOptions::bottomleft;
@@ -239,6 +246,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				if (CurrentMove == MoveOptions::topleft)
 				{
 					g_Attack = true;
+					g_SurfIsOn = true;
 				}
 				else if (CurrentMove == MoveOptions::topright)
 				{
@@ -305,12 +313,12 @@ void DrawBattle()
 		g_WindowWidth,
 		g_HeightOfTextBlock
 	},
-		destinationAllyPokemon
+	destinationAllyPokemon
 	{
 		g_AllyPokemon.position.x,
 		g_AllyPokemon.position.y,
-		g_WindowWidth * 0.3f,
-		g_HeightOfTextBlock,
+		g_WindowWidth * 0.25f,
+		g_WindowWidth * 0.25f,
 	},
 	destinationEnemyPokemon
 	{
@@ -325,14 +333,26 @@ void DrawBattle()
 		attackSpriteSize.y,
 		g_WindowWidth * 0.1f,
 		g_WindowHeight * 0.1f,
+	},
+	destinationSurf
+	{
+		g_SurfPosition.x,
+		g_SurfPosition.y,
+		g_WindowWidth * 0.4f,
+		g_WindowHeight - (g_WindowHeight * 0.6f),
 	};
 	DrawTexture(g_BackgroundTexture, destinationBackground);
-	DrawTexture(g_GyaridosTexture, destinationAllyPokemon);
+	DrawTexture(g_GyaradosTexture, destinationAllyPokemon);
 	DrawTexture(g_GodmoongussTexture, destinationEnemyPokemon);
 	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
-
+	DrawTexture(g_GyaradosNameText, Point2f{ destinationgInfoAllyPokemonTexture.left+ 65.f, destinationgInfoAllyPokemonTexture.top-5.f});
+	DrawTexture(g_GodmoongussNameText, Point2f{ destinationgInfoEnemyPokemonTexture.left + 20.f, destinationgInfoEnemyPokemonTexture.top - 5.f});
+	if (g_SurfIsOn)
+	{
+		DrawTexture(g_SurfTexture, destinationSurf);
+	}
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);
@@ -342,6 +362,10 @@ void DrawBattle()
 	{
 		DrawTexture(g_MovesTexture, destinationMoves);
 		DrawTexture(g_ArrowTexture, destinationArrowMovesTexture);
+		DrawTexture(g_SurfText, g_Move1Position);
+		DrawTexture(g_HydroPumpText, Point2f{ (g_Move1Position.x + g_HalfWidth * 0.65f),g_Move1Position.y });
+		DrawTexture(g_DragonRageText, Point2f{ g_Move1Position.x,(g_Move1Position.y + g_HeightOfTextBlock / 3.f) });
+		DrawTexture(g_HyperBeamText, Point2f{ (g_Move1Position.x + g_HalfWidth * 0.65f),(g_Move1Position.y + g_HeightOfTextBlock / 3.f) });
 	}
 	if (g_EnemyPokemon.attackTextureIsOn == true)
 	{
@@ -352,8 +376,8 @@ void DrawBattle()
 	}
 	if (g_AllyPokemon.attackTextureIsOn == true)
 	{
-		DrawTexture(g_GyaridosAttackText, Point2f{
-				g_WindowWidth / 2 - g_GyaridosAttackText.width / 2,
+		DrawTexture(g_GyaradosAttackText, Point2f{
+				g_WindowWidth / 2 - g_GyaradosAttackText.width / 2,
 				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
 	}
@@ -406,8 +430,14 @@ void DrawBattle()
 				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
 	}
+	DrawHPBar();
+
+}
+
+void DrawHPBar()
+{
 	float alphaEnemy{ g_Godmoonguss.animHP / g_Godmoonguss.total };
-	float alphaAlly{ g_Gyaridos.animHP / g_Gyaridos.total };
+	float alphaAlly{ g_Gyarados.animHP / g_Gyarados.total };
 	if ((g_HPBarEnemyPokemon.width * alphaEnemy) > (g_HPBarEnemyPokemon.width / 2))
 	{
 		SetColor(0.44f, 0.97f, 0.66f);
@@ -440,9 +470,6 @@ void DrawBattle()
 		SetColor(0.97f, 0.34f, 0.2f);
 		FillRect(g_HPBarAllyPokemon.position.x, g_HPBarAllyPokemon.position.y, (g_HPBarAllyPokemon.width * alphaAlly), g_HPBarAllyPokemon.height);
 	}
-
-
-
 }
 #pragma endregion Draw
 
@@ -450,7 +477,22 @@ void DrawBattle()
 void UpdateBattle(float elapsedSec) {
 	if (g_Attack)
 	{
-		Attack(elapsedSec);
+		if (CurrentMove == MoveOptions::topleft)
+		{
+			Attack(elapsedSec,g_Surf);
+		}
+		else if (CurrentMove == MoveOptions::topright)
+		{
+			Attack(elapsedSec,g_DragonRage);
+		}
+		else if (CurrentMove == MoveOptions::bottomleft)
+		{
+			Attack(elapsedSec,g_HydroPump);
+		}
+		else if (CurrentMove == MoveOptions::bottomright)
+		{
+			Attack(elapsedSec,g_HyperBeam);
+		}
 	}
 	if (g_Item)
 	{
@@ -465,7 +507,7 @@ void UpdateBattle(float elapsedSec) {
 		RunAway(elapsedSec);
 	}
 }
-void Attack(float elapsedSec)
+void Attack(float elapsedSec, Moves& currentMove)
 {
 
 	switch (AttackSequence)
@@ -488,7 +530,7 @@ void Attack(float elapsedSec)
 			PlaySoundEffect(g_Noises.g_DamageTaken);
 			g_SoundDone = true;
 		}
-		Damage(g_Godmoonguss, g_Tackle);
+		Damage(g_Godmoonguss, currentMove);
 		HPBarMath(g_Godmoonguss, elapsedSec);
 		break;
 	case Phases::phase_wait:
@@ -511,22 +553,22 @@ void Attack(float elapsedSec)
 			PlaySoundEffect(g_Noises.g_DamageTaken);
 			g_SoundDone = true;
 		}
-		Damage(g_Gyaridos, g_StrongTackle);
-		HPBarMath(g_Gyaridos, elapsedSec);
+		Damage(g_Gyarados, g_DragonRage);
+		HPBarMath(g_Gyarados, elapsedSec);
 		break;
 	case Phases::phase_done:
 		g_EnemyPokemon.attackTextureIsOn = false;
 		if (g_Attack)
 		{
-			if (g_Gyaridos.actual <= 0.f)
+			if (g_Gyarados.actual <= 0.f)
 			{
-				g_Gyaridos.actual = 0.f;
+				g_Gyarados.actual = 0.f;
 				g_FightingOptionsTextureIsOn = false;
 				g_FaintTextureIsOn = true;
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
 			g_notFirstTurn = true;
-			if (g_Gyaridos.actual != 0.f)
+			if (g_Gyarados.actual != 0.f)
 			{
 				g_FightingOptionsTextureIsOn = true;
 			}
@@ -547,8 +589,8 @@ void Item(float elapsedSec)
 			switch (ItemSequence)
 			{
 			case Phases::phase_hpbarally_up:
-				Heal(g_Gyaridos);
-				HPBarMath(g_Gyaridos, elapsedSec);
+				Heal(g_Gyarados);
+				HPBarMath(g_Gyarados, elapsedSec);
 				g_ItemTextureIsOn = true;
 				g_FightingOptionsTextureIsOn = false;
 				break;
@@ -572,8 +614,8 @@ void Item(float elapsedSec)
 					PlaySoundEffect(g_Noises.g_DamageTaken);
 					g_SoundDone = true;
 				}
-				Damage(g_Gyaridos, g_StrongTackle);
-				HPBarMath(g_Gyaridos, elapsedSec);
+				Damage(g_Gyarados, g_DragonRage);
+				HPBarMath(g_Gyarados, elapsedSec);
 				break;
 			case Phases::phase_done:
 				g_EnemyPokemon.attackTextureIsOn = false;
@@ -581,8 +623,9 @@ void Item(float elapsedSec)
 				{
 					g_ItemOnlyOnce = true;
 					g_FightingOptionsTextureIsOn = true;
-					if (g_HPBarAllyPokemon.width <= 0.f)
+					if (g_Gyarados.actual <= 0.f)
 					{
+						g_Gyarados.actual = 0.f;
 						g_FightingOptionsTextureIsOn = false;
 						g_FaintTextureIsOn = true;
 					}
@@ -653,32 +696,26 @@ void RunAway(float elapsedSec)
 }
 void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
 {
-	float attackIncrimintation{ 60.f };
-	float attackDistance{ (g_WindowWidth * 0.32f)/3.f };
-	g_SpeedAttack += attackIncrimintation * elapsedSec;
-	if (g_SpeedAttack < 30.f)
+	static bool attackIsntGoing{false};
+	if (g_SurfIsOn)
 	{
-		PlaySoundEffect(g_Noises.g_Attack);
-		attackSpriteSize.x = attackPositionX;
-		attackSpriteSize.y = attackPositionY;
+		if (!g_SoundDone)
+		{
+			PlaySoundEffect(g_Noises.g_Surf);
+			g_SoundDone = true;
+		}
+			g_SurfPosition.x += 400.f * elapsedSec;
+			g_SurfPosition.y -= 200.f * elapsedSec;
+			if (g_SurfPosition.x >= g_WindowWidth)
+			{
+				attackIsntGoing = true;
+				g_SurfIsOn = false;
+				g_SoundDone = false;
+			}
 	}
-	else if (g_SpeedAttack < 50.f)
-	{
-		PlaySoundEffect(g_Noises.g_Attack);
-		attackSpriteSize.x = attackPositionX + attackDistance;
-		attackSpriteSize.y = attackPositionY + attackDistance;
-	}
-	else if (g_SpeedAttack < 70.f)
-	{
-		PlaySoundEffect(g_Noises.g_Attack);
-		attackSpriteSize.x = attackPositionX + (attackDistance * 2);
-		attackSpriteSize.y = attackPositionY + (attackDistance * 2);
-	}
-	else
+	else if (attackIsntGoing = true)
 	{
 		g_SpeedAttack = 0.f;
-		attackSpriteSize.x = (g_WindowWidth * -0.99375f);
-		attackSpriteSize.y = (g_WindowHeight * -0.025f);
 		if (g_Attack)
 		{
 			if (AttackSequence == Phases::phase_attack || AttackSequence == Phases::phase_attackcounter)
