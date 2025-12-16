@@ -236,11 +236,7 @@ Moves
 	g_HydroPump
 	{
 		"HydroPump",
-<<<<<<< HEAD
 		(static_cast<float>(rand() % 51) + 10.f)
-=======
-		70.f
->>>>>>> dc8a60c010f03dbd69b4657cef90963f1a6726c1
 	},
 	g_DragonRage
 	{
@@ -301,22 +297,7 @@ Pokemon
 			250.f
 	};
 
-<<<<<<< HEAD
 Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Godmoonguss ,g_Gyarados };
-=======
-utils::Texture
-	g_BackgroundTexture{},
-	g_GyaradosTexture{},
-	g_InfoAllyPokemonTexture{},
-	g_GodmoongussTexture{},
-	g_AttackTexture{},
-	g_FightingOptionsTexture{},
-	g_InfoEnemyPokemonTexture{},
-	g_ArrowTexture{},
-	g_MovesTexture{},
-	g_SurfTexture{},
-	g_MoveSurfTexture{};
->>>>>>> dc8a60c010f03dbd69b4657cef90963f1a6726c1
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
