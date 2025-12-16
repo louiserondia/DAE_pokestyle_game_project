@@ -88,6 +88,7 @@ struct Scene {
 	void	InitCollisionMap();
 	void	InitAnimTextureMap();
 
+
 	void	DrawSea() const;
 	void	DrawRocks() const;
 	void	DrawFlowers() const;

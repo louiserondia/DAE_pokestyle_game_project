@@ -97,7 +97,7 @@ struct Pokemon
 
 struct PokemonInBattle
 {
-	Point2f
+	Rectf
 		position{};
 	bool
 		attackTextureIsOn{};
@@ -122,26 +122,32 @@ Sounds
 PokemonInBattle
 	g_AllyPokemon
 	{
-		Point2f
+		Rectf
 		{
 			g_WindowWidth / 10,
-			g_WindowHeight - (g_HeightOfTextBlock + (g_WindowWidth * 0.25f))
+			g_WindowHeight - (g_HeightOfTextBlock + (g_WindowWidth * 0.25f)),
+			g_WindowWidth * 0.25f,
+			g_WindowWidth * 0.25f
 		}
 	},
 	g_EnemyPokemon
 	{
-		Point2f
+		Rectf
 		{
 		(g_WindowWidth / 2) + 50.f,
-		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
+		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f)),
+		g_WindowWidth * 0.25f,
+		g_WindowWidth * 0.25f
 		}
 	},
 	g_BossPokemon
 	{
-		Point2f
+		Rectf
 		{
 		(g_WindowWidth * 0.575f),
-		0.f
+		0.f,
+		g_WindowWidth * 0.32f,
+		g_WindowWidth * 0.32f
 		}
 	};
 
@@ -205,7 +211,7 @@ Pokemon
 		g_DragonRage,
 		g_HyperBeam,
 			100.f,
-			300.f
+			500.f
 	},
 	g_Gyarados
 	{
@@ -215,8 +221,12 @@ Pokemon
 		g_DragonRage,
 		g_HyperBeam,
 			50.f,
-			100.f
+			300.f
 	};
+int
+	g_CurrentHydroPumpIndex{ 1 },
+	g_CurrentDragonRageIndex{ 1 };
+
 float
 	g_SpeedAttack{ 0.f },
 	g_PhaseWaitCounter{ 0.f },
@@ -225,8 +235,8 @@ float
 	g_MovementAnimAlpha{ 0.f },
 	g_HPBarTarget{},
 	g_AnimationTime{ 1.f / 0.6f },
-	g_SavedHPDamage{ -1 },
-	g_SavedHPHeal{ -1 };
+	g_SavedHPDamage{ -1.f },
+	g_SavedHPHeal{ -1.f };
 
 bool
 	g_Attack{},
@@ -246,8 +256,26 @@ bool
 	g_IsHeal{},
 	g_PickingMoves{},
 	g_SurfIsOn{},
+	g_HydroPumpIsOn{},
+	g_DragonRageIsOn{},
 	g_SoundDone{};
 
+enum class TextureType
+{
+	None = -1,
+	Background,
+	Gyarados,
+	Count
+};
+
+std::string
+	g_TextureFileNameArray[int(TextureType::Count)]
+	{
+		"Resources/BackgroundCave.png",
+		"Resources/BackgroundCave.png"
+	};
+utils::Texture
+	g_TextureArray[int( TextureType::Count ) ];
 
 utils::Texture
 	g_BackgroundTexture{},
@@ -267,6 +295,10 @@ Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f)
 Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock *0.75f };
 Point2f g_BackgroundPosition{ 0.f,0.f };
 Point2f g_SurfPosition{ 0.f,g_WindowHeight * 0.6f };
+Point2f g_HydroPumpDestinationPosition{ 0.f,0.f };
+Point2f g_HydroPumpSourcePosition{ 0.f,0.f };
+Point2f g_DragonRageDestinationPosition{ 0.f,0.f };
+Point2f g_DragonRageSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
@@ -296,12 +328,13 @@ void	Attack(float elapsedSec, Moves& currentMove);
 void	Item(float elapsedSec);
 void	Switch(float elapsedSec);
 void	RunAway(float elapsedSec);
-void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY);
+void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY, float floatattackWidth, float floatattackheight);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
 void	Wait(float elapsedSec);
 void	Damage(Pokemon& hpBarForDamage, Moves& move);
 void	Heal(Pokemon& hpBar);
 void	HPBarMath(Pokemon& hpBar, float elapsedTime);
+
 #pragma endregion Update
 #pragma endregion Functions
 
