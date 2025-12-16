@@ -7,6 +7,7 @@
 #include <mmsystem.h>
 
 void TurnOffBattle();
+void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize = 100, bool isBlack = 1);
 
 #pragma region Init
 void InitBattle()
@@ -48,40 +49,6 @@ void InitSprites()
 }
 void InitText()
 {
-	//g_GyaradosAttackText = "Gyarados Attacks Godmunguss";
-	//	g_GodmoongussAttackText = "Godmunguss Retaliates with an attack on Gyarados";
-	//	g_WaitText = "Waiting for Godmunguss";
-	//	g_ItemText = "Gyarados healed with an item";
-	//	g_ItemDoneText = "You don't have any items left";
-	//	g_NotFirstTurnText = "Your HP is full";
-	//	g_RunText = "You can't run from a god";
-	//	g_SwitchText = "You don't have pokemon to switch to";
-	//	g_FaintText = "Gyarados has fainted";
-	//	g_GyaradosNameText = "Gyarados";
-	//	g_GodmoongussNameText = "Godmoonguss";
-	//	g_SurfText = "Surf";
-	//	g_HydroPumpText = "Hydro Pump";
-	//	g_DragonRageText = "Dragon Rage";
-	//	g_HyperBeamText = "Hyper Beam";
-
-
-
-	TextureFromString("Gyarados Attacks Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_GyaradosAttackText);
-	TextureFromString("Godmunguss Retaliates with an attack on Gyarados", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 1.f,1.f,1.f,1.f }, g_GodmoongussAttackText);
-	TextureFromString("Waiting for Godmunguss", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_WaitText);
-	TextureFromString("Gyarados healed with an item", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemText);
-	TextureFromString("You don't have any items left", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_ItemDoneText);
-	TextureFromString("Your HP is full", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_NotFirstTurnText);
-	TextureFromString("You can't run from a god", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_RunText);
-	TextureFromString("You don't have pokemon to switch to", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 1.f,1.f,1.f,1.f }, g_SwitchText);
-	TextureFromString("Gyarados has fainted", "Resources/pokemon_fire_red.ttf", 100, Color4f{ 1.f,1.f,1.f,1.f }, g_FaintText);
-	TextureFromString("Gyarados", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 0.f,0.f,0.f,1.f }, g_GyaradosNameText);
-	TextureFromString("Godmoonguss", "Resources/pokemon_fire_red.ttf", 80, Color4f{ 0.f,0.f,0.f,1.f }, g_GodmoongussNameText);
-	TextureFromString("Surf", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_SurfText);
-	TextureFromString("Hydro Pump", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_HydroPumpText);
-	TextureFromString("Dragon Rage", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_DragonRageText);
-	TextureFromString("Hyper Beam", "Resources/pokemon_fire_red.ttf", 60, Color4f{ 0.f,0.f,0.f,1.f }, g_HyperBeamText);
-
 	std::cout << "Music and Godmoonguss sprites by Jasper Bouchet" << std::endl;
 }
 #pragma endregion Init
@@ -94,15 +61,6 @@ void FreeBattle()
 	DeleteTexture(g_InfoAllyPokemonTexture);
 	DeleteTexture(g_GodmoongussTexture);
 	DeleteTexture(g_AttackTexture);
-	DeleteTexture(g_GodmoongussAttackText);
-	DeleteTexture(g_GyaradosAttackText);
-	DeleteTexture(g_WaitText);
-	DeleteTexture(g_ItemText);
-	DeleteTexture(g_SwitchText);
-	DeleteTexture(g_RunText);
-	DeleteTexture(g_ItemDoneText);
-	DeleteTexture(g_NotFirstTurnText);
-	DeleteTexture(g_FaintText);
 	DeleteTexture(g_FightingOptionsTexture);
 	DeleteTexture(g_InfoEnemyPokemonTexture);
 	Mix_FreeMusic(g_Noises.g_GodmungussBattleMusic);
@@ -403,14 +361,18 @@ void DrawBattle()
 		g_EnemyPokemon.position.width,
 		g_EnemyPokemon.position.height,
 	};
+	const int fontsize{ 60 };
+
 	DrawTexture(g_BackgroundTexture, destinationBackground);
 	DrawTexture(g_GyaradosTexture, g_AllyPokemon.position);
 	DrawTexture(g_GodmoongussTexture, g_BossPokemon.position);
 	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
-	DrawTexture(g_GyaradosNameText, Point2f{ destinationgInfoAllyPokemonTexture.left+ 65.f, destinationgInfoAllyPokemonTexture.top-5.f});
-	DrawTexture(g_GodmoongussNameText, Point2f{ destinationgInfoEnemyPokemonTexture.left + 20.f, destinationgInfoEnemyPokemonTexture.top - 5.f});
+
+	DrawTextFromString(g_Gyarados.name, Point2f{ destinationgInfoAllyPokemonTexture.left + 75.f, destinationgInfoAllyPokemonTexture.top + 5.f}, fontsize);
+	DrawTextFromString(g_Godmoonguss.name, Point2f{ destinationgInfoEnemyPokemonTexture.left + 30.f, destinationgInfoEnemyPokemonTexture.top + 5.f }, fontsize);
+
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);
@@ -420,73 +382,55 @@ void DrawBattle()
 	{
 		DrawTexture(g_MovesTexture, destinationMoves);
 		DrawTexture(g_ArrowTexture, destinationArrowMovesTexture);
-		DrawTexture(g_SurfText, g_Move1Position);
-		DrawTexture(g_HydroPumpText, Point2f{ (g_Move1Position.x + g_HalfWidth * 0.65f),g_Move1Position.y });
-		DrawTexture(g_DragonRageText, Point2f{ g_Move1Position.x,(g_Move1Position.y + g_HeightOfTextBlock / 3.f) });
-		DrawTexture(g_HyperBeamText, Point2f{ (g_Move1Position.x + g_HalfWidth * 0.65f),(g_Move1Position.y + g_HeightOfTextBlock / 3.f) });
+
+		const float offsetHor{ g_HalfWidth * 0.65f }, offsetVert{ g_HeightOfTextBlock / 3.f };
+		const Point2f origin{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,
+			g_WindowHeight - g_HeightOfTextBlock * 0.80f };
+
+		DrawTextFromString(g_Gyarados.arrMoves[0].name, origin, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[1].name, Point2f{ (origin.x + g_HalfWidth * 0.65f),origin.y }, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[2].name, Point2f{ origin.x, (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[3].name, Point2f{ (origin.x + g_HalfWidth * 0.65f), (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
 	}
+
+	const Point2f textPos{ Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock + 50.f } };
+	const int fontSize{ 80 };
+
 	if (g_EnemyPokemon.attackTextureIsOn == true)
 	{
-		DrawTexture(g_GodmoongussAttackText, Point2f{
-				g_WindowWidth / 2 - g_GodmoongussAttackText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.6f)
-			});
+		DrawTextFromString(g_Godmoonguss.name + g_Texts.retaliation + g_Gyarados.name, textPos, 60);
 	}
 	if (g_AllyPokemon.attackTextureIsOn == true)
 	{
-		DrawTexture(g_GyaradosAttackText, Point2f{
-				g_WindowWidth / 2 - g_GyaradosAttackText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Gyarados.name + g_Texts.attack + g_Godmoonguss.name, textPos, fontSize);
 	}
 	if (g_WaitTextBlock == true)
 	{
-		DrawTexture(g_WaitText, Point2f{
-				g_WindowWidth / 2 - g_WaitText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Texts.wait + g_Gyarados.name, textPos, fontSize);
 	}
-	if (g_ItemTextureIsOn == true)
+	if (g_ItemTextureIsOn == true) // only for us ? 
 	{
-		DrawTexture(g_ItemText, Point2f{
-				g_WindowWidth / 2 - g_ItemText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Gyarados.name + g_Texts.item, textPos, fontSize);
 	}
 	if (g_SwitchTextureIsOn == true)
 	{
-		DrawTexture(g_SwitchText, Point2f{
-				g_WindowWidth / 2 - g_SwitchText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Texts.switchText, textPos, 70);
 	}
 	if (g_RunTextureIsOn == true)
 	{
-		DrawTexture(g_RunText, Point2f{
-				g_WindowWidth / 2 - g_RunText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Texts.runText, textPos, fontSize);
 	}
 	if (g_ItemDoneTextureIsOn == true)
 	{
-		DrawTexture(g_ItemDoneText, Point2f{
-				g_WindowWidth / 2 - g_ItemDoneText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Texts.itemDoneText, textPos, fontSize);
 	}
 	if (g_NotFirstTurnTextureIsOn == true)
 	{
-		DrawTexture(g_NotFirstTurnText, Point2f{
-				g_WindowWidth / 2 - g_NotFirstTurnText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Texts.notFirstTurnText, textPos, fontSize);
 	}
 	if (g_FaintTextureIsOn == true)
 	{
-		DrawTexture(g_FaintText, Point2f{
-				g_WindowWidth / 2 - g_FaintText.width / 2,
-				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
-			});
+		DrawTextFromString(g_Gyarados.name + g_Texts.faint, textPos, fontSize);
 	}
 	if (g_SurfIsOn)
 	{
@@ -556,19 +500,19 @@ void UpdateBattle(float elapsedSec) {
 	{
 		if (CurrentMove == MoveOptions::topleft)
 		{
-			Attack(elapsedSec,g_Surf);
+			Attack(elapsedSec, g_Surf);
 		}
 		else if (CurrentMove == MoveOptions::topright)
 		{
-			Attack(elapsedSec,g_DragonRage);
+			Attack(elapsedSec, g_DragonRage);
 		}
 		else if (CurrentMove == MoveOptions::bottomleft)
 		{
-			Attack(elapsedSec,g_HydroPump);
+			Attack(elapsedSec, g_HydroPump);
 		}
 		else if (CurrentMove == MoveOptions::bottomright)
 		{
-			Attack(elapsedSec,g_HyperBeam);
+			Attack(elapsedSec, g_HyperBeam);
 		}
 	}
 	if (g_Item)
@@ -892,12 +836,12 @@ void Wait(float elapsedSec)
 			if (ItemSequence == Phases::phase_wait)
 				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 		}
-			g_WaitTextBlock = false;
+		g_WaitTextBlock = false;
 	}
 }
 void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 {
- 	if (g_SavedPosition < 0)
+	if (g_SavedPosition < 0)
 	{
 		g_SavedPosition = pokemon.position.left;
 		g_MovementAnimAlpha = 0;
@@ -960,7 +904,7 @@ void Heal(Pokemon& hpBarForHealing)
 		hpBarForHealing.actual += (g_SavedHPHeal - hpBarForHealing.actual);
 	}
 }
-void HPBarMath(Pokemon& hpBar,float elapsedTime)
+void HPBarMath(Pokemon& hpBar, float elapsedTime)
 {
 	if (!g_IsHeal)
 	{

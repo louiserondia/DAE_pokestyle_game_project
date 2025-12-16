@@ -36,11 +36,11 @@ void InitAlphabet() {
 	}
 }
 
-void DrawTextFromString(const std::string& str, Point2f pos, int fontSize, bool isBlack) {
+void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize, bool isBlack) {
 	Texture* pTexture{ isBlack ? &g_AlphabetB : &g_AlphabetW };
 	const float fontRatio{ static_cast<float>(fontSize) / g_DefaultFontSize };
 
-	Rectf dst{ 0.f, 0.f, 0.f, pTexture->height * fontRatio };
+	Rectf dst{ pos.x, pos.y, 0.f, pTexture->height * fontRatio };
 
 	for (char c : str) {
 		if (!std::strchr(g_AlphabetString.c_str(), c))
