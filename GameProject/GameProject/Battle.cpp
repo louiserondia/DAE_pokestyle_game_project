@@ -349,10 +349,6 @@ void DrawBattle()
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
 	DrawTexture(g_GyaradosNameText, Point2f{ destinationgInfoAllyPokemonTexture.left+ 65.f, destinationgInfoAllyPokemonTexture.top-5.f});
 	DrawTexture(g_GodmoongussNameText, Point2f{ destinationgInfoEnemyPokemonTexture.left + 20.f, destinationgInfoEnemyPokemonTexture.top - 5.f});
-	if (g_SurfIsOn)
-	{
-		DrawTexture(g_SurfTexture, destinationSurf);
-	}
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);
@@ -429,6 +425,10 @@ void DrawBattle()
 				g_WindowWidth / 2 - g_FaintText.width / 2,
 				g_WindowHeight - (g_HeightOfTextBlock * 0.7f)
 			});
+	}
+	if (g_SurfIsOn)
+	{
+		DrawTexture(g_SurfTexture, destinationSurf);
 	}
 	DrawHPBar();
 
@@ -708,6 +708,8 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			g_SurfPosition.y -= 200.f * elapsedSec;
 			if (g_SurfPosition.x >= g_WindowWidth)
 			{
+				g_SurfPosition.x = 0.f;
+				g_SurfPosition.y = g_WindowHeight * 0.6f;
 				attackIsntGoing = true;
 				g_SurfIsOn = false;
 				g_SoundDone = false;
