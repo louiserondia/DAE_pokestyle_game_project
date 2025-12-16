@@ -10,7 +10,7 @@ using namespace utils;
 //		--- CONST VARIABLES ---
 
 const int		g_NrScenes{ 6 };
-const int		g_NrNPC{ 2 };
+const int		g_NrNPC{ 3 };
 
 const Color4f	g_White(.9f, .9f, .9f, .5f);
 const Color4f	g_Black(.2f, .2f, .2f, .5f);
@@ -146,7 +146,7 @@ struct NPC : Character {
 
 	static int battleRange;
 
-	void Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving = 1);
+	void Init(int sceneIndex, int tile, const Rectf& dimensions, bool isMoving = 1, bool isMoto = 0);
 	void Walk();
 	void Drive();
 	void UpdateMotoFrame();
@@ -168,7 +168,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 5 }; // to debug, set to the scene you want to start at
+	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
 	const float moveSpeed{ 220.f };
 };
 
@@ -219,7 +219,7 @@ float		g_BlinkTime{};
 
 void	InitOverworld();
 void	InitScenes();
-void 	InitCharacters(const Scene& scene);
+void 	InitCharacters(const Scene& scene, int sceneIndex);
 void	InitAnimFrames();
 void	InitAudioFiles();
 void	InitNPCPath(NPC& npc, int tile, Point2f dir);
@@ -247,6 +247,7 @@ void	UpdateOverworld(float elapsedSec);
 void	UpdateScene(Camera& camera, Player& player);
 void	HandlePlayerWalk();
 void	CheckSoundEffect(SDL_Keycode key);
+void	PlayMusicOverworld();
 void	CheckBattleInGrass();
 void	EndBattleOverworld();
 
