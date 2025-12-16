@@ -697,6 +697,7 @@ void RunAway(float elapsedSec)
 void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
 {
 	static bool attackIsntGoing{false};
+	float SurfMovement{ 200.f };
 	if (g_SurfIsOn)
 	{
 		if (!g_SoundDone)
@@ -704,8 +705,8 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			PlaySoundEffect(g_Noises.g_Surf);
 			g_SoundDone = true;
 		}
-			g_SurfPosition.x += 400.f * elapsedSec;
-			g_SurfPosition.y -= 200.f * elapsedSec;
+		g_SurfPosition.x += (SurfMovement * 2) * elapsedSec;
+			g_SurfPosition.y -= SurfMovement * elapsedSec;
 			if (g_SurfPosition.x >= g_WindowWidth)
 			{
 				g_SurfPosition.x = 0.f;
