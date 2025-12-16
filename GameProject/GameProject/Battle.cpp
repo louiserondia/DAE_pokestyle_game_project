@@ -12,9 +12,11 @@ void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize
 #pragma region Init
 void InitBattle()
 {
+	srand(int(time(nullptr)));
 	InitMusic();
 	InitSprites();
 	InitText();
+	g_PickedPokemon = rand() % g_AmmountOfPokemon;
 }
 void InitMusic()
 {
@@ -23,7 +25,6 @@ void InitMusic()
 	LoadSoundEffect(g_Noises.g_Surf, "../Resources/SurfSound.wav");
 	LoadSoundEffect(g_Noises.g_DragonRage, "../Resources/DragonRage.wav");
 	LoadSoundEffect(g_Noises.g_HyperBeam, "../Resources/HyperBeam.wav");
-	LoadSoundEffect(g_Noises.g_Attack, "../Resources/AttackSoundEfffect.wav");
 	LoadSoundEffect(g_Noises.g_DamageTaken, "../Resources/DamageSoundEffect.wav");
 }
 void PlayMusicBattle() {
@@ -36,15 +37,16 @@ void InitSprites()
 	TextureFromFile("Resources/FightingOptions.png", g_FightingOptionsTexture);
 	TextureFromFile("Resources/Gyarados.png", g_GyaradosTexture);
 	TextureFromFile("Resources/Sandslash.png", g_SandslashTexture);
+	TextureFromFile("Resources/Victreebel.png", g_VictreebelTexture);
 	TextureFromFile("Resources/InfoAllyPokemon.png", g_InfoAllyPokemonTexture);
 	TextureFromFile("Resources/InfoEnemyPokemon.png", g_InfoEnemyPokemonTexture);
 	TextureFromFile("Resources/GodmoongussColor.png", g_GodmoongussTexture);
 	TextureFromFile("Resources/ArrowforOptions.png", g_ArrowTexture);
-	TextureFromFile("Resources/Attack.png", g_AttackTexture);
 	TextureFromFile("Resources/MovesOptions.png", g_MovesTexture);
 	TextureFromFile("Resources/Surf.png", g_SurfTexture);
 	TextureFromFile("Resources/HydroPump.png", g_HydroPumpTexture);
 	TextureFromFile("Resources/DragonRage.png", g_DragonRageTexture);
+	TextureFromFile("Resources/RazorLeaf.png", g_RazorLeafTexture);
 	TextureFromFile("Resources/HyperBeam.png", g_HyperBeamTexture);
 }
 void InitText()
@@ -57,16 +59,26 @@ void InitText()
 void FreeBattle()
 {
 	DeleteTexture(g_BackgroundTexture);
+	DeleteTexture(g_SurfTexture);
+	DeleteTexture(g_HydroPumpTexture);
+	DeleteTexture(g_DragonRageTexture);
+	DeleteTexture(g_RazorLeafTexture);
+	DeleteTexture(g_HyperBeamTexture);
 	DeleteTexture(g_GyaradosTexture);
 	DeleteTexture(g_InfoAllyPokemonTexture);
+	DeleteTexture(g_SandslashTexture);
+	DeleteTexture(g_MovesTexture);
+	DeleteTexture(g_ArrowTexture);
+	DeleteTexture(g_VictreebelTexture);
 	DeleteTexture(g_GodmoongussTexture);
-	DeleteTexture(g_AttackTexture);
 	DeleteTexture(g_FightingOptionsTexture);
 	DeleteTexture(g_InfoEnemyPokemonTexture);
 	Mix_FreeMusic(g_Noises.g_GodmungussBattleMusic);
 	Mix_FreeChunk(g_Noises.g_ArrowMove);
-	Mix_FreeChunk(g_Noises.g_Attack);
 	Mix_FreeChunk(g_Noises.g_DamageTaken);
+	Mix_FreeChunk(g_Noises.g_Surf);
+	Mix_FreeChunk(g_Noises.g_HyperBeam);
+	Mix_FreeChunk(g_Noises.g_DragonRage);
 }
 #pragma endregion End
 
@@ -233,24 +245,25 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				}
 				else if (CurrentMove == MoveOptions::topright)
 				{
-					g_HydroPumpDestinationPosition.x = (g_BossPokemon.position.left + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
-					g_HydroPumpDestinationPosition.y = g_BossPokemon.position.top + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
 					g_Attack = true;
 					g_HydroPumpIsOn = true;
 				}
 				else if (CurrentMove == MoveOptions::bottomleft)
 				{
-					g_DragonRageDestinationPosition.x = (g_BossPokemon.position.left + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
-					g_DragonRageDestinationPosition.y = g_BossPokemon.position.top + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
 					g_Attack = true;
 					g_DragonRageIsOn = true;
 				}
 				else if (CurrentMove == MoveOptions::bottomright)
 				{
-					g_HyperBeamDestinationPosition.x = (g_BossPokemon.position.left + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
-					g_HyperBeamDestinationPosition.y = g_BossPokemon.position.top + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
-					g_Attack = true;
-					g_HyperBeamIsOn = true;
+					if (!g_DidHyperBeamLastTurn)
+					{
+						g_Attack = true;
+						g_HyperBeamIsOn = true;
+					}
+					else
+					{
+						g_HyperBeamTextIsOn = true;
+					}
 				}
 				break;
 			}
@@ -304,75 +317,28 @@ void DrawBattle()
 		g_WindowHeight - g_HeightOfTextBlock,
 		g_WindowWidth,
 		g_HeightOfTextBlock
-	},
-		destinationAttack
-	{
-		attackSpriteSize.x,
-		attackSpriteSize.y,
-		g_WindowWidth * 0.1f,
-		g_WindowHeight * 0.1f,
-	},
-	destinationSurf
-	{
-		g_SurfPosition.x,
-		g_SurfPosition.y,
-		g_WindowWidth * 0.4f,
-		g_WindowHeight - (g_WindowHeight * 0.6f),
-	},
-	sourceHydroPump
-	{
-		g_HydroPumpSourcePosition.x,
-		g_HydroPumpSourcePosition.y,
-		g_HydroPumpTexture.width,
-		g_HydroPumpTexture.height / 4
-	},
-		destinationHydroPump
-	{
-		g_HydroPumpDestinationPosition.x,
-		g_HydroPumpDestinationPosition.y,
-		g_EnemyPokemon.position.width,
-		g_EnemyPokemon.position.height,
-	},
-	sourceDragonRage
-	{
-		g_DragonRageSourcePosition.x,
-		g_DragonRageSourcePosition.y,
-		g_DragonRageTexture.width,
-		g_DragonRageTexture.height / 5
-	},
-		destinationDragonRage
-	{
-		g_DragonRageDestinationPosition.x,
-		g_DragonRageDestinationPosition.y,
-		g_EnemyPokemon.position.width,
-		g_EnemyPokemon.position.height,
-	},
-	sourceHyperBeam
-	{
-		g_HyperBeamSourcePosition.x,
-		g_HyperBeamSourcePosition.y,
-		g_HyperBeamTexture.width,
-		g_HyperBeamTexture.height / 6
-	},
-		destinationHyperBeam
-	{
-		g_HyperBeamDestinationPosition.x,
-		g_HyperBeamDestinationPosition.y,
-		g_EnemyPokemon.position.width,
-		g_EnemyPokemon.position.height,
 	};
 	const int fontsize{ 60 };
-
 	DrawTexture(g_BackgroundTexture, destinationBackground);
 	DrawTexture(g_GyaradosTexture, g_AllyPokemon.position);
-	DrawTexture(g_GodmoongussTexture, g_BossPokemon.position);
-	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
 
 	DrawTextFromString(g_Gyarados.name, Point2f{ destinationgInfoAllyPokemonTexture.left + 75.f, destinationgInfoAllyPokemonTexture.top + 5.f}, fontsize);
-	DrawTextFromString(g_Godmoonguss.name, Point2f{ destinationgInfoEnemyPokemonTexture.left + 30.f, destinationgInfoEnemyPokemonTexture.top + 5.f }, fontsize);
+	DrawTextFromString(arrWildBushPokemon[g_PickedPokemon].name, Point2f{ destinationgInfoEnemyPokemonTexture.left + 30.f, destinationgInfoEnemyPokemonTexture.top + 5.f }, fontsize);
 
+	if (g_IsBossFight)
+	{
+		DrawTexture(g_GodmoongussTexture, g_EnemyPokemon.position);
+	}
+	if (g_PickedPokemon == 0)
+	{
+		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
+	}
+	if (g_PickedPokemon == 1)
+	{
+		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
+	}
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);
@@ -382,82 +348,16 @@ void DrawBattle()
 	{
 		DrawTexture(g_MovesTexture, destinationMoves);
 		DrawTexture(g_ArrowTexture, destinationArrowMovesTexture);
-
-		const float offsetHor{ g_HalfWidth * 0.65f }, offsetVert{ g_HeightOfTextBlock / 3.f };
-		const Point2f origin{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,
-			g_WindowHeight - g_HeightOfTextBlock * 0.80f };
-
-		DrawTextFromString(g_Gyarados.arrMoves[0].name, origin, fontsize);
-		DrawTextFromString(g_Gyarados.arrMoves[1].name, Point2f{ (origin.x + g_HalfWidth * 0.65f),origin.y }, fontsize);
-		DrawTextFromString(g_Gyarados.arrMoves[2].name, Point2f{ origin.x, (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
-		DrawTextFromString(g_Gyarados.arrMoves[3].name, Point2f{ (origin.x + g_HalfWidth * 0.65f), (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
 	}
-
-	const Point2f textPos{ Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock + 50.f } };
-	const int fontSize{ 80 };
-
-	if (g_EnemyPokemon.attackTextureIsOn == true)
-	{
-		DrawTextFromString(g_Godmoonguss.name + g_Texts.retaliation + g_Gyarados.name, textPos, 60);
-	}
-	if (g_AllyPokemon.attackTextureIsOn == true)
-	{
-		DrawTextFromString(g_Gyarados.name + g_Texts.attack + g_Godmoonguss.name, textPos, fontSize);
-	}
-	if (g_WaitTextBlock == true)
-	{
-		DrawTextFromString(g_Texts.wait + g_Gyarados.name, textPos, fontSize);
-	}
-	if (g_ItemTextureIsOn == true) // only for us ? 
-	{
-		DrawTextFromString(g_Gyarados.name + g_Texts.item, textPos, fontSize);
-	}
-	if (g_SwitchTextureIsOn == true)
-	{
-		DrawTextFromString(g_Texts.switchText, textPos, 70);
-	}
-	if (g_RunTextureIsOn == true)
-	{
-		DrawTextFromString(g_Texts.runText, textPos, fontSize);
-	}
-	if (g_ItemDoneTextureIsOn == true)
-	{
-		DrawTextFromString(g_Texts.itemDoneText, textPos, fontSize);
-	}
-	if (g_NotFirstTurnTextureIsOn == true)
-	{
-		DrawTextFromString(g_Texts.notFirstTurnText, textPos, fontSize);
-	}
-	if (g_FaintTextureIsOn == true)
-	{
-		DrawTextFromString(g_Gyarados.name + g_Texts.faint, textPos, fontSize);
-	}
-	if (g_SurfIsOn)
-	{
-		DrawTexture(g_SurfTexture, destinationSurf);
-	}
-	if (g_HydroPumpIsOn)
-	{
-		g_HydroPumpSourcePosition.y = g_CurrentHydroPumpIndex* g_HydroPumpTexture.height / 4;
-		DrawTexture(g_HydroPumpTexture, destinationHydroPump,sourceHydroPump);
-	}
-	if (g_DragonRageIsOn)
-	{
-		g_DragonRageSourcePosition.y = g_CurrentDragonRageIndex * g_DragonRageTexture.height / 5;
-		DrawTexture(g_DragonRageTexture, destinationDragonRage, sourceDragonRage);
-	}
-	if (g_HyperBeamIsOn)
-	{
-		g_HyperBeamSourcePosition.y = g_CurrentHyperBeamIndex * g_HyperBeamTexture.height / 5;
-		DrawTexture(g_HyperBeamTexture, destinationHyperBeam, sourceHyperBeam);
-	}
+	DrawTexts();
+	DrawAttackEffects();
 	DrawHPBar();
 
 }
 
 void DrawHPBar()
 {
-	float alphaEnemy{ g_Godmoonguss.animHP / g_Godmoonguss.total };
+	float alphaEnemy{ arrWildBushPokemon[g_PickedPokemon].animHP / arrWildBushPokemon[g_PickedPokemon].total };
 	float alphaAlly{ g_Gyarados.animHP / g_Gyarados.total };
 	if ((g_HPBarEnemyPokemon.width * alphaEnemy) > (g_HPBarEnemyPokemon.width / 2))
 	{
@@ -490,6 +390,174 @@ void DrawHPBar()
 	{
 		SetColor(0.97f, 0.34f, 0.2f);
 		FillRect(g_HPBarAllyPokemon.position.x, g_HPBarAllyPokemon.position.y, (g_HPBarAllyPokemon.width * alphaAlly), g_HPBarAllyPokemon.height);
+	}
+}
+void DrawTexts()
+{
+	const int fontsize{ 60 };
+	if (g_PickingMoves)
+	{
+		const float offsetHor{ g_HalfWidth * 0.65f }, offsetVert{ g_HeightOfTextBlock / 3.f };
+		const Point2f origin{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,
+			g_WindowHeight - g_HeightOfTextBlock * 0.80f };
+
+		DrawTextFromString(g_Gyarados.arrMoves[0].name, origin, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[1].name, Point2f{ (origin.x + g_HalfWidth * 0.65f),origin.y }, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[2].name, Point2f{ origin.x, (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
+		DrawTextFromString(g_Gyarados.arrMoves[3].name, Point2f{ (origin.x + g_HalfWidth * 0.65f), (origin.y + g_HeightOfTextBlock / 3.f) }, fontsize);
+	}
+	const Point2f textPos{ Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock * 0.70f } };
+	const int fontSize{ 80 };
+
+	if (g_EnemyPokemon.attackTextureIsOn == true)
+	{
+		DrawTextFromString(arrWildBushPokemon[g_PickedPokemon].name + g_Texts.retaliation + g_Gyarados.name, Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock * 0.60f }, 60);
+	}
+	if (g_AllyPokemon.attackTextureIsOn == true)
+	{
+		DrawTextFromString(g_Gyarados.name + g_Texts.attack + arrWildBushPokemon[g_PickedPokemon].name, textPos, fontSize);
+	}
+	if (g_WaitTextBlock == true)
+	{
+		DrawTextFromString(g_Texts.wait + arrWildBushPokemon[g_PickedPokemon].name, textPos, fontSize);
+	}
+	if (g_ItemTextureIsOn == true) // only for us ? 
+	{
+		DrawTextFromString(g_Gyarados.name + g_Texts.item, textPos, fontSize);
+	}
+	if (g_SwitchTextureIsOn == true)
+	{
+		DrawTextFromString(g_Texts.switchText, textPos, fontSize);
+	}
+	if (g_RunTextureIsOn == true)
+	{
+		DrawTextFromString(g_Texts.runText, textPos, fontSize);
+	}
+	if (g_ItemDoneTextureIsOn == true)
+	{
+		DrawTextFromString(g_Texts.itemDoneText, textPos, fontSize);
+	}
+	if (g_NotFirstTurnTextureIsOn == true)
+	{
+		DrawTextFromString(g_Texts.notFirstTurnText, textPos, fontSize);
+	}
+	if (g_FaintTextureIsOn == true)
+	{
+		DrawTextFromString(g_Gyarados.name + g_Texts.faint, textPos, fontSize);
+	}
+	if (g_HyperBeamTextIsOn == true)
+	{
+		DrawTextFromString(g_Texts.hyperbeam, Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock * 0.60f }, 60);
+	}
+}
+void DrawAttackEffects()
+{
+	Rectf
+		destinationSurf
+	{
+		g_SurfPosition.x,
+		g_SurfPosition.y,
+		g_WindowWidth * 0.4f,
+		g_WindowHeight - (g_WindowHeight * 0.6f),
+	},
+	sourceHydroPump
+	{
+		g_HydroPumpSourcePosition.x,
+		g_HydroPumpSourcePosition.y,
+		g_HydroPumpTexture.width,
+		g_HydroPumpTexture.height / 4
+	},
+	destinationHydroPump
+	{
+		g_HydroPumpDestinationPosition.x,
+		g_HydroPumpDestinationPosition.y,
+		g_EnemyPokemon.position.width,
+		g_EnemyPokemon.position.height,
+	},
+	sourceDragonRage
+	{
+		g_DragonRageSourcePosition.x,
+		g_DragonRageSourcePosition.y,
+		g_DragonRageTexture.width,
+		g_DragonRageTexture.height / 5
+	},
+	destinationDragonRage
+	{
+		g_DragonRageDestinationPosition.x,
+		g_DragonRageDestinationPosition.y,
+		g_EnemyPokemon.position.width,
+		g_EnemyPokemon.position.height,
+	},
+	sourceHyperBeam
+	{
+		g_HyperBeamSourcePosition.x,
+		g_HyperBeamSourcePosition.y,
+		g_HyperBeamTexture.width,
+		g_HyperBeamTexture.height / 6
+	},
+	destinationHyperBeam
+	{
+		g_HyperBeamDestinationPosition.x,
+		g_HyperBeamDestinationPosition.y,
+		g_EnemyPokemon.position.width,
+		g_EnemyPokemon.position.height,
+	},
+	sourceSlash
+	{
+		g_SlashSourcePosition.x,
+		g_SlashSourcePosition.y,
+		g_DragonRageTexture.width,
+		g_DragonRageTexture.height / 5
+	},
+	destinationSlash
+	{
+		g_SlashDestinationPosition.x,
+		g_SlashDestinationPosition.y,
+		g_AllyPokemon.position.width,
+		g_AllyPokemon.position.height,
+	},
+	sourceRazorLeaf
+	{
+		g_RazorLeafSourcePosition.x,
+		g_RazorLeafSourcePosition.y,
+		g_RazorLeafTexture.width,
+		g_RazorLeafTexture.height / 5
+	},
+		destinationRazorLeaf
+	{
+		g_RazorLeafDestinationPosition.x,
+		g_RazorLeafDestinationPosition.y,
+		g_AllyPokemon.position.width,
+		g_AllyPokemon.position.height,
+	};
+	if (g_SurfIsOn)
+	{
+		DrawTexture(g_SurfTexture, destinationSurf);
+	}
+	if (g_HydroPumpIsOn)
+	{
+		g_HydroPumpSourcePosition.y = g_CurrentHydroPumpIndex * g_HydroPumpTexture.height / 4;
+		DrawTexture(g_HydroPumpTexture, destinationHydroPump, sourceHydroPump);
+	}
+	if (g_DragonRageIsOn)
+	{
+		g_DragonRageSourcePosition.y = g_CurrentDragonRageIndex * g_DragonRageTexture.height / 5;
+		DrawTexture(g_DragonRageTexture, destinationDragonRage, sourceDragonRage);
+	}
+	if (g_HyperBeamIsOn)
+	{
+		g_HyperBeamSourcePosition.y = g_CurrentHyperBeamIndex * g_HyperBeamTexture.height / 5;
+		DrawTexture(g_HyperBeamTexture, destinationHyperBeam, sourceHyperBeam);
+	}
+	if (g_SlashIsOn)
+	{
+		g_SlashSourcePosition.y = g_CurrentSlashIndex * g_DragonRageTexture.height / 5;
+		DrawTexture(g_DragonRageTexture, destinationSlash, sourceSlash);
+	}
+	if (g_RazorLeafIsOn)
+	{
+		g_RazorLeafSourcePosition.y = g_CurrentRazorLeafIndex * g_RazorLeafTexture.height / 5;
+		DrawTexture(g_RazorLeafTexture, destinationRazorLeaf, sourceRazorLeaf);
 	}
 }
 #pragma endregion Draw
@@ -527,6 +595,12 @@ void UpdateBattle(float elapsedSec) {
 	{
 		RunAway(elapsedSec);
 	}
+
+
+	if(g_HyperBeamTextIsOn)
+	{
+		HyperBeamText(elapsedSec);
+	}
 }
 void Attack(float elapsedSec, Moves& currentMove)
 {
@@ -540,10 +614,10 @@ void Attack(float elapsedSec, Moves& currentMove)
 		g_PickingMoves = false;
 		break;
 	case Phases::phase_attack:
-		AttackEffect(elapsedSec, g_BossPokemon.position.left, g_BossPokemon.position.top, g_BossPokemon.position.width, g_BossPokemon.position.height);
+		AttackEffect(elapsedSec, g_EnemyPokemon.position.left, g_EnemyPokemon.position.top, g_EnemyPokemon.position.width, g_EnemyPokemon.position.height);
 		break;
 	case Phases::phase_enemypokemon_move:
-		Move(elapsedSec, g_BossPokemon, 1);
+		Move(elapsedSec, g_EnemyPokemon, 1);
 		break;
 	case Phases::phase_hpbarenemy_down:
 		if (!g_SoundDone)
@@ -551,20 +625,19 @@ void Attack(float elapsedSec, Moves& currentMove)
 			PlaySoundEffect(g_Noises.g_DamageTaken);
 			g_SoundDone = true;
 		}
-		Damage(g_Godmoonguss, currentMove);
-		HPBarMath(g_Godmoonguss, elapsedSec);
+		Damage(arrWildBushPokemon[g_PickedPokemon], currentMove);
+		HPBarMath(arrWildBushPokemon[g_PickedPokemon], elapsedSec);
 		break;
 	case Phases::phase_wait:
 		g_AllyPokemon.attackTextureIsOn = false;
 		Wait(elapsedSec);
 		break;
 	case Phases::phase_enemypokemoncounter_move:
-		Move(elapsedSec, g_BossPokemon, -1);
+		Move(elapsedSec, g_EnemyPokemon, -1);
 		g_EnemyPokemon.attackTextureIsOn = true;
 		break;
 	case Phases::phase_attackcounter:
-		//AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top, g_AllyPokemon.position.width, g_AllyPokemon.position.height);
-		AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+		AttackEffectEnemy(elapsedSec);
 		break;
 	case Phases::phase_allypokemoncounter_move:
 		Move(elapsedSec, g_AllyPokemon, -1);
@@ -575,7 +648,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 			PlaySoundEffect(g_Noises.g_DamageTaken);
 			g_SoundDone = true;
 		}
-		Damage(g_Gyarados, g_DragonRage);
+		Damage(g_Gyarados, arrWildBushPokemon[g_PickedPokemon].arrMoves[rand()%4]);
 		HPBarMath(g_Gyarados, elapsedSec);
 		break;
 	case Phases::phase_done:
@@ -620,7 +693,7 @@ void Item(float elapsedSec)
 				break;
 			case Phases::phase_enemypokemoncounter_move:
 				g_EnemyPokemon.attackTextureIsOn = true;
-				Move(elapsedSec, g_BossPokemon, -1);
+				Move(elapsedSec, g_EnemyPokemon, -1);
 				break;
 			case Phases::phase_attackcounter:
 				AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top, g_AllyPokemon.position.width, g_AllyPokemon.position.height);
@@ -634,7 +707,7 @@ void Item(float elapsedSec)
 					PlaySoundEffect(g_Noises.g_DamageTaken);
 					g_SoundDone = true;
 				}
-				Damage(g_Gyarados, g_DragonRage);
+				Damage(g_Gyarados, arrWildBushPokemon[g_PickedPokemon].arrMoves[rand() % 4]);
 				HPBarMath(g_Gyarados, elapsedSec);
 				break;
 			case Phases::phase_done:
@@ -700,6 +773,23 @@ void Switch(float elapsedSec)
 		g_FightingOptionsTextureIsOn = true;
 	}
 }
+void HyperBeamText(float elapsedSec)
+{
+	if (g_DidHyperBeamLastTurn == true)
+	{
+		g_FightingOptionsTextureIsOn = false;
+		g_PickingMoves = false;
+		const float HyperBeamIncrementation{ 50.f };
+		g_PhaseWaitCounter += HyperBeamIncrementation*elapsedSec;
+		if (g_PhaseWaitCounter >= 100)
+		{
+			g_PhaseWaitCounter = 0;
+			g_HyperBeamTextIsOn = false;
+			g_FightingOptionsTextureIsOn = true;
+			g_PickingMoves = true;
+		}
+	}
+}
 void RunAway(float elapsedSec)
 {
 	const float RunIncrementation{ 50.f };
@@ -735,6 +825,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 				attackIsntGoing = true;
 				g_SurfIsOn = false;
 				g_SoundDone = false;
+				g_DidHyperBeamLastTurn = false;
 			}
 	}
 	else if (g_HydroPumpIsOn)
@@ -755,6 +846,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			attackIsntGoing = true;
 			g_HydroPumpIsOn = false;
 			g_SoundDone = false;
+			g_DidHyperBeamLastTurn = false;
 		}
 		
 	}
@@ -776,28 +868,32 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			attackIsntGoing = true;
 			g_DragonRageIsOn = false;
 			g_SoundDone = false;
+			g_DidHyperBeamLastTurn = false;
 		}
 
 	}
 	else if (g_HyperBeamIsOn)
 	{
-		static float HyperBeamincrementation{ 0.f };
-		HyperBeamincrementation += elapsedSec;
-		const int HyperBeamAnimatonTime{ static_cast<int>(HyperBeamincrementation * frameRate) };
-		if (!g_SoundDone)
-		{
-			PlaySoundEffect(g_Noises.g_HyperBeam);
-			g_SoundDone = true;
-		}
-		g_CurrentHyperBeamIndex = HyperBeamAnimatonTime%6;
-		if (HyperBeamincrementation >= 0.5f)
-		{
-			HyperBeamincrementation = 0.f;
-			g_HyperBeamSourcePosition.y = 0.f;
-			attackIsntGoing = true;
-			g_HyperBeamIsOn = false;
-			g_SoundDone = false;
-		}
+			static float HyperBeamincrementation{ 0.f };
+			HyperBeamincrementation += elapsedSec;
+			const int HyperBeamAnimatonTime{ static_cast<int>(HyperBeamincrementation * frameRate) };
+			if (!g_SoundDone)
+			{
+				PlaySoundEffect(g_Noises.g_HyperBeam);
+				g_SoundDone = true;
+			}
+			g_CurrentHyperBeamIndex = HyperBeamAnimatonTime % 6;
+			if (HyperBeamincrementation >= 0.5f)
+			{
+				HyperBeamincrementation = 0.f;
+				g_HyperBeamSourcePosition.y = 0.f;
+				attackIsntGoing = true;
+				g_HyperBeamIsOn = false;
+				g_SoundDone = false;
+				g_DidHyperBeamLastTurn = true;
+				
+			}
+		
 
 	}
 	else if (attackIsntGoing)
@@ -814,6 +910,77 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 			if (ItemSequence == Phases::phase_attackcounter)
 				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 			attackIsntGoing = false;
+		}
+	}
+}
+void AttackEffectEnemy(float elapsedSec)
+{
+	static bool attackIsntGoing{ false };
+	float frameRate{ 10.f };
+	if (g_PickedPokemon == 0)
+	{
+		static float Slashincrementation{ 0.f };
+		Slashincrementation += elapsedSec;
+		const int SlashAnimatonTime{ static_cast<int>(Slashincrementation * frameRate) };
+			g_SlashIsOn = true;
+		if (!g_SoundDone)
+		{
+			PlaySoundEffect(g_Noises.g_DragonRage);
+			g_SoundDone = true;
+		}
+		g_CurrentSlashIndex = SlashAnimatonTime % 5;
+		if (Slashincrementation >= 0.5f)
+		{
+			Slashincrementation = 0.f;
+			g_SlashSourcePosition.y = 0.f;
+			attackIsntGoing = true;
+			g_SlashIsOn = false;
+			g_SoundDone = false;
+			if (g_Attack)
+			{
+				if (AttackSequence == Phases::phase_attack || AttackSequence == Phases::phase_attackcounter)
+					AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+				attackIsntGoing = false;
+			}
+			else if (g_Item)
+			{
+				if (ItemSequence == Phases::phase_attackcounter)
+					ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+				attackIsntGoing = false;
+			}
+		}
+	}
+	else if (g_PickedPokemon == 1)
+	{
+		static float RazorLeafincrementation{ 0.f };
+		RazorLeafincrementation += elapsedSec;
+		const int RazorLeafAnimatonTime{ static_cast<int>(RazorLeafincrementation * frameRate) };
+		g_RazorLeafIsOn = true;
+		if (!g_SoundDone)
+		{
+			PlaySoundEffect(g_Noises.g_DragonRage);
+			g_SoundDone = true;
+		}
+		g_CurrentRazorLeafIndex = RazorLeafAnimatonTime % 5;
+		if (RazorLeafincrementation >= 0.5f)
+		{
+			RazorLeafincrementation = 0.f;
+			g_RazorLeafSourcePosition.y = 0.f;
+			attackIsntGoing = true;
+			g_RazorLeafIsOn = false;
+			g_SoundDone = false;
+			if (g_Attack)
+			{
+				if (AttackSequence == Phases::phase_attack || AttackSequence == Phases::phase_attackcounter)
+					AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+				attackIsntGoing = false;
+			}
+			else if (g_Item)
+			{
+				if (ItemSequence == Phases::phase_attackcounter)
+					ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+				attackIsntGoing = false;
+			}
 		}
 	}
 }

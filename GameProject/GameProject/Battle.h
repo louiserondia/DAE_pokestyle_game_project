@@ -4,7 +4,6 @@
 using namespace utils;
 
 #pragma region ConstVariables
-
 const float
 	g_SpeedHPBar{ 25.f },
 	g_MovementLength{ 55.f },
@@ -13,8 +12,7 @@ const float
 	g_HalfWidth{ g_WindowWidth / 2.f };
 
 const int
-	g_pickedPokemon{rand()%3},
-	g_AmmountOfPokemon{ 2 },
+g_AmmountOfPokemon{ 2 },
 	g_AmmountOfMoves{ 4 };
 
 #pragma endregion ConstVariables
@@ -29,6 +27,7 @@ struct Texts {
 	const std::string wait{ "Waiting for " };
 	const std::string item{ " healed with an item" };
 	const std::string faint{ " has fainted" };
+	const std::string hyperbeam{ " Gyarados can only use Hyperbeam once evry 2 turns" };
 
 	const std::string itemDoneText{ "You don't have any items left" };
 	const std::string notFirstTurnText{ "Your HP is full" };
@@ -90,7 +89,7 @@ struct HPBar
 struct Pokemon
 {
 	std::string name{};
-	Texture pokemonSprite{};
+	Texture* pokemonSprite{};
 	Moves arrMoves[g_AmmountOfMoves]{};
 	float
 		speed{},
@@ -115,7 +114,6 @@ struct Sounds
 	Mix_Chunk* g_Surf{};
 	Mix_Chunk* g_DragonRage{};
 	Mix_Chunk* g_HyperBeam{};
-	Mix_Chunk* g_Attack{};
 	Mix_Chunk* g_DamageTaken{};
 };
 #pragma endregion Enum&Structs
@@ -128,7 +126,7 @@ g_GyaradosTexture{},
 g_InfoAllyPokemonTexture{},
 g_GodmoongussTexture{},
 g_SandslashTexture{},
-g_AttackTexture{},
+g_VictreebelTexture{},
 g_FightingOptionsTexture{},
 g_InfoEnemyPokemonTexture{},
 g_ArrowTexture{},
@@ -137,10 +135,15 @@ g_SurfTexture{},
 g_HydroPumpTexture{},
 g_DragonRageTexture{},
 g_HyperBeamTexture{},
+g_RazorLeafTexture{},
 g_MoveSurfTexture{};
+
 int
 g_CurrentHydroPumpIndex{ 1 },
 g_CurrentDragonRageIndex{ 1 },
+g_PickedPokemon{},
+g_CurrentSlashIndex{1},
+g_CurrentRazorLeafIndex{1},
 g_CurrentHyperBeamIndex{ 1 };
 
 float
@@ -175,6 +178,11 @@ g_SurfIsOn{},
 g_HydroPumpIsOn{},
 g_DragonRageIsOn{},
 g_HyperBeamIsOn{},
+g_IsBossFight{},
+g_DidHyperBeamLastTurn{},
+g_SlashIsOn{},
+g_RazorLeafIsOn{},
+g_HyperBeamTextIsOn{},
 g_SoundDone{};
 Sounds
 	g_Noises{};
@@ -191,16 +199,6 @@ PokemonInBattle
 		}
 	},
 	g_EnemyPokemon
-	{
-		Rectf
-		{
-		(g_WindowWidth / 2) + 50.f,
-		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f)),
-		g_WindowWidth * 0.25f,
-		g_WindowWidth * 0.25f
-		}
-	},
-	g_BossPokemon
 	{
 		Rectf
 		{
@@ -247,7 +245,17 @@ Moves
 	{
 		"HyperBeam",
 		(static_cast<float>(rand() % 51) + 50.f)
-	};
+	},
+	g_Slash
+	{
+		"Slash",
+		(static_cast<float>(rand() % 51) + 20.f)
+	},
+	g_RazorLeaf
+	{
+		"Razor Leaf",
+		(static_cast<float>(rand() % 51) + 20.f)
+	};	
 Rectf
 	g_MoveOptionsRect{
 			0.f,
@@ -266,50 +274,53 @@ Pokemon
 	g_Godmoonguss
 	{
 		"Godmoonguss",
-		g_GodmoongussTexture,
-		g_Surf,
-		g_HydroPump,
-		g_DragonRage,
-		g_HyperBeam,
+		&g_GodmoongussTexture,
+		{g_Surf,g_HydroPump,g_DragonRage,g_HyperBeam,},
 			100.f,
 			500.f
 	},
 	g_Gyarados
 	{
 		"Gyarados",
-		g_GyaradosTexture,
-		g_Surf,
-		g_HydroPump,
-		g_DragonRage,
-		g_HyperBeam,
+		&g_GyaradosTexture,
+		{
+		g_Surf,g_HydroPump,g_DragonRage,g_HyperBeam,},
 			50.f,
 			300.f
 	},
 	g_Sandslash
 	{
 		"Sandslash",
-		g_SandslashTexture,
-		g_Surf,
-		g_HydroPump,
-		g_DragonRage,
-		g_HyperBeam,
+		&g_SandslashTexture,
+		{g_Slash,g_Slash,g_Slash,g_Slash},
+			50.f,
+			250.f
+	},
+	g_Victreebel
+	{
+		"Victreebel",
+		&g_VictreebelTexture,
+		{g_RazorLeaf,g_RazorLeaf,g_RazorLeaf,g_RazorLeaf},
 			50.f,
 			250.f
 	};
 
-Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Godmoonguss ,g_Gyarados };
+Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Sandslash ,g_Victreebel };
 
-Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
 Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock *0.75f };
 Point2f g_BackgroundPosition{ 0.f,0.f };
 Point2f g_SurfPosition{ 0.f,g_WindowHeight * 0.6f };
-Point2f g_HydroPumpDestinationPosition{ 0.f,0.f };
+Point2f g_HydroPumpDestinationPosition{ (g_EnemyPokemon.position.left + (g_EnemyPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f) ,g_EnemyPokemon.position.top + (g_EnemyPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f) };
 Point2f g_HydroPumpSourcePosition{ 0.f,0.f };
-Point2f g_DragonRageDestinationPosition{ 0.f,0.f };
+Point2f g_DragonRageDestinationPosition{ (g_EnemyPokemon.position.left + (g_EnemyPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f) ,g_EnemyPokemon.position.top + (g_EnemyPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f) };
 Point2f g_DragonRageSourcePosition{ 0.f,0.f };
-Point2f g_HyperBeamDestinationPosition{ 0.f,0.f };
+Point2f g_HyperBeamDestinationPosition{ (g_EnemyPokemon.position.left + (g_EnemyPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f),g_EnemyPokemon.position.top + (g_EnemyPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f) };
 Point2f g_HyperBeamSourcePosition{ 0.f,0.f };
+Point2f g_SlashDestinationPosition{ (g_AllyPokemon.position.left + (g_AllyPokemon.position.width / 2.f)) - (g_AllyPokemon.position.width / 1.9f) ,g_AllyPokemon.position.top + (g_AllyPokemon.position.height / 2.f) - (g_AllyPokemon.position.height / 1.9f) };
+Point2f g_SlashSourcePosition{ 0.f,0.f };
+Point2f g_RazorLeafDestinationPosition{ (g_AllyPokemon.position.left + (g_AllyPokemon.position.width / 2.f)) - (g_AllyPokemon.position.width / 1.9f) ,g_AllyPokemon.position.top + (g_AllyPokemon.position.height / 2.f) - (g_AllyPokemon.position.height / 1.9f) };
+Point2f g_RazorLeafSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
@@ -331,6 +342,8 @@ void	InitMusic();
 #pragma region Draw
 void	DrawBattle();
 void	DrawHPBar();
+void	DrawTexts();
+void	DrawAttackEffects();
 #pragma endregion Draw
 #pragma region Update
 void	PlayMusicBattle();
@@ -340,6 +353,8 @@ void	Item(float elapsedSec);
 void	Switch(float elapsedSec);
 void	RunAway(float elapsedSec);
 void	AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY, float floatattackWidth, float floatattackheight);
+void	AttackEffectEnemy(float elapsedSec);
+void	HyperBeamText(float elapsedSec);
 void	Move(float elapsedSec, PokemonInBattle& pokemon, int dir);
 void	Wait(float elapsedSec);
 void	Damage(Pokemon& hpBarForDamage, Moves& move);
