@@ -12,7 +12,10 @@ const float
 	g_HeightOfTextBlock{ g_WindowHeight * 0.3f },
 	g_HalfWidth{ g_WindowWidth / 2.f };
 
-const int g_AmmountOfMoves{ 4 };
+const int
+	g_pickedPokemon{rand()%3},
+	g_AmmountOfPokemon{ 2 },
+	g_AmmountOfMoves{ 4 };
 
 #pragma endregion ConstVariables
 
@@ -70,6 +73,7 @@ struct HPBar
 struct Pokemon
 {
 	std::string name{};
+	Texture pokemonSprite{};
 	Moves arrMoves[g_AmmountOfMoves]{};
 	float
 		speed{},
@@ -92,6 +96,8 @@ struct Sounds
 	Mix_Music* g_GodmungussBattleMusic{};
 	Mix_Chunk* g_ArrowMove{};
 	Mix_Chunk* g_Surf{};
+	Mix_Chunk* g_DragonRage{};
+	Mix_Chunk* g_HyperBeam{};
 	Mix_Chunk* g_Attack{};
 	Mix_Chunk* g_DamageTaken{};
 };
@@ -99,6 +105,75 @@ struct Sounds
 
 #pragma region Variables
 
+utils::Texture
+g_BackgroundTexture{},
+g_GyaradosTexture{},
+g_InfoAllyPokemonTexture{},
+g_GodmoongussTexture{},
+g_SandslashTexture{},
+g_AttackTexture{},
+g_GodmoongussAttackText{},
+g_GyaradosAttackText{},
+g_WaitText{},
+g_ItemText{},
+g_SwitchText{},
+g_RunText{},
+g_ItemDoneText{},
+g_NotFirstTurnText{},
+g_FaintText{},
+g_GyaradosNameText{},
+g_GodmoongussNameText{},
+g_FightingOptionsTexture{},
+g_InfoEnemyPokemonTexture{},
+g_ArrowTexture{},
+g_MovesTexture{},
+g_SurfText{},
+g_HydroPumpText{},
+g_DragonRageText{},
+g_HyperBeamText{},
+g_SurfTexture{},
+g_HydroPumpTexture{},
+g_DragonRageTexture{},
+g_HyperBeamTexture{},
+g_MoveSurfTexture{};
+int
+g_CurrentHydroPumpIndex{ 1 },
+g_CurrentDragonRageIndex{ 1 },
+g_CurrentHyperBeamIndex{ 1 };
+
+float
+g_SpeedAttack{ 0.f },
+g_PhaseWaitCounter{ 0.f },
+g_SavedPosition{ -1 },
+g_PhaseDoneCounter{ 0.f },
+g_MovementAnimAlpha{ 0.f },
+g_HPBarTarget{},
+g_AnimationTime{ 1.f / 0.6f },
+g_SavedHPDamage{ -1.f },
+g_SavedHPHeal{ -1.f };
+
+bool
+g_Attack{},
+g_Item{},
+g_Run{},
+g_Switch{},
+g_notFirstTurn{},
+g_WaitTextBlock{},
+g_ItemTextureIsOn{},
+g_SwitchTextureIsOn{},
+g_RunTextureIsOn{},
+g_ItemDoneTextureIsOn{},
+g_FightingOptionsTextureIsOn{ true },
+g_NotFirstTurnTextureIsOn{},
+g_FaintTextureIsOn{},
+g_ItemOnlyOnce{},
+g_IsHeal{},
+g_PickingMoves{},
+g_SurfIsOn{},
+g_HydroPumpIsOn{},
+g_DragonRageIsOn{},
+g_HyperBeamIsOn{},
+g_SoundDone{};
 Sounds
 	g_Noises{};
 
@@ -154,12 +229,12 @@ Moves
 	g_Surf
 	{
 		"Surf",
-		50.f
+		(static_cast<float>(rand() % 31) + 20.f)
 	},
 	g_HydroPump
 	{
-		"HydoPump",
-		70.f
+		"HydroPump",
+		(static_cast<float>(rand() % 51) + 10.f)
 	},
 	g_DragonRage
 	{
@@ -169,7 +244,7 @@ Moves
 	g_HyperBeam
 	{
 		"HyperBeam",
-		100.f
+		(static_cast<float>(rand() % 51) + 50.f)
 	};
 Rectf
 	g_MoveOptionsRect{
@@ -189,6 +264,7 @@ Pokemon
 	g_Godmoonguss
 	{
 		"Godmoonguss",
+		g_GodmoongussTexture,
 		g_Surf,
 		g_HydroPump,
 		g_DragonRage,
@@ -199,96 +275,27 @@ Pokemon
 	g_Gyarados
 	{
 		"Gyarados",
+		g_GyaradosTexture,
 		g_Surf,
 		g_HydroPump,
 		g_DragonRage,
 		g_HyperBeam,
 			50.f,
 			300.f
-	};
-int
-	g_CurrentHydroPumpIndex{ 1 },
-	g_CurrentDragonRageIndex{ 1 };
-
-float
-	g_SpeedAttack{ 0.f },
-	g_PhaseWaitCounter{ 0.f },
-	g_SavedPosition{ -1 },
-	g_PhaseDoneCounter{ 0.f },
-	g_MovementAnimAlpha{ 0.f },
-	g_HPBarTarget{},
-	g_AnimationTime{ 1.f / 0.6f },
-	g_SavedHPDamage{ -1.f },
-	g_SavedHPHeal{ -1.f };
-
-bool
-	g_Attack{},
-	g_Item{},
-	g_Run{},
-	g_Switch{},
-	g_notFirstTurn{},
-	g_WaitTextBlock{},
-	g_ItemTextureIsOn{},
-	g_SwitchTextureIsOn{},
-	g_RunTextureIsOn{},
-	g_ItemDoneTextureIsOn{},
-	g_FightingOptionsTextureIsOn{ true },
-	g_NotFirstTurnTextureIsOn{},
-	g_FaintTextureIsOn{},
-	g_ItemOnlyOnce{},
-	g_IsHeal{},
-	g_PickingMoves{},
-	g_SurfIsOn{},
-	g_HydroPumpIsOn{},
-	g_DragonRageIsOn{},
-	g_SoundDone{};
-
-enum class TextureType
-{
-	None = -1,
-	Background,
-	Gyarados,
-	Count
-};
-
-std::string
-	g_TextureFileNameArray[int(TextureType::Count)]
+	},
+	g_Sandslash
 	{
-		"Resources/BackgroundCave.png",
-		"Resources/BackgroundCave.png"
+		"Sandslash",
+		g_SandslashTexture,
+		g_Surf,
+		g_HydroPump,
+		g_DragonRage,
+		g_HyperBeam,
+			50.f,
+			250.f
 	};
-utils::Texture
-	g_TextureArray[int( TextureType::Count ) ];
 
-utils::Texture
-	g_BackgroundTexture{},
-	g_GyaradosTexture{},
-	g_InfoAllyPokemonTexture{},
-	g_GodmoongussTexture{},
-	g_AttackTexture{},
-	g_GodmoongussAttackText{},
-	g_GyaradosAttackText{},
-	g_WaitText{},
-	g_ItemText{},
-	g_SwitchText{},
-	g_RunText{},
-	g_ItemDoneText{},
-	g_NotFirstTurnText{},
-	g_FaintText{},
-	g_GyaradosNameText{},
-	g_GodmoongussNameText{},
-	g_FightingOptionsTexture{},
-	g_InfoEnemyPokemonTexture{},
-	g_ArrowTexture{},
-	g_MovesTexture{},
-	g_SurfText{},
-	g_HydroPumpText{},
-	g_DragonRageText{},
-	g_HyperBeamText{},
-	g_SurfTexture{},
-	g_HydroPumpTexture{},
-	g_DragonRageTexture{},
-	g_MoveSurfTexture{};
+Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Godmoonguss ,g_Gyarados };
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
@@ -300,6 +307,8 @@ Point2f g_HydroPumpDestinationPosition{ 0.f,0.f };
 Point2f g_HydroPumpSourcePosition{ 0.f,0.f };
 Point2f g_DragonRageDestinationPosition{ 0.f,0.f };
 Point2f g_DragonRageSourcePosition{ 0.f,0.f };
+Point2f g_HyperBeamDestinationPosition{ 0.f,0.f };
+Point2f g_HyperBeamSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
