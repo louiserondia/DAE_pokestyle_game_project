@@ -18,6 +18,23 @@ const int g_AmmountOfMoves{ 4 };
 
 #pragma region Enum&Structs
 
+
+struct Texts {
+	// concat with the name(s) of the concerned pokemon(s) 
+	const std::string attack{ " Attacks " };
+	const std::string retaliation{ " retaliates with an attack on " };
+	const std::string wait{ "Waiting for " };
+	const std::string item{ " healed with an item" };
+	const std::string faint{ " has fainted" };
+
+	const std::string itemDoneText{ "You don't have any items left" };
+	const std::string notFirstTurnText{ "Your HP is full" };
+	const std::string runText{ "You can't run from a god" };
+	const std::string switchText{ "You don't have pokemon to switch to" };
+};
+
+const Texts g_Texts{};
+
 enum class Phases
 {
 	phase_allypokemon_move,
@@ -152,7 +169,7 @@ Moves
 	},
 	g_HydroPump
 	{
-		"HydoPump",
+		"HydroPump",
 		70.f
 	},
 	g_DragonRage
@@ -233,38 +250,22 @@ bool
 
 
 utils::Texture
-g_BackgroundTexture{},
-g_GyaradosTexture{},
-g_InfoAllyPokemonTexture{},
-g_GodmoongussTexture{},
-g_AttackTexture{},
-g_GodmoongussAttackText{},
-g_GyaradosAttackText{},
-g_WaitText{},
-g_ItemText{},
-g_SwitchText{},
-g_RunText{},
-g_ItemDoneText{},
-g_NotFirstTurnText{},
-g_FaintText{},
-g_GyaradosNameText{},
-g_GodmoongussNameText{},
-g_FightingOptionsTexture{},
-g_InfoEnemyPokemonTexture{},
-g_ArrowTexture{},
-g_MovesTexture{},
-g_SurfText{},
-g_HydroPumpText{},
-g_DragonRageText{},
-g_HyperBeamText{},
-g_SurfTexture{},
-g_MoveSurfTexture{};
+	g_BackgroundTexture{},
+	g_GyaradosTexture{},
+	g_InfoAllyPokemonTexture{},
+	g_GodmoongussTexture{},
+	g_AttackTexture{},
+	g_FightingOptionsTexture{},
+	g_InfoEnemyPokemonTexture{},
+	g_ArrowTexture{},
+	g_MovesTexture{},
+	g_SurfTexture{},
+	g_MoveSurfTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
 Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock *0.75f };
 Point2f g_BackgroundPosition{ 0.f,0.f };
-Point2f g_Move1Position{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,g_WindowHeight - g_HeightOfTextBlock * 0.80f };
 Point2f g_SurfPosition{ 0.f,g_WindowHeight * 0.6f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
@@ -303,6 +304,4 @@ void	Heal(Pokemon& hpBar);
 void	HPBarMath(Pokemon& hpBar, float elapsedTime);
 #pragma endregion Update
 #pragma endregion Functions
-
-
 

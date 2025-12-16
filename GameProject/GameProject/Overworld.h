@@ -119,7 +119,7 @@ struct Character {
 	static Texture texture;
 
 	void		Draw() const;
-	void		UpdateFrame(float elapsedSec, float frameRate = 1 / 8.f);
+	void		UpdateFrame(float elapsedSec, int frameRate = 8);
 	void		UpdateAnimFrameState();
 	void		UpdatePos(float elapsedSec, float speed, float maxDist);
 	void		StopWalkingAndReset(int& curKey, int& nextKey);
@@ -168,7 +168,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
+	int		curSceneIndex{ 1 }; // to debug, set to the scene you want to start at
 	const float moveSpeed{ 220.f };
 };
 

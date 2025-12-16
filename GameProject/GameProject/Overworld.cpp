@@ -544,7 +544,7 @@ void	UpdateOverworld(float elapsedSec) {
 		if (npc.isMoto) {
 			npc.Drive();
 			npc.UpdatePos(elapsedSec, g_World.moveSpeed, Scene::tileSize);
-			npc.UpdateFrame(elapsedSec, 1 / 8.f);
+			npc.UpdateFrame(elapsedSec);
 		}
 		else {
 			//if (npc.isWalkingTowardsPlayer) npc.Walk();
@@ -690,7 +690,8 @@ void NPC::FollowPath() {
 }
 
 void Camera::UpdatePos(float elapsedSec, const Scene& scene, const Player& player) {
-	if (player.isMoving) {
+	if (player.isMoving)
+	{
 		if (player.dst.left + (player.dst.width / 2) - g_WindowWidth / 2 >= 0.f
 			&& player.dst.left + (player.dst.width / 2) + g_WindowWidth / 2 <= scene.screenWidth)
 		{
@@ -728,30 +729,29 @@ void	Character::UpdateAnimFrameState() {
 		curAnimFrame = g_AnimFrames["walkdown"];
 }
 
-void	Character::UpdateFrame(float elapsedSec, float frameRate) {
+void	Character::UpdateFrame(float elapsedSec, int fps) {
+	const int animationTime{ static_cast<int>(frameTime * fps) };
+
 	frame.start = curAnimFrame.col;
 	src.left = (frame.start + frame.index) * src.width;
 
-	if (frameTime > frameRate) {
-		frameTime = 0.f;
-		if (isMoving)
-			frame.index = (frame.index + 1) % curAnimFrame.nrFrames;
-		else
-			frame.index = 1;
+	if (isMoving) {
+		frame.index = animationTime % curAnimFrame.nrFrames;
+	}
+	else {
+		frame.index = 1;
 	}
 	frameTime += elapsedSec;
 }
 
 void	Scene::UpdateAnimTextureFrames() {
-	const float frameRate{ 1.f / 4 };
+	const int fps{ 4 };
+	const int animationTime{ static_cast<int>(g_AnimTextureTime * fps) };
 
-	if (g_AnimTextureTime > frameRate) {
-		g_AnimTextureTime = 0.f;
-		animTextureFrames.sea.index = (animTextureFrames.sea.index + 1) % animTextureFrames.sea.end;
-		animTextureFrames.rock.index = (animTextureFrames.rock.index + 1) % animTextureFrames.rock.end;
-		animTextureFrames.flower.index = (animTextureFrames.flower.index + 1) % animTextureFrames.flower.end;
-		animTextureFrames.smoke.index = (animTextureFrames.smoke.index + 1) % animTextureFrames.smoke.end;
-	}
+	animTextureFrames.sea.index = animationTime % animTextureFrames.sea.end;
+	animTextureFrames.rock.index = animationTime % animTextureFrames.rock.end;
+	animTextureFrames.flower.index = animationTime % animTextureFrames.flower.end;
+	animTextureFrames.smoke.index = animationTime % animTextureFrames.smoke.end;
 }
 
 void	PlayMusicOverworld() {
@@ -792,7 +792,7 @@ void UpdateScene(Camera& camera, Player& player) {
 	// change the music if change environment
 	pScene = &g_World.scenes[g_World.curSceneIndex];
 	pScene->Init();
-	
+
 	if (!prevIsCave && Scene::isCave) {
 		PlayMusicOverworld();
 	}

@@ -24,7 +24,7 @@ const int		g_DefaultFontSize{ 100 };
 
 void LoadFont();
 void InitAlphabet();
-void DrawTextFromString(const std::string& str, Point2f pos, int fontSize = g_DefaultFontSize, bool isBlack = 1);
+void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize = g_DefaultFontSize, bool isBlack = 1);
 void FreeFontAndAlphabets();
 
 // Draw a text from a string, the default font size is 100 but can be srinked and set to white or black
