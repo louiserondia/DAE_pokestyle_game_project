@@ -23,12 +23,12 @@ void InitMusic()
 	LoadSoundEffect(g_Noises.g_Attack, "../Resources/AttackSoundEfffect.wav");
 	LoadSoundEffect(g_Noises.g_DamageTaken, "../Resources/DamageSoundEffect.wav");
 }
-
 void PlayMusicBattle() {
 	PlayMusic(g_Noises.g_GodmungussBattleMusic);
 }
 void InitSprites()
 {
+
 	TextureFromFile("Resources/BackgroundCave.png", g_BackgroundTexture);
 	TextureFromFile("Resources/FightingOptions.png", g_FightingOptionsTexture);
 	TextureFromFile("Resources/Gyarados.png", g_GyaradosTexture);
@@ -39,6 +39,7 @@ void InitSprites()
 	TextureFromFile("Resources/Attack.png", g_AttackTexture);
 	TextureFromFile("Resources/MovesOptions.png", g_MovesTexture);
 	TextureFromFile("Resources/Surf.png", g_SurfTexture);
+	TextureFromFile("Resources/HydroPump.png", g_HydroPumpTexture);
 }
 void InitText()
 {
@@ -270,6 +271,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				else if (CurrentMove == MoveOptions::topright)
 				{
 					g_Attack = true;
+					g_HydroPumpIsOn = true;
 				}
 				else if (CurrentMove == MoveOptions::bottomleft)
 				{
@@ -289,7 +291,7 @@ void HandleKeyUpBattle(SDL_Keycode key)
 #pragma region Draw
 void DrawBattle()
 {
-	const Rectf
+	Rectf
 		destinationBackground
 	{
 		0.f,
@@ -332,21 +334,7 @@ void DrawBattle()
 		g_WindowWidth,
 		g_HeightOfTextBlock
 	},
-	destinationAllyPokemon
-	{
-		g_AllyPokemon.position.x,
-		g_AllyPokemon.position.y,
-		g_WindowWidth * 0.25f,
-		g_WindowWidth * 0.25f,
-	},
-	destinationEnemyPokemon
-	{
-		g_BossPokemon.position.x,
-		g_BossPokemon.position.y,
-		g_WindowWidth * 0.32f,
-		g_WindowWidth * 0.32f,
-	},
-	destinationAttack
+		destinationAttack
 	{
 		attackSpriteSize.x,
 		attackSpriteSize.y,
@@ -359,10 +347,24 @@ void DrawBattle()
 		g_SurfPosition.y,
 		g_WindowWidth * 0.4f,
 		g_WindowHeight - (g_WindowHeight * 0.6f),
+	},
+	sourceHydroPump
+	{
+		g_HydroPumpSourcePosition.x,
+		g_HydroPumpSourcePosition.y,
+		g_HydroPumpTexture.width,
+		g_HydroPumpTexture.height/4
+	},
+	destinationHydroPump
+	{
+		g_HydroPumpDestinationPosition.x,
+		g_HydroPumpDestinationPosition.y,
+		g_EnemyPokemon.position.width,
+		g_EnemyPokemon.position.height,
 	};
 	DrawTexture(g_BackgroundTexture, destinationBackground);
-	DrawTexture(g_GyaradosTexture, destinationAllyPokemon);
-	DrawTexture(g_GodmoongussTexture, destinationEnemyPokemon);
+	DrawTexture(g_GyaradosTexture, g_AllyPokemon.position);
+	DrawTexture(g_GodmoongussTexture, g_BossPokemon.position);
 	DrawTexture(g_AttackTexture, destinationAttack);
 	DrawTexture(g_InfoAllyPokemonTexture, destinationgInfoAllyPokemonTexture);
 	DrawTexture(g_InfoEnemyPokemonTexture, destinationgInfoEnemyPokemonTexture);
@@ -448,6 +450,11 @@ void DrawBattle()
 	if (g_SurfIsOn)
 	{
 		DrawTexture(g_SurfTexture, destinationSurf);
+	}
+	if (g_HydroPumpIsOn)
+	{
+		g_HydroPumpSourcePosition.y = g_CurrentHydroPumpIndex* g_HydroPumpTexture.height / 4;
+		DrawTexture(g_HydroPumpTexture, destinationHydroPump,sourceHydroPump);
 	}
 	DrawHPBar();
 
@@ -538,7 +545,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 		g_PickingMoves = false;
 		break;
 	case Phases::phase_attack:
-		AttackEffect(elapsedSec, g_BossPokemon.position.x, g_BossPokemon.position.y);
+		AttackEffect(elapsedSec, g_BossPokemon.position.left, g_BossPokemon.position.top);
 		break;
 	case Phases::phase_enemypokemon_move:
 		Move(elapsedSec, g_BossPokemon, 1);
@@ -561,7 +568,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 		g_EnemyPokemon.attackTextureIsOn = true;
 		break;
 	case Phases::phase_attackcounter:
-		AttackEffect(elapsedSec, g_AllyPokemon.position.x, g_AllyPokemon.position.y);
+		AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top);
 		break;
 	case Phases::phase_allypokemoncounter_move:
 		Move(elapsedSec, g_AllyPokemon, -1);
@@ -599,9 +606,6 @@ void Attack(float elapsedSec, Moves& currentMove)
 }
 void Item(float elapsedSec)
 {
-
-
-
 	if (g_notFirstTurn == true)
 	{
 		if (g_ItemOnlyOnce == false)
@@ -623,7 +627,7 @@ void Item(float elapsedSec)
 				Move(elapsedSec, g_BossPokemon, -1);
 				break;
 			case Phases::phase_attackcounter:
-				AttackEffect(elapsedSec, g_AllyPokemon.position.x, g_AllyPokemon.position.y);
+				AttackEffect(elapsedSec, g_AllyPokemon.position.left, g_AllyPokemon.position.top);
 				break;
 			case Phases::phase_allypokemoncounter_move:
 				Move(elapsedSec, g_AllyPokemon, -1);
@@ -716,10 +720,11 @@ void RunAway(float elapsedSec)
 }
 void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY)
 {
-	static bool attackIsntGoing{false};
-	float SurfMovement{ 200.f };
+	static bool attackIsntGoing{ false };
+	float frameRate{ 10.f };
 	if (g_SurfIsOn)
 	{
+		float SurfMovement{ 200.f };
 		if (!g_SoundDone)
 		{
 			PlaySoundEffect(g_Noises.g_Surf);
@@ -736,6 +741,29 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 				g_SoundDone = false;
 			}
 	}
+	else if (g_HydroPumpIsOn)
+	{
+		static float HydroPumpincrementation{ 0.f };
+		HydroPumpincrementation += elapsedSec;
+		const int HydroPumpAnimatonTime{ static_cast<int>(HydroPumpincrementation * frameRate) };
+		if (!g_SoundDone)
+		{
+			PlaySoundEffect(g_Noises.g_Surf);
+			g_SoundDone = true;
+		}
+		g_HydroPumpDestinationPosition.x = (attackPositionX + (g_BossPokemon.position.width / 2.f)) - (g_EnemyPokemon.position.width / 1.9f);
+		g_HydroPumpDestinationPosition.y = attackPositionY + (g_BossPokemon.position.height / 2.f) - (g_EnemyPokemon.position.height / 1.9f);
+			g_CurrentHydroPumpIndex = HydroPumpAnimatonTime % 4;
+		if (HydroPumpincrementation >= 1.f)
+		{
+			HydroPumpincrementation = 0.f;
+			g_HydroPumpSourcePosition.y = 0.f;
+			attackIsntGoing = true;
+			g_HydroPumpIsOn = false;
+			g_SoundDone = false;
+		}
+		
+	}
 	else if (attackIsntGoing = true)
 	{
 		g_SpeedAttack = 0.f;
@@ -743,11 +771,13 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 		{
 			if (AttackSequence == Phases::phase_attack || AttackSequence == Phases::phase_attackcounter)
 				AttackSequence = static_cast<Phases>(static_cast<int>(AttackSequence) + 1);
+			attackIsntGoing = false;
 		}
 		else if (g_Item)
 		{
 			if (ItemSequence == Phases::phase_attackcounter)
 				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
+			attackIsntGoing = false;
 		}
 	}
 }
@@ -777,7 +807,7 @@ void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 {
  	if (g_SavedPosition < 0)
 	{
-		g_SavedPosition = pokemon.position.x;
+		g_SavedPosition = pokemon.position.left;
 		g_MovementAnimAlpha = 0;
 	}
 	if (g_MovementAnimAlpha >= 1)
@@ -801,7 +831,7 @@ void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 				ItemSequence = static_cast<Phases>(static_cast<int>(ItemSequence) + 1);
 			}
 		}
-		pokemon.position.x = g_SavedPosition;
+		pokemon.position.left = g_SavedPosition;
 		g_MovementAnimAlpha = 0;
 		g_SavedPosition = -1;
 
@@ -820,7 +850,7 @@ void Move(float elapsedSec, PokemonInBattle& pokemon, int dir)
 	}
 
 	float currentX = utils::Lerp(g_SavedPosition, target, alpha);
-	pokemon.position.x = currentX;
+	pokemon.position.left = currentX;
 }
 void Damage(Pokemon& hpBarForDamage, Moves& move)
 {

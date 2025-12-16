@@ -911,7 +911,9 @@ Point2f	PosFromTile(int row, int col) {
 
 Point2f	DirFromKey(SDL_Keycode key) {
 	if (key == SDLK_LEFT)
+	{
 		return Point2f{ -1.f, 0.f };
+	}
 	if (key == SDLK_RIGHT)
 		return Point2f{ 1.f, 0.f };
 	if (key == SDLK_UP)
@@ -1013,7 +1015,7 @@ void DrawCurrentAndTargetTiles() {
 	const Scene& scene{ GetScene() };
 
 	SetColor(g_Red); // target
-	for (const NPC& npc : g_NPC) {
+	for ( const NPC& npc : g_NPC) {
 		FillRect(PosFromTile(npc.targetTile).x - g_Camera.pos.x, PosFromTile(npc.targetTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
 	}
 	FillRect(PosFromTile(g_Player.targetTile).x - g_Camera.pos.x, PosFromTile(g_Player.targetTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
@@ -1026,12 +1028,12 @@ void DrawCurrentAndTargetTiles() {
 }
 
 void NPC::DrawPath() const {
-	for (int i{}; i < pathLength; ++i)
+	for (int index{}; index < pathLength; ++index)
 	{
 		SetColor(g_Red);
 
-		FillRect(PosFromTile(path[i]).x - g_Camera.pos.x, PosFromTile(path[i]).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
-		std::cout << path[i] << " ";
+		FillRect(PosFromTile(path[index]).x - g_Camera.pos.x, PosFromTile(path[index]).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
+		std::cout << path[index] << " ";
 	}
 	std::cout << "\n";
 }

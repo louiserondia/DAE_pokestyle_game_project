@@ -49,6 +49,15 @@ enum class MoveOptions
 	bottomright
 };
 
+enum class HydroPumpModes
+{
+	one,
+	two,
+	three,
+	four,
+	cleanup
+};
+
 
 struct Moves
 {
@@ -80,7 +89,7 @@ struct Pokemon
 
 struct PokemonInBattle
 {
-	Point2f
+	Rectf
 		position{};
 	bool
 		attackTextureIsOn{};
@@ -105,26 +114,32 @@ Sounds
 PokemonInBattle
 	g_AllyPokemon
 	{
-		Point2f
+		Rectf
 		{
 			g_WindowWidth / 10,
-			g_WindowHeight - (g_HeightOfTextBlock + (g_WindowWidth * 0.25f))
+			g_WindowHeight - (g_HeightOfTextBlock + (g_WindowWidth * 0.25f)),
+			g_WindowWidth * 0.25f,
+			g_WindowWidth * 0.25f
 		}
 	},
 	g_EnemyPokemon
 	{
-		Point2f
+		Rectf
 		{
 		(g_WindowWidth / 2) + 50.f,
-		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f))
+		g_WindowHeight - (g_HeightOfTextBlock * 1.75f) - (20 + (g_HeightOfTextBlock * 1.32f)),
+		g_WindowWidth * 0.25f,
+		g_WindowWidth * 0.25f
 		}
 	},
 	g_BossPokemon
 	{
-		Point2f
+		Rectf
 		{
 		(g_WindowWidth * 0.575f),
-		0.f
+		0.f,
+		g_WindowWidth * 0.32f,
+		g_WindowWidth * 0.32f
 		}
 	};
 
@@ -188,7 +203,7 @@ Pokemon
 		g_DragonRage,
 		g_HyperBeam,
 			100.f,
-			300.f
+			500.f
 	},
 	g_Gyarados
 	{
@@ -198,8 +213,10 @@ Pokemon
 		g_DragonRage,
 		g_HyperBeam,
 			50.f,
-			100.f
+			300.f
 	};
+int
+	g_CurrentHydroPumpIndex{ 1 };
 float
 	g_SpeedAttack{ 0.f },
 	g_PhaseWaitCounter{ 0.f },
@@ -208,8 +225,8 @@ float
 	g_MovementAnimAlpha{ 0.f },
 	g_HPBarTarget{},
 	g_AnimationTime{ 1.f / 0.6f },
-	g_SavedHPDamage{ -1 },
-	g_SavedHPHeal{ -1 };
+	g_SavedHPDamage{ -1.f },
+	g_SavedHPHeal{ -1.f };
 
 bool
 	g_Attack{},
@@ -229,36 +246,54 @@ bool
 	g_IsHeal{},
 	g_PickingMoves{},
 	g_SurfIsOn{},
+	g_HydroPumpIsOn{},
 	g_SoundDone{};
 
+enum class TextureType
+{
+	None = -1,
+	Background,
+	Gyarados,
+	Count
+};
+
+std::string
+	g_TextureFileNameArray[int(TextureType::Count)]
+	{
+		"Resources/BackgroundCave.png",
+		"Resources/BackgroundCave.png"
+	};
+utils::Texture
+	g_TextureArray[int( TextureType::Count ) ];
 
 utils::Texture
-g_BackgroundTexture{},
-g_GyaradosTexture{},
-g_InfoAllyPokemonTexture{},
-g_GodmoongussTexture{},
-g_AttackTexture{},
-g_GodmoongussAttackText{},
-g_GyaradosAttackText{},
-g_WaitText{},
-g_ItemText{},
-g_SwitchText{},
-g_RunText{},
-g_ItemDoneText{},
-g_NotFirstTurnText{},
-g_FaintText{},
-g_GyaradosNameText{},
-g_GodmoongussNameText{},
-g_FightingOptionsTexture{},
-g_InfoEnemyPokemonTexture{},
-g_ArrowTexture{},
-g_MovesTexture{},
-g_SurfText{},
-g_HydroPumpText{},
-g_DragonRageText{},
-g_HyperBeamText{},
-g_SurfTexture{},
-g_MoveSurfTexture{};
+	g_BackgroundTexture{},
+	g_GyaradosTexture{},
+	g_InfoAllyPokemonTexture{},
+	g_GodmoongussTexture{},
+	g_AttackTexture{},
+	g_GodmoongussAttackText{},
+	g_GyaradosAttackText{},
+	g_WaitText{},
+	g_ItemText{},
+	g_SwitchText{},
+	g_RunText{},
+	g_ItemDoneText{},
+	g_NotFirstTurnText{},
+	g_FaintText{},
+	g_GyaradosNameText{},
+	g_GodmoongussNameText{},
+	g_FightingOptionsTexture{},
+	g_InfoEnemyPokemonTexture{},
+	g_ArrowTexture{},
+	g_MovesTexture{},
+	g_SurfText{},
+	g_HydroPumpText{},
+	g_DragonRageText{},
+	g_HyperBeamText{},
+	g_SurfTexture{},
+	g_HydroPumpTexture{},
+	g_MoveSurfTexture{};
 
 Point2f attackSpriteSize{ g_WindowWidth * -0.99375f, g_WindowHeight * -0.025f };
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
@@ -266,11 +301,14 @@ Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_Hei
 Point2f g_BackgroundPosition{ 0.f,0.f };
 Point2f g_Move1Position{ (g_HalfWidth * 0.075f) + g_DestinationFightingOptions.width * 0.05f * 1.5f,g_WindowHeight - g_HeightOfTextBlock * 0.80f };
 Point2f g_SurfPosition{ 0.f,g_WindowHeight * 0.6f };
+Point2f g_HydroPumpDestinationPosition{ -900.f,-900.f };
+Point2f g_HydroPumpSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
 FightingOptions CurrentFightingOption{ FightingOptions::fight };
 MoveOptions CurrentMove{ MoveOptions::topleft };
+HydroPumpModes CurrentMode{ HydroPumpModes::one };
 #pragma endregion Variables
 
 #pragma region Functions
@@ -301,6 +339,7 @@ void	Wait(float elapsedSec);
 void	Damage(Pokemon& hpBarForDamage, Moves& move);
 void	Heal(Pokemon& hpBar);
 void	HPBarMath(Pokemon& hpBar, float elapsedTime);
+
 #pragma endregion Update
 #pragma endregion Functions
 
