@@ -77,7 +77,7 @@ void OnKeyUpEvent(SDL_Keycode key)
 		if (g_IsBattleOn)
 			TurnOffBattle();
 		else
-			TurnOnBattle();
+			TurnOnBattle(rand() % 4);
 	}
 	else if (key == SDLK_m) {
 		Mix_VolumeMusic(0);
@@ -220,7 +220,12 @@ void	DrawBattleTransitionAnimation() {
 	DrawAnimationDoubleSnake();
 }
 
-void TurnOnBattle() {
+/// <summary>
+/// Starts the battle with a random pokemon. Tall grass, cave and npc will return a different type of pokemon
+/// </summary>
+/// <param name="pokemonId">0-1 : tall grass and npc, 2-3 : cave and npc, 4 : Godmoongus </param>
+
+void TurnOnBattle(int pokemonId) {
 	g_GlobalTime = 0.f;
 	g_IsOverworldOn = false;
 	g_IsBattleTransitionOn = true;

@@ -6,7 +6,7 @@
 #include <windows.h>
 #include <mmsystem.h>
 
-void TurnOnBattle();
+void TurnOnBattle(int pokemonId);
 
 int Scene::nrCols = 0;
 int Scene::nrRows = 0;
@@ -551,7 +551,7 @@ void	UpdateOverworld(float elapsedSec) {
 			//else 
 			npc.FollowPath();
 			npc.UpdatePos(elapsedSec, g_World.moveSpeed / 3, Scene::tileSize);
-			npc.UpdateFrame(elapsedSec, 1 / 4.f);
+			npc.UpdateFrame(elapsedSec, 4.f);
 		}
 		npc.EngageBattle(g_Player);
 	}
@@ -602,6 +602,12 @@ void HandlePlayerWalk() {
 		if (!IsWalkable(targetTemp) || IsNPCOnTile(targetTemp))
 			g_Player.isMoving = false;
 		CheckBattleInGrass();
+		if (Scene::isCave) {
+			const int gamble{ rand() % 10 };
+			if (!gamble) {
+				TurnOnBattle(rand() % 2 + 2); 
+			}
+		}
 	}
 
 	if (g_CurKey) {
@@ -826,7 +832,7 @@ void CheckBattleInGrass() {
 
 		if (!randNum) {
 			g_Player.StopWalkingAndReset(g_CurKey, g_NextKey);
-			TurnOnBattle();
+			TurnOnBattle(rand() % 2);
 		}
 	}
 }
@@ -864,7 +870,12 @@ void NPC::EngageBattle(Player& player) {
 		g_Camera.backupPos = g_Camera.pos;
 	}
 	else if ((IsPlayerOnTile(targetTile) || isGod) && g_Camera.isBlinking && g_BlinkTime > .8f) {
-		TurnOnBattle();
+		if (isGod) {
+			TurnOnBattle(4); // godmoongus
+		}
+		else {
+			TurnOnBattle(rand() % 4); // npc
+		}
 		g_Camera.isBlinking = false;
 		g_Camera.pos = g_Camera.backupPos;
 	}
@@ -1015,7 +1026,7 @@ void DrawCurrentAndTargetTiles() {
 	const Scene& scene{ GetScene() };
 
 	SetColor(g_Red); // target
-	for ( const NPC& npc : g_NPC) {
+	for (const NPC& npc : g_NPC) {
 		FillRect(PosFromTile(npc.targetTile).x - g_Camera.pos.x, PosFromTile(npc.targetTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);
 	}
 	FillRect(PosFromTile(g_Player.targetTile).x - g_Camera.pos.x, PosFromTile(g_Player.targetTile).y - g_Camera.pos.y, Scene::tileSize, Scene::tileSize);

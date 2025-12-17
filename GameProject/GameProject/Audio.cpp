@@ -19,12 +19,18 @@ void EndAudio() {
 	SDL_Quit();
 }
 
+/// <summary>
+/// Loads music from .ogg file, only for soundtrack / long sounds 
+/// </summary>
 void LoadMusic(Mix_Music*& music, const std::string& path) {
 	music = Mix_LoadMUS(path.c_str());
 	if (music == NULL)
 		std::cout << "Couldn't load music at " << path << std::endl;
 }
 
+/// <summary>
+/// Loads music from .wav file, only for sound effects / short sounds 
+/// </summary>
 void LoadSoundEffect(Mix_Chunk*& sound, const std::string& path) {
 	sound = Mix_LoadWAV(path.c_str());
 	if (sound == NULL)

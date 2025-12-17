@@ -48,12 +48,9 @@ const int g_DefaultFontSize{ 100 };
 
 // Declare your own functions here
 
-void LoadAudio();
-void FreeAudio();
-
 void DrawBattleTransitionAnimation();
 
-void TurnOnBattle();
+void TurnOnBattle(int pokemonId);
 void TurnOffBattle();
 void UpdateBattleOverworldStati();
 
