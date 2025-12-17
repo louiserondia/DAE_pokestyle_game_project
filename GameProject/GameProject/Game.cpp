@@ -30,9 +30,9 @@ void Start()
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	TextureFromFile("Resources/mushroom.png", g_Mushroom);
 
-	InitBattle(g_PokemonIdFromOverworld);
 	InitMushrooms();
 	InitAudio();
+	InitBattle(g_PokemonIdFromOverworld);
 	InitOverworld();
 	InitAlphabet();
 	PlayMusicOverworld();

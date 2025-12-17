@@ -112,6 +112,8 @@ struct Sounds
 	Mix_Music* g_GodmungussBattleMusic{};
 	Mix_Chunk* g_ArrowMove{};
 	Mix_Chunk* g_Surf{};
+	Mix_Chunk* g_Toxic{};
+	Mix_Chunk* g_RazorLeaf{};
 	Mix_Chunk* g_DragonRage{};
 	Mix_Chunk* g_HyperBeam{};
 	Mix_Chunk* g_DamageTaken{};
@@ -121,7 +123,8 @@ struct Sounds
 #pragma region Variables
 
 utils::Texture
-g_BackgroundTexture{},
+g_BackgroundGrassTexture{},
+g_BackgroundCaveTexture{},
 g_GyaradosTexture{},
 g_InfoAllyPokemonTexture{},
 g_GodmoongussTexture{},
@@ -129,9 +132,12 @@ g_SandslashTexture{},
 g_VictreebelTexture{},
 g_FightingOptionsTexture{},
 g_InfoEnemyPokemonTexture{},
+g_ToxicTexture{},
 g_ArrowTexture{},
 g_MovesTexture{},
 g_SurfTexture{},
+g_ParasTexture{},
+g_ParasectTexture{},
 g_HydroPumpTexture{},
 g_DragonRageTexture{},
 g_HyperBeamTexture{},
@@ -143,6 +149,7 @@ g_CurrentHydroPumpIndex{ 1 },
 g_CurrentDragonRageIndex{ 1 },
 g_PickedPokemon{},
 g_CurrentSlashIndex{1},
+g_CurrentToxicIndex{1},
 g_CurrentRazorLeafIndex{1},
 g_CurrentHyperBeamIndex{ 1 };
 
@@ -183,6 +190,7 @@ g_DidHyperBeamLastTurn{},
 g_SlashIsOn{},
 g_RazorLeafIsOn{},
 g_HyperBeamTextIsOn{},
+g_ToxicIsOn{},
 g_SoundDone{};
 Sounds
 	g_Noises{};
@@ -226,36 +234,41 @@ HPBar
 		}
 	};
 Moves
-	g_Surf
-	{
-		"Surf",
-		(static_cast<float>(rand() % 31) + 20.f)
-	},
-	g_HydroPump
-	{
-		"HydroPump",
-		(static_cast<float>(rand() % 51) + 10.f)
-	},
-	g_DragonRage
-	{
-		"DragonRage",
-		40.f
-	},
-	g_HyperBeam
-	{
-		"HyperBeam",
-		(static_cast<float>(rand() % 51) + 50.f)
-	},
-	g_Slash
-	{
-		"Slash",
-		(static_cast<float>(rand() % 51) + 20.f)
-	},
-	g_RazorLeaf
-	{
-		"Razor Leaf",
-		(static_cast<float>(rand() % 51) + 20.f)
-	};	
+g_Surf
+{
+	"Surf",
+	(static_cast<float>(rand() % 31) + 20.f)
+},
+g_HydroPump
+{
+	"HydroPump",
+	(static_cast<float>(rand() % 51) + 10.f)
+},
+g_DragonRage
+{
+	"DragonRage",
+	40.f
+},
+g_HyperBeam
+{
+	"HyperBeam",
+	(static_cast<float>(rand() % 51) + 50.f)
+},
+g_Slash
+{
+	"Slash",
+	(static_cast<float>(rand() % 51) + 20.f)
+},
+g_RazorLeaf
+{
+	"Razor Leaf",
+	(static_cast<float>(rand() % 51) + 20.f)
+},
+g_Toxic
+{
+	"Toxic",
+	(static_cast<float>(rand() % 101) + 50.f)
+};
 Rectf
 	g_MoveOptionsRect{
 			0.f,
@@ -275,7 +288,7 @@ Pokemon
 	{
 		"Godmoonguss",
 		&g_GodmoongussTexture,
-		{g_Surf,g_HydroPump,g_DragonRage,g_HyperBeam,},
+		{g_RazorLeaf,g_RazorLeaf,g_RazorLeaf,g_RazorLeaf},
 			100.f,
 			500.f
 	},
@@ -303,9 +316,25 @@ Pokemon
 		{g_RazorLeaf,g_RazorLeaf,g_RazorLeaf,g_RazorLeaf},
 			50.f,
 			250.f
+	},
+	g_Paras
+	{
+		"Paras",
+		&g_ParasTexture,
+		{g_Slash,g_Slash,g_Slash,g_Slash},
+			50.f,
+			250.f
+	},
+	g_Parasect
+	{
+		"Parasect",
+		&g_ParasectTexture,
+		{g_Slash,g_Slash,g_Slash,g_Slash},
+			50.f,
+			250.f
 	};
 
-Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Sandslash ,g_Victreebel,g_Sandslash,g_Victreebel,g_Godmoonguss };
+Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{g_Paras,g_Victreebel,g_Sandslash,g_Parasect,g_Godmoonguss};
 
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
 Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock *0.75f };
@@ -321,6 +350,8 @@ Point2f g_SlashDestinationPosition{ (g_AllyPokemon.position.left + (g_AllyPokemo
 Point2f g_SlashSourcePosition{ 0.f,0.f };
 Point2f g_RazorLeafDestinationPosition{ (g_AllyPokemon.position.left + (g_AllyPokemon.position.width / 2.f)) - (g_AllyPokemon.position.width / 1.9f) ,g_AllyPokemon.position.top + (g_AllyPokemon.position.height / 2.f) - (g_AllyPokemon.position.height / 1.9f) };
 Point2f g_RazorLeafSourcePosition{ 0.f,0.f };
+Point2f g_ToxicDestinationPosition{ (g_AllyPokemon.position.left + (g_AllyPokemon.position.width / 2.f)) - (g_AllyPokemon.position.width / 1.9f) ,g_AllyPokemon.position.top + (g_AllyPokemon.position.height / 2.f) - (g_AllyPokemon.position.height / 1.9f) };
+Point2f g_ToxicSourcePosition{ 0.f,0.f };
 
 Phases AttackSequence{ Phases::phase_allypokemon_move };
 Phases ItemSequence{ Phases::phase_hpbarally_up };
