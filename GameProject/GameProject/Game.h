@@ -32,11 +32,25 @@ float g_WindowHeight{ 720 };
 // Declare your own global variables here
 
 bool	g_IsBattleOn{};		// press B to switch from battle to map view and mechanics
-bool	g_IsOverworldOn{1};		// press B to switch from battle to map view and mechanics
+bool	g_IsOverworldOn{ 1 };		// press B to switch from battle to map view and mechanics
 bool	g_IsBattleTransitionOn{};
 bool	g_IsDoneDrawing{ true };
 
 float	g_GlobalTime{};
+
+struct Mushroom {
+	float	x;
+	float	y;
+	float	size;
+	int		speed;
+	bool	isFixed;
+};
+
+Texture		g_Mushroom{};
+const int	g_NrMushrooms{ 150 };
+Mushroom	g_MushroomsPos[g_NrMushrooms]{};
+bool		g_IsDrawingMushroom{};
+float		g_MushroomsThreshold{};
 
 struct Sounds {
 	Mix_Music* godmungussBattleMusic{};
@@ -44,20 +58,27 @@ struct Sounds {
 
 Sounds g_GlobalSounds{};
 
-const int g_DefaultFontSize{ 100 };
+const int	g_DefaultFontSize{ 150 };
+int			g_PokemonIdFromOverworld{};
+bool		g_IsBlinking{};
+float		g_BlinkTime{};
 
 // Declare your own functions here
 
-void DrawBattleTransitionAnimation();
+void InitMushrooms();
 
 void TurnOnBattle(int pokemonId);
 void TurnOffBattle();
 void UpdateBattleOverworldStati();
+void UpdateMushroomsPos(float elapsedSec);
 
+void DrawBattleTransitionAnimation();
+void DrawBlinkBattle();
 void DrawAnimationCurtainCall();
 void DrawAnimationHorStripes();
 void DrawAnimationHorStripesSpecial();
 void DrawAnimationDoubleSnake();
+void DrawAnimationMushrooms();
 
 #pragma endregion ownDeclarations
 

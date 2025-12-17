@@ -339,8 +339,6 @@ void	DrawOverworld() {
 	if (scene.fgTexture.height)
 		scene.DrawFgMap();
 	DrawLoadingScreen();
-	DrawBlinkBattle();
-
 }
 
 void Scene::DrawSea() const {
@@ -441,15 +439,6 @@ void DrawLoadingScreen() {
 		return;
 
 	SetColor(0.f, 0.f, 0.f, cosf(g_LoadingScreenCooldown * g_Pi));
-	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
-}
-
-void DrawBlinkBattle() {
-	if (!g_Camera.isBlinking) return;
-
-	const float pulsation{ 15.7f };
-
-	SetColor(0.f, 0.f, 0.f, sinf(pulsation * g_BlinkTime - (pulsation / 2)) / 2 + .5f);
 	FillRect(0.f, 0.f, g_WindowWidth, g_WindowHeight);
 }
 
@@ -562,7 +551,6 @@ void	UpdateOverworld(float elapsedSec) {
 	UpdateScene(g_Camera, g_Player);
 
 	g_Time += elapsedSec;
-	g_BlinkTime += elapsedSec;
 	g_Sounds.collisionCooldown += elapsedSec;
 	g_Sounds.grassCooldown += elapsedSec;
 	g_LoadingScreenCooldown += elapsedSec;
@@ -603,9 +591,9 @@ void HandlePlayerWalk() {
 			g_Player.isMoving = false;
 		CheckBattleInGrass();
 		if (Scene::isCave) {
-			const int gamble{ rand() % 10 };
+			const int gamble{ rand() % 20 };
 			if (!gamble) {
-				TurnOnBattle(rand() % 2 + 2); 
+				TurnOnBattle(rand() % 2 + 2);
 			}
 		}
 	}
@@ -863,21 +851,14 @@ void NPC::EngageBattle(Player& player) {
 		isWalkingTowardsPlayer = true;
 	}
 
-	if ((IsPlayerOnTile(targetTile) || isGod) && !g_Camera.isBlinking) {
+	if ((IsPlayerOnTile(targetTile) || isGod)) {
 		isMoving = false;
-		g_BlinkTime = 0.f;
-		g_Camera.isBlinking = true;
-		g_Camera.backupPos = g_Camera.pos;
-	}
-	else if ((IsPlayerOnTile(targetTile) || isGod) && g_Camera.isBlinking && g_BlinkTime > .8f) {
 		if (isGod) {
 			TurnOnBattle(4); // godmoongus
 		}
 		else {
 			TurnOnBattle(rand() % 4); // npc
 		}
-		g_Camera.isBlinking = false;
-		g_Camera.pos = g_Camera.backupPos;
 	}
 }
 

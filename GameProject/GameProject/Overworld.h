@@ -161,7 +161,6 @@ struct Camera {
 	Point2f pos{};
 	Point2f	backupPos{};
 	static float	zoom;
-	bool	isBlinking{};
 
 	void Init(const Scene& scene);
 	void UpdatePos(float elapsedSec, const Scene& scene, const Player& player);
@@ -211,7 +210,6 @@ float		g_LoadingScreenCooldown{};
 float		g_AnimTextureTime{};
 float		g_SmokeTime{};
 float		g_Time{};
-float		g_BlinkTime{};
 
 
 //		--- FUNCTIONS ---
@@ -233,7 +231,6 @@ void	FreeOverworld();
 
 void	DrawOverworld();
 void	DrawLoadingScreen();
-void	DrawBlinkBattle();
 
 //		INPUT HANDLING
 
