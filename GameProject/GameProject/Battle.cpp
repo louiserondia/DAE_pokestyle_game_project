@@ -330,11 +330,11 @@ void DrawBattle()
 	{
 		DrawTexture(g_GodmoongussTexture, g_EnemyPokemon.position);
 	}
-	if (g_PickedPokemon == 0)
+	if (g_PickedPokemon == 0|| g_PickedPokemon == 2)
 	{
 		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
 	}
-	if (g_PickedPokemon == 1)
+	if (g_PickedPokemon == 1 || g_PickedPokemon == 3)
 	{
 		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
 	}
@@ -835,7 +835,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 	{
 		static float HydroPumpincrementation{ 0.f };
 		HydroPumpincrementation += elapsedSec;
-		const int HydroPumpAnimatonTime{ static_cast<int>(HydroPumpincrementation * frameRate) };
+		const int HydroPumpAnimatonTime{ static_cast<int>(HydroPumpincrementation * frameRate+0.0001f) };
 		if (!g_SoundDone)
 		{
 			PlaySoundEffect(g_Noises.g_Surf);
@@ -857,7 +857,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 	{
 		static float DragonRageincrementation{ 0.f };
 		DragonRageincrementation += elapsedSec;
-		const int DragonRageAnimatonTime{ static_cast<int>(DragonRageincrementation * frameRate) };
+		const int DragonRageAnimatonTime{ static_cast<int>(DragonRageincrementation * frameRate+0.0001f) };
 		if (!g_SoundDone)
 		{
 			PlaySoundEffect(g_Noises.g_DragonRage);
@@ -879,7 +879,7 @@ void AttackEffect(float elapsedSec, float attackPositionX, float attackPositionY
 	{
 			static float HyperBeamincrementation{ 0.f };
 			HyperBeamincrementation += elapsedSec;
-			const int HyperBeamAnimatonTime{ static_cast<int>(HyperBeamincrementation * frameRate) };
+			const int HyperBeamAnimatonTime{ static_cast<int>(HyperBeamincrementation * frameRate+0.0001f) };
 			if (!g_SoundDone)
 			{
 				PlaySoundEffect(g_Noises.g_HyperBeam);

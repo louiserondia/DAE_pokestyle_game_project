@@ -30,6 +30,7 @@ void Start()
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	TextureFromFile("Resources/mushroom.png", g_Mushroom);
 
+	InitBattle(g_PokemonIdFromOverworld);
 	InitMushrooms();
 	InitAudio();
 	InitOverworld();
@@ -61,6 +62,7 @@ void Update(float elapsedSec)
 
 void End()
 {
+	FreeBattle();
 	FreeOverworld();
 	EndAudio();
 	DeleteTexture(g_Mushroom);
@@ -305,7 +307,6 @@ void TurnOnBattle(int pokemonId) {
 		g_IsDrawingMushroom = true;
 		InitMushrooms();
 	}
-	InitBattle(g_PokemonIdFromOverworld);
 	PlayMusicBattle();
 }
 
@@ -319,7 +320,6 @@ void TurnOffBattle() {
 	g_GlobalTime = 0.f;
 	g_IsDoneDrawing = false;
 	EndBattleOverworld();
-	FreeBattle();
 }
 
 // should make an enum of state instead of 2 bools (isbattleon & overworld)
