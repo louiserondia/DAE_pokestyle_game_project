@@ -32,7 +32,6 @@ void Start()
 
 	InitMushrooms();
 	InitAudio();
-	InitBattle(g_PokemonIdFromOverworld);
 	InitOverworld();
 	InitAlphabet();
 	PlayMusicOverworld();
@@ -307,6 +306,7 @@ void TurnOnBattle(int pokemonId) {
 		g_IsDrawingMushroom = true;
 		InitMushrooms();
 	}
+	InitBattle(g_PokemonIdFromOverworld);
 	PlayMusicBattle();
 }
 

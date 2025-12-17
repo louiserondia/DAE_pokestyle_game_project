@@ -21,6 +21,10 @@ void InitBattle(int pokemonId)
 	{
 		g_EnemyPokemon.position.top += 50.f;
 	}
+	else
+	{
+		g_EnemyPokemon.position.top = 0.f;
+	}
 }
 void InitMusic()
 {
@@ -178,7 +182,14 @@ void HandleKeyUpBattle(SDL_Keycode key)
 				}
 				else if (CurrentFightingOption == FightingOptions::run)
 				{
-					g_Run = true;
+					if(g_PickedPokemon==4)
+					{
+						g_Run = true;
+					}
+					else
+					{
+						TurnOffBattle();
+					}
 				}
 				break;
 			}
