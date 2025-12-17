@@ -330,7 +330,7 @@ MoveOptions CurrentMove{ MoveOptions::topleft };
 
 #pragma region Functions
 #pragma region Init
-void	InitBattle();
+void	InitBattle(int pokemonId);
 void	InitText();
 void	InitSprites();
 void	InitMusic();

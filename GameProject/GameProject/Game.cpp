@@ -10,7 +10,7 @@ void	FreeBattle();
 void	HandleKeyDownOverworld(SDL_Keycode key);
 void	HandleKeyUpOverworld(SDL_Keycode key);
 void	UpdateOverworld(float elapsedSec);
-void	InitBattle();
+void	InitBattle(int pokemonId);
 void	DrawBattle();
 void	UpdateBattle(float elapsedSec);
 void	HandleKeyUpBattle(SDL_Keycode key);
@@ -33,7 +33,6 @@ void Start()
 	InitMushrooms();
 	InitAudio();
 	InitOverworld();
-	InitBattle();
 	InitAlphabet();
 	PlayMusicOverworld();
 }
@@ -63,7 +62,6 @@ void Update(float elapsedSec)
 void End()
 {
 	FreeOverworld();
-	FreeBattle();
 	EndAudio();
 	DeleteTexture(g_Mushroom);
 }
@@ -307,7 +305,7 @@ void TurnOnBattle(int pokemonId) {
 		g_IsDrawingMushroom = true;
 		InitMushrooms();
 	}
-
+	InitBattle(g_PokemonIdFromOverworld);
 	PlayMusicBattle();
 }
 
@@ -321,6 +319,7 @@ void TurnOffBattle() {
 	g_GlobalTime = 0.f;
 	g_IsDoneDrawing = false;
 	EndBattleOverworld();
+	FreeBattle();
 }
 
 // should make an enum of state instead of 2 bools (isbattleon & overworld)

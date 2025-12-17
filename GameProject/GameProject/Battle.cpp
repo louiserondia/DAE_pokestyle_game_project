@@ -10,13 +10,12 @@ void TurnOffBattle();
 void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize = 100, bool isBlack = 1);
 
 #pragma region Init
-void InitBattle()
+void InitBattle(int pokemonId)
 {
-	srand(int(time(nullptr)));
 	InitMusic();
 	InitSprites();
 	InitText();
-	g_PickedPokemon = rand() % g_AmmountOfPokemon;
+	g_PickedPokemon = pokemonId;
 }
 void InitMusic()
 {
@@ -33,7 +32,7 @@ void PlayMusicBattle() {
 void InitSprites()
 {
 
-	TextureFromFile("Resources/BackgroundCave.png", g_BackgroundTexture);
+	TextureFromFile("Resources/BackgroundGrass.png", g_BackgroundTexture);
 	TextureFromFile("Resources/FightingOptions.png", g_FightingOptionsTexture);
 	TextureFromFile("Resources/Gyarados.png", g_GyaradosTexture);
 	TextureFromFile("Resources/Sandslash.png", g_SandslashTexture);
