@@ -338,6 +338,10 @@ void DrawBattle()
 	{
 		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
 	}
+	if (g_PickedPokemon == 4)
+	{
+		DrawTexture(*arrWildBushPokemon[g_PickedPokemon].pokemonSprite, g_EnemyPokemon.position);
+	}
 	if (g_FightingOptionsTextureIsOn)
 	{
 		DrawTexture(g_FightingOptionsTexture, g_DestinationFightingOptions);

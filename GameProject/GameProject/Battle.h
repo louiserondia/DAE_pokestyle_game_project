@@ -12,7 +12,7 @@ const float
 	g_HalfWidth{ g_WindowWidth / 2.f };
 
 const int
-g_AmmountOfPokemon{ 2 },
+g_AmmountOfPokemon{ 5 },
 	g_AmmountOfMoves{ 4 };
 
 #pragma endregion ConstVariables
@@ -305,7 +305,7 @@ Pokemon
 			250.f
 	};
 
-Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Sandslash ,g_Victreebel };
+Pokemon arrWildBushPokemon[g_AmmountOfPokemon]{ g_Sandslash ,g_Victreebel,g_Sandslash,g_Victreebel,g_Godmoonguss };
 
 Point2f arrowSpritePositionFightingOptions{ g_HalfWidth + (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock + g_HeightOfTextBlock * 0.25f };
 Point2f arrowSpritePositionMoves{ (g_HalfWidth * 0.075f), g_WindowHeight - g_HeightOfTextBlock *0.75f };
