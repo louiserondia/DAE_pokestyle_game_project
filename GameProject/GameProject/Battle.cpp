@@ -16,7 +16,7 @@ void InitBattle(int pokemonId)
 	InitSprites();
 	InitText();
 	std::cout << pokemonId << std::endl;
-	g_PickedPokemon = 4;
+	g_PickedPokemon = pokemonId;
 	if (g_PickedPokemon == 0)
 	{
 		g_EnemyPokemon.position.top += 50.f;
