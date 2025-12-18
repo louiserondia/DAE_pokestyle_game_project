@@ -174,6 +174,7 @@ g_WaitTextBlock{},
 g_ItemTextureIsOn{},
 g_SwitchTextureIsOn{},
 g_RunTextureIsOn{},
+g_FaintTextureEnemyIsOn{},
 g_ItemDoneTextureIsOn{},
 g_FightingOptionsTextureIsOn{ true },
 g_NotFirstTurnTextureIsOn{},
@@ -361,13 +362,13 @@ MoveOptions CurrentMove{ MoveOptions::topleft };
 
 #pragma region Functions
 #pragma region Init
-void	InitBattle(int pokemonId);
+void	InitBattle();
 void	InitText();
 void	InitSprites();
 void	InitMusic();
 #pragma endregion Init
 #pragma region End
-void Reset();
+void Reset(int pokemonId);
 #pragma endregion End
 #pragma region InputHandling
 #pragma endregion InputHandling

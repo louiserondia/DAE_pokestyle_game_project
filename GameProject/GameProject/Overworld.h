@@ -168,7 +168,7 @@ struct Camera {
 
 struct World {
 	Scene	scenes[g_NrScenes]{};
-	int		curSceneIndex{ 4 }; // to debug, set to the scene you want to start at
+	int		curSceneIndex{ 0 }; // to debug, set to the scene you want to start at
 	const float moveSpeed{ 220.f };
 };
 

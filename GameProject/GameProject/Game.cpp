@@ -10,7 +10,8 @@ void	FreeBattle();
 void	HandleKeyDownOverworld(SDL_Keycode key);
 void	HandleKeyUpOverworld(SDL_Keycode key);
 void	UpdateOverworld(float elapsedSec);
-void	InitBattle(int pokemonId);
+void	InitBattle();
+void	Reset(int pokemonId);
 void	DrawBattle();
 void	UpdateBattle(float elapsedSec);
 void	HandleKeyUpBattle(SDL_Keycode key);
@@ -33,6 +34,7 @@ void Start()
 	InitMushrooms();
 	InitAudio();
 	InitOverworld();
+	InitBattle();
 	InitAlphabet();
 	PlayMusicOverworld();
 }
@@ -306,7 +308,7 @@ void TurnOnBattle(int pokemonId) {
 		g_IsDrawingMushroom = true;
 		InitMushrooms();
 	}
-	InitBattle(g_PokemonIdFromOverworld);
+	Reset(g_PokemonIdFromOverworld);
 	PlayMusicBattle();
 }
 

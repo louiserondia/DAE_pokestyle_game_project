@@ -10,22 +10,11 @@ void TurnOffBattle();
 void DrawTextFromString(const std::string& str, const Point2f& pos, int fontSize = 100, bool isBlack = 1);
 
 #pragma region Init
-void InitBattle(int pokemonId)
+void InitBattle()
 {
 	InitMusic();
 	InitSprites();
 	InitText();
-	std::cout << pokemonId << std::endl;
-	g_PickedPokemon = pokemonId;
-	if (g_PickedPokemon == 0)
-	{
-		g_EnemyPokemon.position.top += 50.f;
-	}
-	else
-	{
-		g_EnemyPokemon.position.top = 0.f;
-	}
-	Reset();
 }
 void InitMusic()
 {
@@ -96,12 +85,21 @@ void FreeBattle()
 	Mix_FreeChunk(g_Noises.g_HyperBeam);
 	Mix_FreeChunk(g_Noises.g_DragonRage);
 }
-void Reset()
+void Reset(int pokemonId)
 {
 	g_Gyarados.actual = g_Gyarados.total;
 	arrWildBushPokemon[g_PickedPokemon].actual = arrWildBushPokemon[g_PickedPokemon].total;
 	g_Gyarados.animHP = g_Gyarados.total;
 	arrWildBushPokemon[g_PickedPokemon].animHP = arrWildBushPokemon[g_PickedPokemon].total;
+	g_PickedPokemon = pokemonId;
+	if (g_PickedPokemon == 0)
+	{
+		g_EnemyPokemon.position.top += 50.f;
+	}
+	else
+	{
+		g_EnemyPokemon.position.top = 0.f;
+	}
 	g_NotFirstTurn = true;
 	g_ItemOnlyOnce = false;
 }
@@ -496,6 +494,10 @@ void DrawTexts()
 	{
 		DrawTextFromString(g_Gyarados.name + g_Texts.faint, textPos, fontSize, false);
 	}
+	if (g_FaintTextureEnemyIsOn == true)
+	{
+		DrawTextFromString(arrWildBushPokemon[g_PickedPokemon].name + g_Texts.faint, textPos, fontSize, false);
+	}
 	if (g_HyperBeamTextIsOn == true)
 	{
 		DrawTextFromString(g_Texts.hyperbeam, Point2f{ 65.f, g_WindowHeight - g_HeightOfTextBlock * 0.60f }, 60,false);
@@ -604,7 +606,6 @@ void DrawAttackEffects()
 		if (g_HydroPumpIsOn)
 		{
 			g_HydroPumpSourcePosition.y = g_CurrentHydroPumpIndex * g_HydroPumpTexture.height / 4;
-			std::cout << g_HydroPumpSourcePosition.y << std::endl;
 			DrawTexture(g_HydroPumpTexture, destinationHydroPump, sourceHydroPump);
 		}
 		if (g_DragonRageIsOn)
@@ -621,7 +622,6 @@ void DrawAttackEffects()
 	if (g_SlashIsOn)
 	{
 		g_SlashSourcePosition.y = g_CurrentSlashIndex * g_DragonRageTexture.height / 5;
-		std::cout << g_SlashSourcePosition.y << std::endl;
 		DrawTexture(g_DragonRageTexture, destinationSlash, sourceSlash);
 	}
 	if (g_RazorLeafIsOn)
@@ -735,6 +735,13 @@ void Attack(float elapsedSec, Moves& currentMove)
 				g_Gyarados.actual = 0.f;
 				g_FightingOptionsTextureIsOn = false;
 				g_FaintTextureIsOn = true;
+				TurnOffBattle();
+			}
+			if (arrWildBushPokemon[g_PickedPokemon].actual <= 0.f)
+			{
+				arrWildBushPokemon[g_PickedPokemon].actual = 0.f;
+				g_FightingOptionsTextureIsOn = false;
+				g_FaintTextureEnemyIsOn = true;
 				TurnOffBattle();
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
