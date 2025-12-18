@@ -25,6 +25,7 @@ void InitBattle(int pokemonId)
 	{
 		g_EnemyPokemon.position.top = 0.f;
 	}
+	Reset();
 }
 void InitMusic()
 {
@@ -94,6 +95,15 @@ void FreeBattle()
 	Mix_FreeChunk(g_Noises.g_Surf);
 	Mix_FreeChunk(g_Noises.g_HyperBeam);
 	Mix_FreeChunk(g_Noises.g_DragonRage);
+}
+void Reset()
+{
+	g_Gyarados.actual = g_Gyarados.total;
+	arrWildBushPokemon[g_PickedPokemon].actual = arrWildBushPokemon[g_PickedPokemon].total;
+	g_Gyarados.animHP = g_Gyarados.total;
+	arrWildBushPokemon[g_PickedPokemon].animHP = arrWildBushPokemon[g_PickedPokemon].total;
+	g_NotFirstTurn = true;
+	g_ItemOnlyOnce = false;
 }
 #pragma endregion End
 
@@ -728,7 +738,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 				TurnOffBattle();
 			}
 			AttackSequence = Phases::phase_allypokemon_move;
-			g_notFirstTurn = true;
+			g_NotFirstTurn = true;
 			if (g_Gyarados.actual != 0.f)
 			{
 				g_FightingOptionsTextureIsOn = true;
@@ -740,7 +750,7 @@ void Attack(float elapsedSec, Moves& currentMove)
 }
 void Item(float elapsedSec)
 {
-	if (g_notFirstTurn == true)
+	if (g_NotFirstTurn == true)
 	{
 		if (g_ItemOnlyOnce == false)
 		{

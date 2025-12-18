@@ -317,6 +317,7 @@ void TurnOffBattle() {
 	}
 	g_IsBattleTransitionOn = true;
 	g_IsBlinking = true;
+	
 	g_GlobalTime = 0.f;
 	g_IsDoneDrawing = false;
 	EndBattleOverworld();

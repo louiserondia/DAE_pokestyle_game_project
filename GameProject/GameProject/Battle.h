@@ -169,7 +169,7 @@ g_Attack{},
 g_Item{},
 g_Run{},
 g_Switch{},
-g_notFirstTurn{},
+g_NotFirstTurn{},
 g_WaitTextBlock{},
 g_ItemTextureIsOn{},
 g_SwitchTextureIsOn{},
@@ -367,6 +367,7 @@ void	InitSprites();
 void	InitMusic();
 #pragma endregion Init
 #pragma region End
+void Reset();
 #pragma endregion End
 #pragma region InputHandling
 #pragma endregion InputHandling
