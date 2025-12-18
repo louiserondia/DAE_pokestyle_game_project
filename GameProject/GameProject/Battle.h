@@ -248,7 +248,7 @@ g_HydroPump
 g_DragonRage
 {
 	"DragonRage",
-	40.f
+	60.f
 },
 g_HyperBeam
 {

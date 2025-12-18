@@ -57,6 +57,29 @@ void InitText()
 {
 	std::cout << "Music and Godmoonguss sprites by Jasper Bouchet" << std::endl;
 }
+void Reset(int pokemonId)
+{
+	g_Gyarados.actual = g_Gyarados.total;
+	arrWildBushPokemon[g_PickedPokemon].actual = arrWildBushPokemon[g_PickedPokemon].total;
+	g_Gyarados.animHP = g_Gyarados.total;
+	arrWildBushPokemon[g_PickedPokemon].animHP = arrWildBushPokemon[g_PickedPokemon].total;
+	g_PickedPokemon = pokemonId;
+	if (g_PickedPokemon == 0)
+	{
+		g_EnemyPokemon.position.top = 50.f;
+	}
+	else
+	{
+		g_EnemyPokemon.position.top = 0.f;
+	}
+	if (g_NotFirstTurn == true)
+	{
+		g_NotFirstTurn = false;
+	}
+	g_ItemOnlyOnce = false;
+	ItemSequence = Phases::phase_hpbarally_up;
+	
+}
 #pragma endregion Init
 
 #pragma region End
@@ -84,24 +107,6 @@ void FreeBattle()
 	Mix_FreeChunk(g_Noises.g_Surf);
 	Mix_FreeChunk(g_Noises.g_HyperBeam);
 	Mix_FreeChunk(g_Noises.g_DragonRage);
-}
-void Reset(int pokemonId)
-{
-	g_Gyarados.actual = g_Gyarados.total;
-	arrWildBushPokemon[g_PickedPokemon].actual = arrWildBushPokemon[g_PickedPokemon].total;
-	g_Gyarados.animHP = g_Gyarados.total;
-	arrWildBushPokemon[g_PickedPokemon].animHP = arrWildBushPokemon[g_PickedPokemon].total;
-	g_PickedPokemon = pokemonId;
-	if (g_PickedPokemon == 0)
-	{
-		g_EnemyPokemon.position.top += 50.f;
-	}
-	else
-	{
-		g_EnemyPokemon.position.top = 0.f;
-	}
-	g_NotFirstTurn = true;
-	g_ItemOnlyOnce = false;
 }
 #pragma endregion End
 
