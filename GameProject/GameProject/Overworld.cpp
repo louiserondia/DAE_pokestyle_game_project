@@ -211,7 +211,7 @@ void InitNPCs(int sceneIndex) {
 		g_NPC[1].Init(5, 257, Rectf{ 0.f, 72.f, 18.f, 24.f }, false);
 	}
 	else if (!sceneIndex) { // moto guy is in scene 0
-		g_NPC[2].Init(0, 224, Rectf{ 0.f, 24.f, 24.f, 24.f }, true, true);
+		g_NPC[2].Init(0, 224, Rectf{ 0.f, 24.f, 24.f, 24.f }, false, true); // ismoving is false atm
 	}
 }
 
@@ -484,6 +484,12 @@ void OnKeyDownEventOnce(SDL_Keycode key) {
 			g_Player.UpdateAnimFrameState();
 		}
 	}
+	// top delete (under this)
+	if (key == SDLK_q) {
+		g_NPC[2].isMoving = true; // moto is [2]
+		canHeMove = true;
+	}
+
 }
 
 void	HandleKeyDownOverworld(SDL_Keycode key) {
@@ -635,7 +641,7 @@ void NPC::Walk() {
 void NPC::Drive() {
 	if (stepProgress == 0.f) {
 		const int targetTemp{ TargetTileFromDir(curTile, dir) };
-		if (IsWalkable(targetTemp) && !IsPlayerOnTile(targetTemp)) {
+		if (isMoving && /* <- to delete */ IsWalkable(targetTemp) && !IsPlayerOnTile(targetTemp)) {
 			targetTile = targetTemp;
 			targetPos = PosFromTile(targetTile);
 			isMoving = true;

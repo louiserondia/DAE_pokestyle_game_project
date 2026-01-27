@@ -211,7 +211,6 @@ float		g_AnimTextureTime{};
 float		g_SmokeTime{};
 float		g_Time{};
 
-
 //		--- FUNCTIONS ---
 
 //		INIT
