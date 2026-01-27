@@ -749,8 +749,8 @@ void	Scene::UpdateAnimTextureFrames() {
 }
 
 void	PlayMusicOverworld() {
-	if (Scene::isCave) PlayMusic(g_Sounds.caveMusic);
-	else PlayMusic(g_Sounds.overworldMusic);
+	//if (Scene::isCave) PlayMusic(g_Sounds.caveMusic);
+	//else PlayMusic(g_Sounds.overworldMusic);
 }
 
 void	CheckSoundEffect(SDL_Keycode key) {

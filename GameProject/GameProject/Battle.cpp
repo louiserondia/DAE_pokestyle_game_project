@@ -28,7 +28,7 @@ void InitMusic()
 	LoadSoundEffect(g_Noises.g_DamageTaken, "../Resources/DamageSoundEffect.wav");
 }
 void PlayMusicBattle() {
-	PlayMusic(g_Noises.g_GodmungussBattleMusic);
+	//PlayMusic(g_Noises.g_GodmungussBattleMusic);
 }
 void InitSprites()
 {
